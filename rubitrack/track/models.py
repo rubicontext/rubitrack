@@ -22,6 +22,7 @@ class Track(models.Model):
     genre = models.ForeignKey(Genre, on_delete=models.CASCADE, blank=True, null=True)
     date_catalog = models.DateTimeField('date added to catalog', auto_now_add=True, blank=True, null=True)
     bpm = models.FloatField(blank=True, null=True)
+    #related_tracks = 
     #tostring :)    
     def __str__(self):
         return self.title + " - " +  self.artist.name
@@ -45,7 +46,8 @@ class Playlist(models.Model):
         return self.name
 
 class TransitionType(models.Model):
-    name = models.CharField(max_length=3)
+    name = models.CharField(max_length=50)
+    acronym = models.CharField(max_length=3)
     description = models.CharField(max_length=200)
     def __str__(self):
         return self.name
