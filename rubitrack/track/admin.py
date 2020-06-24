@@ -32,8 +32,9 @@ class TrackToTrackInline(admin.TabularInline):
 #@admin.register(Track)
 class TrackAdmin(admin.ModelAdmin):
     fieldsets = [
-        (None,               {'fields': ['title', 'artist']}),
-        ('Other information', {'fields': ['genre', 'rating', 'bpm']}),
+        (None,               {'fields': ['title', 'artist', 'genre']}),
+        ('Notes', {'fields': ['ranking', 'comment', 'comment2']}),
+        ('Details', {'fields': ['musical_key', 'bpm', 'bitrate', 'playcount', 'date_last_played']}),
     ]
     inlines = [TrackToTrackInline]
     list_display = ('title', 'artist', 'genre', 'bpm', 'is_techno', 'was_added_recently')
