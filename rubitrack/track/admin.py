@@ -1,7 +1,9 @@
 from django.contrib import admin
 
-# Register your models here.
+#ac
+from adminsortable2.admin import SortableAdminMixin
 
+# Register your models here.
 from .models import Artist
 from .models import Track
 from .models import Genre
@@ -27,10 +29,11 @@ class TrackToTrackInline(admin.TabularInline):
     extra = 1
     fk_name = "track_source"
 
+#@admin.register(Track)
 class TrackAdmin(admin.ModelAdmin):
     fieldsets = [
         (None,               {'fields': ['title', 'artist']}),
-        ('Other information', {'fields': ['genre', 'bpm']}),
+        ('Other information', {'fields': ['genre', 'rating', 'bpm']}),
     ]
     inlines = [TrackToTrackInline]
     list_display = ('title', 'artist', 'genre', 'bpm', 'is_techno', 'was_added_recently')
@@ -46,3 +49,5 @@ class ArtistAdmin(admin.ModelAdmin):
 
 admin.site.register(Track, TrackAdmin)
 admin.site.register(Artist, ArtistAdmin)
+
+

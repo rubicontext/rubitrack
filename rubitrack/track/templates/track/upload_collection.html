@@ -1,0 +1,27 @@
+{% extends "admin/base_site.html" %}
+ 
+{% block title %}Upload Collection (Traktor) {% endblock title %}
+  
+  {% block content %}
+  <h1>Upload your Traktor collection</h1>
+  
+  {% if submitted %}
+      <p class="success">
+         Your collection was uploaded successfully. Thank you.
+     </p>
+      <p class="success">
+         You have uploaded {{ nb_new_tracks }} new traks and {{ nb_existing_tracks }} existing traks.
+     </p>
+ {% else %}
+     <form action="" method="post" novalidate enctype="multipart/form-data">
+     <table>
+         {{ form.as_table }}
+         <tr>
+             <td>&nbsp;</td>
+             <td><input type="submit" value="Submit"></td>
+         </tr>
+     </table>
+     {% csrf_token %}
+     </form>
+ {% endif %}
+ {% endblock content %}

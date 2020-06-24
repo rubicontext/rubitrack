@@ -1,0 +1,35 @@
+{% extends "admin/base.html" %}
+
+{% block title %}{{ title }} | Rubitrack admin{% endblock %}
+
+{% block branding %}
+<h1 id="site-name"><a href="{% url 'admin:index' %}">RubiTRACK - Take the control over your music library!</a></h1>
+<a href="/track/uploadcollection">Upload collection</a>
+{% endblock %}
+
+{% block nav-global %}{% endblock %}
+
+{% block extrahead %}
+    <style>
+        a, a:visited {
+            color:#283C00;
+        }
+
+        div.breadcrumbs {
+        	background-color:gray;
+        }
+
+        #header {
+        	background-color:#283C4F;
+        }
+
+        #branding h1 a:visited {
+        	color:white;
+        }
+
+		.module caption {
+        	background-color:#283C4F;
+        }
+
+    </style>
+{% endblock %}
