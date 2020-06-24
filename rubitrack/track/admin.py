@@ -1,7 +1,7 @@
 from django.contrib import admin
 
 #ac
-from adminsortable2.admin import SortableAdminMixin
+#from adminsortable2.admin import SortableAdminMixin
 
 # Register your models here.
 from .models import Artist
