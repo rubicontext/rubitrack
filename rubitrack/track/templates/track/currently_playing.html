@@ -1,0 +1,15 @@
+{% extends "admin/base_site.html" %}
+ 
+{% block title %}Currently Playing Track {% endblock title %}
+  
+  {% block content %}
+  <h1>You are listening to : {{ currentTrack.title }} By : {{ currentTrack.artist }} </h1>
+  
+  <p class="success">
+     Here are some related tracks : 
+  </p>
+  <p class="success">
+     Here are the tracks you often play after this one : 
+  </p>
+ 
+ {% endblock content %}
