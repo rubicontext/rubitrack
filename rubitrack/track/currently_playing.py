@@ -14,17 +14,22 @@ def display_currently_playing(request):
 
 
 def get_currently_playing_track():
-	refresh_currently_playing_from_log()
-	currentPlaylist = CurrentlyPlaying.objects.order_by('-date_played')
-	currentTrack = currentPlaylist[0].track
-	print(currentTrack)
-	return currentTrack
+	if(not refresh_currently_playing_from_log()):
+		return None
+	else:
+		currentPlaylist = CurrentlyPlaying.objects.order_by('-date_played')
+		currentTrack = currentPlaylist[0].track
+		print(currentTrack)
+		return currentTrack
 
 def refresh_currently_playing_from_log():
 
 	#file = open('/home/rubicontext/Downloads/playlist.log', 'r')
 	file = open('/var/log/icecast2/playlist.log', 'r')
 	lineList = file.readlines()
+	if(len(lineList)<1):
+		print("Nothing to scrap in playlist log")
+		return False
 	lastLine = lineList[len(lineList)-1]
 	print("Current last line in log: ",lastLine) # already has newline
 
@@ -66,4 +71,5 @@ def refresh_currently_playing_from_log():
 	#connection.commit()
 	#count = cursor.rowcount
 	print ("1 Record inserted successfully into currently playing table")
+	return True
 	
