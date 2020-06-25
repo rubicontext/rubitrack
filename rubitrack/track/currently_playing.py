@@ -1,5 +1,6 @@
 
 from .models import Track, TrackToTrack, CurrentlyPlaying
+from django.http import HttpResponse
 
 #from django.http import HttpResponseRedirect
 from django.shortcuts import render
@@ -7,20 +8,34 @@ import psycopg2 as psycopg
 #from django import forms
 
 #FILE_ICECAST_PLAYLIST=
+MAX_PLAYLIST_HISTORY_SIZE=5
 
 def display_currently_playing(request):
-	currentTack = get_currently_playing_track()
-	return render(request, 'track/currently_playing.html', {'currentTrack': currentTack})
+	currentTack = get_currently_playing_track(withRefresh=True)
+	playlistHistory = get_playing_track_list_history(withRefresh=False)
+	#playlistHistory = playlistHistory[1:10]
+	return render(request, 'track/currently_playing.html', {'currentTrack': currentTack, 'playlistHistory':playlistHistory})
 
 
-def get_currently_playing_track():
-	if(not refresh_currently_playing_from_log()):
-		return None
-	else:
-		currentPlaylist = CurrentlyPlaying.objects.order_by('-date_played')
-		currentTrack = currentPlaylist[0].track
-		print(currentTrack)
-		return currentTrack
+def get_currently_playing_track(withRefresh=True):
+	if(withRefresh):
+		if(not refresh_currently_playing_from_log()):
+			return None
+
+	currentPlaylist = get_playing_track_list_history(withRefresh=False)
+	currentTrack = currentPlaylist[len(currentPlaylist)-1].track
+	print(currentTrack)
+	return currentTrack
+
+def get_playing_track_list_history(withRefresh=True):
+	if(withRefresh):
+		if(not refresh_currently_playing_from_log()):
+			return None
+	currentPlaylist = CurrentlyPlaying.objects.order_by('date_played')
+	if(len(currentPlaylist)> MAX_PLAYLIST_HISTORY_SIZE):
+		currentPlaylist = currentPlaylist[len(currentPlaylist)-MAX_PLAYLIST_HISTORY_SIZE:len(currentPlaylist)]
+
+	return currentPlaylist
 
 def refresh_currently_playing_from_log():
 
@@ -31,7 +46,7 @@ def refresh_currently_playing_from_log():
 		print("Nothing to scrap in playlist log")
 		return False
 	lastLine = lineList[len(lineList)-1]
-	print("Current last line in log: ",lastLine) # already has newline
+	#print("Current last line in log: ",lastLine) # already has newline
 
 
 	#split the line to get the track title + artist
@@ -48,28 +63,32 @@ def refresh_currently_playing_from_log():
 	#cursor.execute(postgres_select_query, (like_pattern,))
 	#search_title = trackTitle[1:-1]
 	search_title = trackTitle
-	print("search_title=", search_title)
+	#print("search_title=", search_title)
 
 	try:
 		track = Track.objects.get(title=search_title)
 	except Track.DoesNotExist:
 		print("ERROR NO TRACK FOUND : ", search_title)
 
+	#get the last played track to check if it changed
+	lastTrackPlayed = get_currently_playing_track(withRefresh=False)
+	if(track.id == lastTrackPlayed.id):
+		print ("No new record, still playing the same track...\n")
+		return True
+
 	currentPlay = CurrentlyPlaying()
 	currentPlay.track=track
 	currentPlay.save()
-
-	#cursor.execute(postgres_select_query, (trackTitle,))
-	#track_records = cursor.fetchall()
-
-	#postgres_insert_query = """ INSERT INTO track_currentlyplaying (date_played, track_id) VALUES (%s,%s)"""
-	#current_time = datetime.now()
-	#track_id = 1
-	#record_to_insert = (current_time, track_id)
-	#cursor.execute(postgres_insert_query, record_to_insert)
-
-	#connection.commit()
-	#count = cursor.rowcount
-	print ("1 Record inserted successfully into currently playing table")
+	print ("1 Record inserted successfully into currently playing table\n")
 	return True
 	
+def get_more_tables(request):
+	lastTrackPlayed = get_currently_playing_track(withRefresh=False)
+	refresh_currently_playing_from_log()
+	#increment = int(request.GET['append_increment'])
+	#increment_to = increment + 10
+	currently_playing_track = CurrentlyPlaying.objects.order_by('-date_played')[0]
+	if(lastTrackPlayed.id == currently_playing_track.track.id):
+		return HttpResponse('')
+	else:
+		return render(request, 'track/get_more_tables.html', {'currently_playing_track': currently_playing_track})
