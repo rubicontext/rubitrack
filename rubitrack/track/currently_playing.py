@@ -6,6 +6,7 @@ from django.shortcuts import render
 import psycopg2 as psycopg
 #from django import forms
 
+#FILE_ICECAST_PLAYLIST=
 
 def display_currently_playing(request):
 	currentTack = get_currently_playing_track()
@@ -21,7 +22,8 @@ def get_currently_playing_track():
 
 def refresh_currently_playing_from_log():
 
-	file = open('/home/rubicontext/Downloads/playlist.log', 'r')
+	#file = open('/home/rubicontext/Downloads/playlist.log', 'r')
+	file = open('/var/log/icecast2/playlist.log', 'r')
 	lineList = file.readlines()
 	lastLine = lineList[len(lineList)-1]
 	print("Current last line in log: ",lastLine) # already has newline
