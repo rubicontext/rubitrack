@@ -24,7 +24,7 @@ def get_currently_playing_track(withRefresh=True):
 
 	currentPlaylist = get_playing_track_list_history(withRefresh=False)
 	currentTrack = currentPlaylist[len(currentPlaylist)-1].track
-	print(currentTrack)
+	#print(currentTrack)
 	return currentTrack
 
 def get_playing_track_list_history(withRefresh=True):
@@ -54,7 +54,7 @@ def refresh_currently_playing_from_log():
 	artistName = lastLine[0:indexSep-1]
 	trackTitle = lastLine[indexSep+2:len(lastLine)-1]
 
-	print("Track/Artist=",trackTitle,"/", artistName)
+	#print("Track/Artist=",trackTitle,"/", artistName)
 	#postgres_select_query = " SELECT id from track_track WHERE title like %s;"
 
 	#postgres_select_query = 'SELECT * from track_track tt WHERE LOWER(tt.title) LIKE LOWER(%s)'
@@ -68,18 +68,18 @@ def refresh_currently_playing_from_log():
 	try:
 		track = Track.objects.get(title=search_title)
 	except Track.DoesNotExist:
-		print("ERROR NO TRACK FOUND : ", search_title)
+		#print("ERROR NO TRACK FOUND : ", search_title)
 
 	#get the last played track to check if it changed
 	lastTrackPlayed = get_currently_playing_track(withRefresh=False)
 	if(track.id == lastTrackPlayed.id):
-		print ("No new record, still playing the same track...\n")
+		#print ("No new record, still playing the same track...\n")
 		return True
 
 	currentPlay = CurrentlyPlaying()
 	currentPlay.track=track
 	currentPlay.save()
-	print ("1 Record inserted successfully into currently playing table\n")
+	#print ("1 Record inserted successfully into currently playing table\n")
 	return True
 	
 def get_more_tables(request):

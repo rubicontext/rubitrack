@@ -21,7 +21,7 @@ class UploadCollectionForm(forms.Form):
 #from somewhere import handle_uploaded_file
 
 def handle_uploaded_file(file):
-	print('xml parsing BEGINs')
+	#print('xml parsing BEGINs')
 	xmldoc = xml.dom.minidom.parse(file)
 	values = []
 	#pk_list = xmldoc.getElementsByTagName('KEY')
@@ -47,7 +47,7 @@ def handle_uploaded_file(file):
 			artistName = current_entry.attributes['ARTIST'].value
 		else:
 			artistName=UNKNOWN_ARTIST_NAME
-		print("TRACK: ", title, "Artist: ", artistName)
+		#print("TRACK: ", title, "Artist: ", artistName)
 
 		location = current_entry.getElementsByTagName('LOCATION')
 		#print("LOCATION: ", location)
@@ -143,7 +143,7 @@ def handle_uploaded_file(file):
 			artist = Artist()
 			artist.name=artistName
 			artist.save()
-			print("Created new artist : ", artistName)
+			#print("Created new artist : ", artistName)
 		
 		#check if GENRE exists, or insert it
 		if(genreName is not None):
@@ -155,7 +155,7 @@ def handle_uploaded_file(file):
 				genre = Genre()
 				genre.name=genreName
 				genre.save()
-				print("Created new genre : ", genreName)
+				#print("Created new genre : ", genreName)
 		else:
 			genre=None
 
@@ -170,7 +170,7 @@ def handle_uploaded_file(file):
 			track.title=title
 			#track.save()
 			cptNewTracks = cptNewTracks+1
-			print("Created new track : ", title)
+			#print("Created new track : ", title)
 		
 		#update track infos
 		track.bpm=666 #FOR DEBUG AND PURGE
@@ -190,7 +190,7 @@ def handle_uploaded_file(file):
 		#print('About to save track with artist :', artist)
 		track.save() #force save to add children
 
-	print('xml parsing DONE!')
+	#print('xml parsing DONE!')
 	return cptNewTracks, cptExistingTracks
 
 	#traverseTree(xml.documentElement)
@@ -200,7 +200,7 @@ def upload_file(request):
     if request.method == 'POST':
         form = UploadCollectionForm(request.POST, request.FILES)
         if form.is_valid():
-        	print('Form is valid!')
+        	#print('Form is valid!')
         	cptNewTracks, cptExistingTracks = handle_uploaded_file(request.FILES['file'])
         	#return HttpResponseRedirect('/admin/')
         	return render(request, 'track/upload_collection.html', {'form': form, 'nb_new_tracks': cptNewTracks, 'nb_existing_tracks':cptExistingTracks, 'submitted':True})

@@ -6,9 +6,9 @@ try:
   connectStr = "dbname='rubitrack_dev' user='track' password='track_db' host='lula'"
   connection = psycopg.connect(connectStr)
   cursor = connection.cursor()
-  print("connected to DB")
+  #print("connected to DB")
 except:
-  print("could not connect to the database")
+  #print("could not connect to the database")
 
 file = open('/home/rubicontext/Downloads/playlist.log', 'r')
 while 1:
@@ -23,7 +23,7 @@ while 1:
         #first get the track in the registry, or insertit
         #split the line to get the track title + artist
         track_title = line.split('-')[1].lstrip().strip() #issue with preceeding white spaces lstrip().
-        print("Title=",track_title,"#")
+        #rint("Title=",track_title,"#")
         #postgres_select_query = " SELECT id from track_track WHERE title like %s;"
 
         postgres_select_query = 'SELECT * from track_track tt WHERE LOWER(tt.title) LIKE LOWER(%s)'
@@ -46,4 +46,4 @@ while 1:
 
         connection.commit()
         count = cursor.rowcount
-        print (count, "Record(s) inserted successfully into currently playing table")
+        #print (count, "Record(s) inserted successfully into currently playing table")
