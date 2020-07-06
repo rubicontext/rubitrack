@@ -43,7 +43,7 @@ def refresh_currently_playing_from_log():
 	file = open('/var/log/icecast2/playlist.log', 'r')
 	lineList = file.readlines()
 	if(len(lineList)<1):
-		print("Nothing to scrap in playlist log")
+		#print("Nothing to scrap in playlist log")
 		return False
 	lastLine = lineList[len(lineList)-1]
 	#print("Current last line in log: ",lastLine) # already has newline
@@ -68,7 +68,7 @@ def refresh_currently_playing_from_log():
 	try:
 		track = Track.objects.get(title=search_title)
 	except Track.DoesNotExist:
-		#print("ERROR NO TRACK FOUND : ", search_title)
+		track = None
 
 	#get the last played track to check if it changed
 	lastTrackPlayed = get_currently_playing_track(withRefresh=False)
