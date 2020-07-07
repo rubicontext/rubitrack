@@ -3,7 +3,7 @@
 {% block title %}{{ title }} | Rubitrack admin{% endblock %}
 
 {% block branding %}
-<h1 id="site-name"><a href="{% url 'admin:index' %}">RubiTRACK - Take the control over your music library!</a></h1>
+<h1 id="site-name"><a href="{% url 'admin:index' %}"><div class="green_flashy">Rubi</div>TRACK - Take the control over your <div class="green_flashy">music</div> library!</a></h1>
 <a href="/track/upload_collection">Upload collection</a> -- <a href="/track/currently_playing">Currently Playing</a>
 {% endblock %}
 
@@ -17,12 +17,21 @@
             color:#283C00;
         }
 
+        div.inline { 
+            float:left; 
+        }
+
+        .clearBoth { 
+            clear:both; 
+        }
+
         div.breadcrumbs {
         	background-color:gray;
         }
 
         #header {
         	background-color:#283C4F;
+            align-items:stretch;
         }
 
         #branding h1 a:visited {
@@ -31,6 +40,46 @@
 
 		.module caption {
         	background-color:#283C4F;
+        }
+
+        div.now_playing_track {
+            font-size: 50px;
+            color:green;
+            background-color:#283C4F;
+            display: inline;
+        }
+
+        div.red_alert {
+            font-size: 50px;
+            color:red;
+            display: inline;
+        }
+
+        div.green_flashy {
+            color:#52d3aa;
+            display: inline;
+        }
+
+        div.track_big_blue {
+            font-size: 50px;
+            color:#283C4F;
+            display: inline;
+        }
+
+        div.grey_subtitle {
+            font-size: 25px;
+            font-weight: bold;
+            color:gray;
+            #display: inline;
+        }
+
+        td.good_transition {
+            color:green;
+        }
+
+        td.bad_transition {
+            text-align: center;
+            color:red;
         }
 
     </style>

@@ -82,7 +82,7 @@ def refresh_currently_playing_from_log():
 	#print ("1 Record inserted successfully into currently playing table\n")
 	return True
 	
-def get_more_tables(request):
+def get_more_played_history_row(request):
 	lastTrackPlayed = get_currently_playing_track(withRefresh=False)
 	refresh_currently_playing_from_log()
 	#increment = int(request.GET['append_increment'])
@@ -91,4 +91,12 @@ def get_more_tables(request):
 	if(lastTrackPlayed.id == currently_playing_track.track.id):
 		return HttpResponse('')
 	else:
-		return render(request, 'track/get_more_tables.html', {'currently_playing_track': currently_playing_track})
+		return render(request, 'track/get_more_played_history_row.html', {'currentTrack': currently_playing_track.track})
+
+def get_more_currently_playing_title_block(request):
+	currently_playing_track = CurrentlyPlaying.objects.order_by('-date_played')[0]
+	return render(request, 'track/get_more_currently_playing_title_block.html', {'currentTrack': currently_playing_track.track})
+
+def get_more_currently_playing_track_block(request):
+	currently_playing_track = CurrentlyPlaying.objects.order_by('-date_played')[0]
+	return render(request, 'track/get_more_currently_playing_track_block.html', {'currentTrack': currently_playing_track.track})
