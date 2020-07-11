@@ -4,7 +4,7 @@
 
 {% block branding %}
 <h1 id="site-name"><a href="{% url 'admin:index' %}"><div class="green_flashy">Rubi</div>TRACK - Take the control over your <div class="green_flashy">music</div> library!</a></h1>
-<a href="/track/upload_collection">Upload collection</a> -- <a href="/track/currently_playing">Currently Playing</a>
+<a href="/track/currently_playing">Now Playing</a> -- <a href="/track/import_collection">Import Collection</a> -- <a href="/track/export_collection">Export Collection</a>
 {% endblock %}
 
 {% block nav-global %}{% endblock %}
@@ -13,8 +13,8 @@
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
 
     <style>
-        a, a:visited {
-            color:#283C00;
+        a, a:link, a:visited {
+            color:#283C4F;
         }
 
         div.inline { 
@@ -27,7 +27,7 @@
 
         div.breadcrumbs {
         	background-color:gray;
-        }
+        }   
 
         #header {
         	background-color:#283C4F;
@@ -80,6 +80,14 @@
         td.bad_transition {
             text-align: center;
             color:red;
+        }
+
+        .module h2 {
+            background-color: gray;
+        }
+
+        .button, input[type=submit], input[type=button], .submit-row input, a.button {
+            background:#283C4F;
         }
 
     </style>

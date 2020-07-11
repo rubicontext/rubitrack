@@ -203,8 +203,8 @@ def upload_file(request):
         	#print('Form is valid!')
         	cptNewTracks, cptExistingTracks = handle_uploaded_file(request.FILES['file'])
         	#return HttpResponseRedirect('/admin/')
-        	return render(request, 'track/upload_collection.html', {'form': form, 'nb_new_tracks': cptNewTracks, 'nb_existing_tracks':cptExistingTracks, 'submitted':True})
+        	return render(request, 'track/import_collection.html', {'form': form, 'nb_new_tracks': cptNewTracks, 'nb_existing_tracks':cptExistingTracks, 'submitted':True})
     else:
         form = UploadCollectionForm()
-    return render(request, 'track/upload_collection.html', {'form': form})
+    return render(request, 'track/import_collection.html', {'form': form})
 

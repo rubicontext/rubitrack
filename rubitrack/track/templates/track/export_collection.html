@@ -1,0 +1,28 @@
+{% extends "admin/base_site.html" %}
+ 
+{% block title %}Export Collection (Traktor) {% endblock title %}
+  
+  {% block content %}
+  <h1>Export your Traktor collection</h1>
+  
+  {% if submitted %}
+      <p class="success">
+         Your collection was converted successfully. Thank you.
+     </p>
+      <p class="success">
+         You have  {{ nb_tracks }} traks and {{ nb_artists }} artits.
+         The origin folder was :  {{ origin_folder }} and the destination :  {{ destination_folder }}
+     </p>
+ {% else %}
+     <form action="" method="post" novalidate enctype="multipart/form-data">
+     <table>
+         {{ form.as_table }}
+         <tr>
+             <td>&nbsp;</td>
+             <td><input type="submit" value="Submit"></td>
+         </tr>
+     </table>
+     {% csrf_token %}
+     </form>
+ {% endif %}
+ {% endblock content %}

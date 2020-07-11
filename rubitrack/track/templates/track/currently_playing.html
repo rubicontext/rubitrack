@@ -1,10 +1,12 @@
 {% extends "admin/base_site.html" %}
+{% load admin_urls %}
  
 {% block title %}Now Playing - Tonial{% endblock title %}
   
   {% block content %}
 
 <h2><div class="grey_subtitle">Now Playing: </div></h2>
+
 <div class='now_playing_track' id='currentlyPlayingTrackBlock'>
   <div class="row">
     <div class="track_big_blue" >
@@ -17,7 +19,8 @@
        
     </div>
      <div class="grey_subtitle">
-      Genre: {{ currentTrack.genre.name }}  - {{ currentTrack.bpm|floatformat}} bpm
+      Genre: {{ currentTrack.genre.name }}  - {{ currentTrack.bpm|floatformat}} bpm - 
+      <a href="{% url 'admin:track_track_change' currentTrack.id %}">See details</a>
     </div>
   </div>
 </div>
@@ -26,7 +29,9 @@
 <hr>
 <hr>
 
+
 <h2>Playlist History: </h2>
+<div id="tablePlaylistHistory">
 <table id="_appendHere" class="table table-striped table-condensed">
   <tr>
     <th>Track Title</th>
@@ -34,77 +39,149 @@
     <th>Genre</th>
     <th>BPM</th>
     <th colspan=2 style="text-align: center">Transition Rating?</th>
-    <th>Time played</th>
+    <th>Comment</th>
+    <th>Date played</th>
   </tr>
   {% for currentPlay in playlistHistory %}
     <tr>                    
 
 
-     <td>{{ currentPlay.track.title }}</td>
+     <td><a href="{% url 'admin:track_track_change' currentPlay.track.id %}">{{ currentPlay.track.title }}</a></td>
      <td>{{ currentPlay.track.artist.name }}</td>
      <td>{{ currentPlay.track.genre.name }}</td>
      <td>{{ currentPlay.track.bpm|floatformat}}</td>
      <td class="good_transition">Good</td>
      <td class="bad_transition">Poor</td>
+     <td>{{ currentPlay.track.title }}</td>
      <td>{{ currentPlay.date_played }}</td>
   </tr>
   {% endfor %}
 </table>
-
-
-
-
-
-<hr>
-<hr>
-<hr>
-
-<h2>Suggestions: </h2>
-<div id='suggestionsBlock'>
-  <h3>Related tracks based on your manual input: </h3>
-    <p class="success">
-       track1
-       track2
-    </p>
-
-  <h3>Related tracks based on our algorithm:</h3>
-    <p class="success">
-       track1
-       track2
-    </p>
-
-    <h3>Most played tracks after this one: </h3>
-    <p class="success">
-      lala
-      lili
-    </p>
-
-    <h3>In the same musical genre : </h3>
-    <p class="success">
-      lala
-      lili
-    </p>
-
-  <h3>Tracks and Remixes from the same artist : </h3>
-  <p class="success">
-    lala
-    lili
-  </p>
 </div>
+
+
+
+
+<hr>
+<hr>
+<hr>
+
+<h2>Suggestions - what to play next?</h2>
+<div id='suggestionsBlock'>
+
+  <h3>From your manual preferences: </h3>
+
+  <table id="suggestionsManualInput" class="table table-striped table-condensed">
+        <tr>                    
+         <th>Title</td>
+         <th>Artist</td>
+         <th>Genre</td>
+         <th>Bpm</td>
+         <th>Suggestion</td>
+         <th colspan=2 style="text-align: center">Suggestion Rating?</th>
+         <th>Comment</td>
+         <th>Last Played</td>
+        </tr>
+
+        {% for currentTransition in suggestionsManualInput %}
+        <tr>                    
+         <td><a href="{% url 'admin:track_track_change' currentTransition.track_destination.id %}">{{ currentTransition.track_destination.title }}</a></td>
+         <td>{{ currentTransition.track_destination.artist.name }}</td>
+         <td>{{ currentTransition.track_destination.genre.name }}</td>
+         <td>{{ currentTransition.track_destination.bpm|floatformat}}</td>   
+         <td>Manual</td>
+         <td class="good_transition">Good</td>
+         <td class="bad_transition">Poor</td>
+         <td>{{ currentTransition.track_destination.comment }}</td>
+         <td>{{ currentTransition.track_destination.date_played }}</td>
+        </tr>
+        {% endfor %}
+      
+
+      <tr>
+        <td colspan=9><h3>From our algorithm:</h3></th>
+        
+
+      </tr>
+        <tr>                    
+         <th>Title</td>
+         <th>Artist</td>
+         <th>Genre</td>
+         <th>Bpm</td>
+         <th>Suggestion</td>
+         <th colspan=2 style="text-align: center">Suggestion Rating?</th>
+         <th>Comment</td>
+         <th>Last Played</td>
+        </tr>
+
+        {% for currentTransition in suggestionsManualInput %}
+        <tr>                    
+         <td><a href="{% url 'admin:track_track_change' currentTransition.track_destination.id %}">{{ currentTransition.track_destination.title }}</a></td>
+         <td>{{ currentTransition.track_destination.artist.name }}</td>
+         <td>{{ currentTransition.track_destination.genre.name }}</td>
+         <td>{{ currentTransition.track_destination.bpm|floatformat}}</td>
+         <td>Simiar genre&bpm</td>
+         <td class="good_transition">Good</td>
+         <td class="bad_transition">Poor</td>
+         <td>{{ currentTransition.track_destination.comment }}</td>
+         <td>{{ currentTransition.track_destination.date_played }}</td>
+         
+        </tr>
+        {% endfor %}
+         <tr>                    
+         <td>ll</td>
+         <td>ll</td>
+         <td>ll</td>
+         <td>ll</td>
+         <td>Same musical genre</td>
+         <td class="good_transition">Good</td>
+         <td class="bad_transition">Poor</td>
+         <td>ll</td>
+         <td>ll</td>
+        </tr>
+         <tr>                    
+         <td>rr</td>
+         <td>rr</td>
+          <td>rr</td>
+          <td>rr</td>
+         <td>Remixed by the same artist</td>
+         <td class="good_transition">Good</td>
+         <td class="bad_transition">Poor</td>
+         <td>rr</td>
+         <td>rr</td>
+        </tr>
+         <tr>                    
+         <td>rr</td>
+         <td>rr</td>
+          <td>rr</td>
+          <td>rr</td>
+         <td>Most played after this one</td>
+         <td class="good_transition">Good</td>
+         <td class="bad_transition">Poor</td>
+         <td>rr</td>
+         <td>rr</td>
+        </tr>
+      </table>
+</div>
+
+
+{% block submit_buttons_bottom %}
+    {{ block.super }}
+    <div class="submit-row">
+            <input type="submit" value="Add new track to suggestions" name="_make-unique">
+    </div>
+{% endblock %}
 
 <script>
     var append_increment = 0;
     setInterval(function() {
+       
         $.ajax({
-            type: "GET",
-            url: '../get_more_played_history_row',  // URL to your view that serves new info
-            data: {'append_increment': append_increment}
-        })
-        .done(function(response) {
-            $('#_appendHere').append(response);
-            append_increment += 10;
+          url: '../get_more_playlist_history_table',
+          success: function(data) {
+            $('#tablePlaylistHistory').html(data); 
+          }
         });
-
         $.ajax({
           url: '../get_more_currently_playing_title_block',
           success: function(data) {

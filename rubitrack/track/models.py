@@ -29,8 +29,6 @@ class Track(models.Model):
     title = models.CharField(max_length=200)
     artist = models.ForeignKey(Artist, on_delete=models.CASCADE)
     genre = models.ForeignKey(Genre, on_delete=models.CASCADE, blank=True, null=True)
-    date_catalog = models.DateTimeField('date added to catalog', auto_now_add=True, blank=True, null=True)
-    date_last_played = models.DateTimeField('date last played', blank=True, null=True)
     bpm = models.FloatField(blank=True, null=True)
     ranking = models.IntegerField(choices=Ranking_CHOICES, default=None, blank=True, null=True)
     musical_key = models.CharField(max_length=3, blank=True, null=True)
@@ -40,6 +38,14 @@ class Track(models.Model):
     position = models.PositiveIntegerField(default=0, blank=False, null=False)
     bitrate = models.IntegerField(blank=True, null=True)
     playcount = models.IntegerField(blank=True, null=True)
+
+    #all dates
+    date_collection_created = models.DateTimeField('date added to collection', auto_now_add=True, blank=True, null=True)
+    date_collection_updated = models.DateTimeField('date of modification in collection', auto_now_add=True, blank=True, null=True)
+    date_collection_source_updated = models.DateTimeField('date of modification in the source collection (Traktor/Serato/Rekordbox)', auto_now_add=True, blank=True, null=True)
+    date_last_played = models.DateTimeField('date last played', blank=True, null=True)
+
+
     class Meta(object):
         ordering = ['position']
     #related_tracks = 
@@ -48,8 +54,8 @@ class Track(models.Model):
         return self.title + " - " +  self.artist.name
 	#custom method
     def was_added_recently(self):
-        if self.date_catalog:
-            return self.date_catalog >= timezone.now() - datetime.timedelta(days=120)
+        if self.date_collection_created:
+            return self.date_collection_created >= timezone.now() - datetime.timedelta(days=120)
         else:
             return False
     def is_techno(self):
@@ -57,6 +63,9 @@ class Track(models.Model):
             return self.genre.name.startswith('T')
         else:
             return False
+    def get_related_manual_input(self):
+        suggestions_manual_input = TrackToTrack.objects.filter(track_source=self)
+        return suggestions_manual_input
 
 class Playlist(models.Model):
     name = models.CharField(max_length=200)

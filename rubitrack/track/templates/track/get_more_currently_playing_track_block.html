@@ -1,4 +1,4 @@
-<div class="row">
+ <div class="row">
     <div class="track_big_blue" >
        {{ currentTrack.title }}  
     </div>
@@ -9,6 +9,7 @@
        
     </div>
      <div class="grey_subtitle">
-      Genre: {{ currentTrack.genre.name }}  - {{ currentTrack.bpm|floatformat}} bpm
+      Genre: {{ currentTrack.genre.name }}  - {{ currentTrack.bpm|floatformat}} bpm - 
+      <a href="{% url 'admin:track_track_change' currentTrack.id %}">See details</a>
     </div>
   </div>
