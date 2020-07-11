@@ -78,7 +78,7 @@ def refresh_currently_playing_from_log():
 
 	#get the last played track to check if it changed
 	lastTrackPlayed = get_currently_playing_track(withRefresh=False)
-	if(track is None or track.id == lastTrackPlayed.id):
+	if(track is None or lastTrackPlayed is None or track.id == lastTrackPlayed.id):
 		#print ("No new record, still playing the same track...\n")
 		return True
 
