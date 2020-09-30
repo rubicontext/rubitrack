@@ -4,6 +4,7 @@
 {% block title %}Now Playing - Tonial{% endblock title %}
   
   {% block content %}
+  {% if currentTrack %}
 
 <h2><div class="grey_subtitle">Now Playing: </div></h2>
 
@@ -217,6 +218,27 @@
    
 
 </script>
+
+
+{% else %}
+
+<div class='now_playing_track' id='currentlyPlayingTrackBlock'>
+  <div class="row">
+    <div class="track_big_blue" > Please start playing a track </div>
+    <div class="green_flashy">- Broadcasto your Mix to http://193.70.86.101/</div> 
+    <div class="track_big_blue" >- Port 8059</div>
+  </div>
+</div>
+
+<script>
+  setInterval(function() {
+       location.reload();
+    }, 10000);
+</script>
+
+{% endif %}
+
+
 
  {% endblock content %}
 

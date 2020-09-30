@@ -12,15 +12,23 @@ MAX_PLAYLIST_HISTORY_SIZE=5
 
 def display_currently_playing(request):
 	currentTack = get_currently_playing_track(withRefresh=True)
-	playlistHistory = get_playing_track_list_history(withRefresh=False)
-	suggestionsManualInput = get_suggestions_manual_input(currentTack)
-	suggestionsSameArtist = get_suggestions_same_artist(currentTack)
-	#playlistHistory = playlistHistory[1:10]
-	return render(request, 'track/currently_playing.html', 
-		{'currentTrack': currentTack, 
-		'playlistHistory':playlistHistory, 
-		'suggestionsManualInput':suggestionsManualInput,
-		'suggestionsSameArtist' :suggestionsSameArtist})
+	if(currentTack is None):
+		return render(request, 'track/currently_playing.html', 
+			{'currentTrack': None, 
+			'playlistHistory':None, 
+			'suggestionsManualInput':None,
+			'suggestionsSameArtist' :None})
+
+	else:
+		playlistHistory = get_playing_track_list_history(withRefresh=False)
+		suggestionsManualInput = get_suggestions_manual_input(currentTack)
+		suggestionsSameArtist = get_suggestions_same_artist(currentTack)
+		#playlistHistory = playlistHistory[1:10]
+		return render(request, 'track/currently_playing.html', 
+			{'currentTrack': currentTack, 
+			'playlistHistory':playlistHistory, 
+			'suggestionsManualInput':suggestionsManualInput,
+			'suggestionsSameArtist' :suggestionsSameArtist})
 
 
 def get_currently_playing_track(withRefresh=True):
@@ -134,8 +142,10 @@ def get_suggestions_most_played_after(track):
         return suggestions
 
 def get_suggestions_same_artist(track):
-        suggestions = Track.objects.filter(artist=track.artist)
-        return suggestions
+	suggestions = None
+	if(track is not None):
+		suggestions = Track.objects.filter(artist=track.artist)
+	return suggestions
 
 def get_suggestions_same_genre(track):
         suggestions = TrackToTrack.objects.filter(track_source=track)
