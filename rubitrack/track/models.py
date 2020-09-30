@@ -85,7 +85,7 @@ class TransitionType(models.Model):
     def __str__(self):
         return self.name
 
-class TrackToTrack(models.Model):
+class Transition(models.Model):
     track_source = models.ForeignKey(Track, related_name="source", on_delete=models.CASCADE)
     track_destination = models.ForeignKey(Track, related_name="destination", on_delete=models.CASCADE)
     transition_type = models.ForeignKey(TransitionType, on_delete=models.CASCADE)

@@ -4,13 +4,13 @@ from django.contrib import admin
 #from adminsortable2.admin import SortableAdminMixin
 
 # Register your models here.
-from .models import Artist, Track, Genre, Playlist, TransitionType, TrackToTrack, CurrentlyPlaying
+from .models import Artist, Track, Genre, Playlist, TransitionType, Transition, CurrentlyPlaying
 
 #admin.site.register(Artist)
 #admin.site.register(Track)
 admin.site.register(Genre)
 admin.site.register(Playlist)
-admin.site.register(TrackToTrack)
+admin.site.register(Transition)
 admin.site.register(TransitionType)
 admin.site.register(CurrentlyPlaying)
 
@@ -20,8 +20,8 @@ class TrackInline(admin.TabularInline):
     extra = 1
 
 #class TrackInline(admin.StackedInline):
-class TrackToTrackInline(admin.TabularInline):
-    model = TrackToTrack
+class TransitionInline(admin.TabularInline):
+    model = Transition
     extra = 1
     fk_name = "track_source"
 
@@ -32,7 +32,7 @@ class TrackAdmin(admin.ModelAdmin):
         ('Notes', {'fields': ['ranking', 'comment', 'comment2']}),
         ('Details', {'fields': ['musical_key', 'bpm', 'bitrate', 'playcount', 'date_last_played']}),
     ]
-    inlines = [TrackToTrackInline]
+    inlines = [TransitionInline]
     list_display = ('title', 'artist', 'genre', 'bpm', 'is_techno', 'was_added_recently')
     list_filter = ['genre']
     search_fields = ['title', 'artist__name']
