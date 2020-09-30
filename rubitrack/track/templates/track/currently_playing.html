@@ -50,9 +50,18 @@
      <td>{{ currentPlay.track.artist.name }}</td>
      <td>{{ currentPlay.track.genre.name }}</td>
      <td>{{ currentPlay.track.bpm|floatformat}}</td>
-     <td class="good_transition">Good</td>
-     <td class="bad_transition">Poor</td>
-     <td>{{ currentPlay.track.title }}</td>
+     
+     <td class="good_transition">
+            <button onclick="add_new_transition({{currentTrack.id}}, {{currentTransition.track_destination.id}}, 5);">
+              Good
+            </button>
+        </td>
+     <td class="bad_transition">
+           
+              Bad
+            
+     </td>
+     <td>{{ currentPlay.track.comment }}</td>
      <td>{{ currentPlay.date_played }}</td>
   </tr>
   {% endfor %}
@@ -198,6 +207,12 @@
 
     }, 10000);
 
+    //asynchron action click on rating GOOD/POOR
+    function add_new_transition(track_source_id, track_destination_id, transition_rating) {
+        $.get('../add_new_transition/'+track_source_id+'/'+track_destination_id+'/'+transition_rating+'/', function (data) {
+            alert("New transition saved!");
+        });
+    }
 
    
 

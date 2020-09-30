@@ -63,9 +63,6 @@ class Track(models.Model):
             return self.genre.name.startswith('T')
         else:
             return False
-    def get_related_manual_input(self):
-        suggestions_manual_input = TrackToTrack.objects.filter(track_source=self)
-        return suggestions_manual_input
 
 class Playlist(models.Model):
     name = models.CharField(max_length=200)

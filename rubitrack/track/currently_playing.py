@@ -106,16 +106,16 @@ def get_more_playlist_history_table(request):
 	refresh_currently_playing_from_log()
 	#increment = int(request.GET['append_increment'])
 	#increment_to = increment + 10
-	playlist_history_table_raw = CurrentlyPlaying.objects.order_by('-date_played')
-	if (len(playlist_history_table_raw) > 4):
-		currently_playing_table = playlist_history_table_raw[0:4]
+	playlist_history_table_raw = CurrentlyPlaying.objects.order_by('date_played')
+	if (len(playlist_history_table_raw) > 5):
+		playlist_history_table = playlist_history_table_raw[len(playlist_history_table_raw)-5:len(playlist_history_table_raw)]
 	else:
 		playlist_history_table = playlist_history_table_raw
-	currently_playing_track = playlist_history_table[0]
-	if(lastTrackPlayed.id == currently_playing_track.track.id):
-		return HttpResponse('')
-	else:
-		return render(request, 'track/playlist_history_table.html', {'playlist_history_table': playlist_history_table.track})
+	#currently_playing_track = playlist_history_table[0]
+	#if(lastTrackPlayed.id == currently_playing_track.track.id):
+	#	return HttpResponse('')
+	#else:
+	return render(request, 'track/get_more_playlist_history_table.html', {'playlistHistory': playlist_history_table})
 
 def get_more_currently_playing_title_block(request):
 	currently_playing_track = CurrentlyPlaying.objects.order_by('-date_played')[0]
