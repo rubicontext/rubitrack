@@ -1,7 +1,7 @@
 from django import forms
 from django.http import HttpResponseRedirect
 from django.shortcuts import render
-from .models import Track, Artist, Genre
+from .models import Track, Artist, Genre, Collection
 #from .forms import UploadFileForm
 from django.shortcuts import get_object_or_404
 
@@ -11,6 +11,7 @@ import datetime
 
 UNKNOWN_ARTIST_NAME = "Unknown Artist"
 MAX_COMMENT_LENGTH = 500
+MAX_MUSICAL_KEY_LENGTH = 3
 MAX_GENRE_LENGTH = 3
 
 class UploadCollectionForm(forms.Form):
@@ -20,7 +21,7 @@ class UploadCollectionForm(forms.Form):
 # Imaginary function to handle an uploaded file.
 #from somewhere import handle_uploaded_file
 
-def handle_uploaded_file(file):
+def handle_uploaded_file(file, user):
 	#print('xml parsing BEGINs')
 	xmldoc = xml.dom.minidom.parse(file)
 	values = []
@@ -34,6 +35,9 @@ def handle_uploaded_file(file):
 
 	key_list = entry_list[0].getElementsByTagName('KEY')
 	#print("TRACK: ", key_list)
+
+	#get or init a collection object for this user
+	userCollection = get_default_collection_for_user(user)
 
 	elements = []
 	cptNewTracks = 0
@@ -98,6 +102,8 @@ def handle_uploaded_file(file):
 		#musicalKey
 		if('KEY' in info[0].attributes):
 			musicalKey = info[0].attributes['KEY'].value
+			if(len(musicalKey)>MAX_MUSICAL_KEY_LENGTH):
+				musicalKey=musicalKey[0:MAX_MUSICAL_KEY_LENGTH]
 		else:
 			musicalKey = 0
 
@@ -161,19 +167,16 @@ def handle_uploaded_file(file):
 
 		#Check if TRACK exists or insert it
 		try:
-			TrackDb = Track.objects.get(title=title)
-			track = TrackDb
+			trackDb = Track.objects.get(title=title, artist=artist)
+			track = trackDb
 			cptExistingTracks = cptExistingTracks+1
-			#print("Found existing track : ", title)
 		except Track.DoesNotExist:
 			track = Track()
 			track.title=title
-			#track.save()
 			cptNewTracks = cptNewTracks+1
-			#print("Created new track : ", title)
 		
 		#update track infos
-		track.bpm=666 #FOR DEBUG AND PURGE
+		#track.bpm=66 #FOR DEBUG AND PURGE
 		#track.bpm=bpm
 		track.artist=artist
 		track.genre=genre
@@ -190,6 +193,9 @@ def handle_uploaded_file(file):
 		#print('About to save track with artist :', artist)
 		track.save() #force save to add children
 
+		#add this track to a temp list collection
+		add_track_to_user_collection(userCollection, track)
+
 	#print('xml parsing DONE!')
 	return cptNewTracks, cptExistingTracks
 
@@ -201,10 +207,34 @@ def upload_file(request):
         form = UploadCollectionForm(request.POST, request.FILES)
         if form.is_valid():
         	#print('Form is valid!')
-        	cptNewTracks, cptExistingTracks = handle_uploaded_file(request.FILES['file'])
+        	#get user
+        	current_user = request.user
+    		#print current_user.id
+        	cptNewTracks, cptExistingTracks = handle_uploaded_file(request.FILES['file'], current_user)
         	#return HttpResponseRedirect('/admin/')
         	return render(request, 'track/import_collection.html', {'form': form, 'nb_new_tracks': cptNewTracks, 'nb_existing_tracks':cptExistingTracks, 'submitted':True})
     else:
         form = UploadCollectionForm()
     return render(request, 'track/import_collection.html', {'form': form})
+
+def get_default_collection_for_user(currentUser):
+	collectionList = Collection.objects.filter(user=currentUser)
+	if (len(collectionList) <1): 
+		#create new collection
+		collection=Collection()
+		collection.user=currentUser
+		collection.name='User collection'
+		collection.save()
+	else:
+		collection=collectionList[0]
+	return collection
+
+def add_track_to_user_collection(collection, track):
+	existingTrack = collection.tracks.filter(title=track.title, artist=track.artist)
+	if (existingTrack is None):
+		collection.tracks.append(track)
+		return True
+	return False
+
+
 

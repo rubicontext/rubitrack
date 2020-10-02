@@ -4,7 +4,7 @@ from django.contrib import admin
 #from adminsortable2.admin import SortableAdminMixin
 
 # Register your models here.
-from .models import Artist, Track, Genre, Playlist, TransitionType, Transition, CurrentlyPlaying
+from .models import Artist, Track, Genre, Playlist, TransitionType, Transition, CurrentlyPlaying, Collection
 
 #admin.site.register(Artist)
 #admin.site.register(Track)
@@ -13,6 +13,7 @@ admin.site.register(Playlist)
 admin.site.register(Transition)
 admin.site.register(TransitionType)
 admin.site.register(CurrentlyPlaying)
+admin.site.register(Collection)
 
 #class TrackInline(admin.StackedInline):
 class TrackInline(admin.TabularInline):

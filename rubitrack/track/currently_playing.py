@@ -134,11 +134,11 @@ def get_more_currently_playing_track_block(request):
 	return render(request, 'track/get_more_currently_playing_track_block.html', {'currentTrack': currently_playing_track.track})
 
 def get_suggestions_manual_input(track):
-        suggestions = TrackToTrack.objects.filter(track_source=track)
+        suggestions = Transition.objects.filter(track_source=track)
         return suggestions
 
 def get_suggestions_most_played_after(track):
-        suggestions = TrackToTrack.objects.filter(track_source=track)
+        suggestions = Transition.objects.filter(track_source=track)
         return suggestions
 
 def get_suggestions_same_artist(track):
@@ -148,5 +148,5 @@ def get_suggestions_same_artist(track):
 	return suggestions
 
 def get_suggestions_same_genre(track):
-        suggestions = TrackToTrack.objects.filter(track_source=track)
+        suggestions = Transition.objects.filter(track_source=track)
         return suggestions
