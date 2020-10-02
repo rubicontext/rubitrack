@@ -39,6 +39,9 @@ class TrackAdmin(admin.ModelAdmin):
     search_fields = ['title', 'artist__name']
     ordering = ['title']
 
+    #def get_queryset(self, request):
+    #    return self.model.objects.filter(user = request.user)
+
 class ArtistAdmin(admin.ModelAdmin):
     fieldsets = [
         ('Say my name!',               {'fields': ['name']}),
@@ -47,5 +50,20 @@ class ArtistAdmin(admin.ModelAdmin):
 
 admin.site.register(Track, TrackAdmin)
 admin.site.register(Artist, ArtistAdmin)
+
+#custom track admin view 
+class CustomTrackTransition(Track):
+    class Meta:
+        proxy = True
+
+class CustomTrackTransitionAdmin(TrackAdmin):
+    title = 'Add a new transition'
+    fieldsets = None
+    fields =(
+        ('title'),
+    )
+    inlines = [TransitionInline]
+
+admin.site.register(CustomTrackTransition, CustomTrackTransitionAdmin)
 
 

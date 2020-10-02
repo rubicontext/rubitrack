@@ -1,17 +1,20 @@
 {% extends "admin/base.html" %}
 
+
 {% block title %}{{ title }} | Rubitrack admin{% endblock %}
 
 {% block branding %}
 <h1 id="site-name"><a href="{% url 'admin:index' %}"><div class="green_flashy">Rubi</div>TRACK - Take the control over your <div class="green_flashy">music</div> library!</a></h1>
-<a href="/track/currently_playing">Now Playing</a> -- <a href="/track/import_collection">Import Collection</a> -- <a href="/track/export_collection">Export Collection</a>
+<a href="/track/currently_playing"><div class="green_flashy">Now Playing</div></a> -- <a href="/track/import_collection">Import Collection</a> -- <a href="/track/export_collection">Export Collection</a>
+
+<link rel="shortcut icon" type="image/png" href="/static/favicon.ico'/"/>
+
 {% endblock %}
 
 {% block nav-global %}{% endblock %}
 
 {% block extrahead %}
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
-    <script src="/static/bsmodals/bsmodals/js"></script>
     
     <style>
         a, a:link, a:visited {
@@ -74,6 +77,13 @@
             #display: inline;
         }
 
+         div.blue_subtitle_small {
+            font-size: 20px;
+            font-weight: bold;
+            color:#283C4F;
+            display: inline;
+        }
+
         td.good_transition {
             color:green;
         }
@@ -81,6 +91,13 @@
         td.bad_transition {
             text-align: center;
             color:red;
+        }
+
+        td.button_add {
+            text-align: center;
+            color:red;
+            border-width: 1;
+            border-color: blue;
         }
 
         .module h2 {

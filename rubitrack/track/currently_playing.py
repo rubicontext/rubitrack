@@ -1,5 +1,5 @@
 
-from .models import Track, Transition, CurrentlyPlaying
+from .models import Track, Transition, CurrentlyPlaying, TransitionType
 from django.http import HttpResponse
 
 #from django.http import HttpResponseRedirect
@@ -150,3 +150,5 @@ def get_suggestions_same_artist(track):
 def get_suggestions_same_genre(track):
         suggestions = Transition.objects.filter(track_source=track)
         return suggestions
+
+
