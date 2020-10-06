@@ -1,31 +1,33 @@
 <table id="_appendHere" class="table table-striped table-condensed">
-  <tr>
-    <th>Track Title</th>
-    <th>Artist</th>
-    <th>Genre</th>
-    <th>BPM</th>
-    <th style="text-align: center">Save</th>
-    <th>Comment</th>
-    <th>Date played</th>
-  </tr>
-  {% for currentPlay in playlistHistory %}
-    <tr>                    
+      <tr>
+        <th>Track Title</th>
+        <th>Artist</th>
+        <th>Genre</th>
+        <th>BPM</th>
+        <th style="text-align: center">Save</th>
+        <th>Comment</th>
+        <th>Date played</th>
+      </tr>
+      {% for currentPlay in playlistHistory %}
+        <tr>                    
 
 
-     <td><a href="{% url 'admin:track_track_change' currentPlay.track.id %}">{{ currentPlay.track.title }}</a></td>
-     <td>{{ currentPlay.track.artist.name }}</td>
-     <td>{{ currentPlay.track.genre.name }}</td>
-     <td>{{ currentPlay.track.bpm|floatformat}}</td>
-     
-     <td>
-        
-            <a class="addlink" href="/track/add_new_transition/?trackId={{ currentPlay.track.id }}&destinationId={{ currentTrack.id }}">
-              <b>Save Transition</b>
-            </a>
-        
-        </td>
-     <td>{{ currentPlay.track.comment }}</td>
-     <td>{{ currentPlay.date_played }}</td>
-  </tr>
-  {% endfor %}
-</table>
+         <td><a href="{% url 'admin:track_track_change' currentPlay.track.id %}">{{ currentPlay.track.title }}</a></td>
+         <td>{{ currentPlay.track.artist.name }}</td>
+         <td>{{ currentPlay.track.genre.name }}</td>
+         <td>{{ currentPlay.track.bpm|floatformat}}</td>
+         
+         <td>
+            
+                
+                  <a href="/track/add_new_transition/?trackId={{ currentPlay.track.id }}&destinationId={{ currentTrack.id }}" 
+                  id="add-row" class="btn btn-default"><i class="glyphicon glyphicon-plus icon-success"></i> Save Transition </a>
+                
+                  
+            
+            </td>
+         <td>{{ currentPlay.track.comment }}</td>
+         <td>{{ currentPlay.date_played }}</td>
+      </tr>
+      {% endfor %}
+    </table>
