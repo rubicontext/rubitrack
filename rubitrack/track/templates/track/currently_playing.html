@@ -1,5 +1,6 @@
 {% extends "admin/base_site.html" %}
 {% load admin_urls %}
+<link rel="stylesheet" href="http://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.min.css">
  
 {% block title %}Now Playing - Tonial{% endblock title %}
   
@@ -7,84 +8,125 @@
 
   {% if currentTrack %}
 
-<h2><div class="grey_subtitle">Now Playing: </div></h2>
+
 
 <div class='now_playing_track' id='currentlyPlayingTrackBlock'>
+  <div class="row">
+    <div class="grey_subtitle">Now Playing: </div>
+  </div>
   <div class="row">
     <div class="track_big_blue" >
        {{ currentTrack.title }}  
     </div>
 
-    <div class="green_flashy">- {{ currentTrack.artist.name }}</div>
-    
-     <div class="green_flashy">
-       
-    </div>
+     <div class="green_flashy"> - {{ currentTrack.artist.name }}</div>
+
      <div class="grey_subtitle">
       Genre: {{ currentTrack.genre.name }}  - {{ currentTrack.bpm|floatformat}} bpm - 
       <a href="{% url 'admin:track_track_change' currentTrack.id %}">Edit track info</a>
-    </div>
+      </div>
   </div>
 </div>
 
-<hr>
-<hr>
-<hr>
-<br>
 
-<div class="blue_subtitle_small">Playlist History: </div>
-<div id="tablePlaylistHistory">
-<table id="_appendHere" class="table table-striped table-condensed">
-  <tr>
-    <th>Track Title</th>
-    <th>Artist</th>
-    <th>Genre</th>
-    <th>BPM</th>
-    <th style="text-align: center">Save</th>
-    <th>Comment</th>
-    <th>Date played</th>
-  </tr>
-  {% for currentPlay in playlistHistory %}
-    <tr>                    
+  <div class="blue_subtitle_small">Tracklist History </div>
+  <div id="tablePlaylistHistory">
+    <table id="_appendHere" class="table table-striped table-condensed">
+      <tr>
+        <th>Track Title</th>
+        <th>Artist</th>
+        <th>Genre</th>
+        <th>BPM</th>
+        <th style="text-align: center">Save</th>
+        <th>Comment</th>
+        <th>Date played</th>
+      </tr>
+      {% for currentPlay in playlistHistory %}
+        <tr>                    
 
 
-     <td><a href="{% url 'admin:track_track_change' currentPlay.track.id %}">{{ currentPlay.track.title }}</a></td>
-     <td>{{ currentPlay.track.artist.name }}</td>
-     <td>{{ currentPlay.track.genre.name }}</td>
-     <td>{{ currentPlay.track.bpm|floatformat}}</td>
-     
-     <td>
-        
-            <a class="addlink" href="/track/add_new_transition/?trackId={{ currentTrack.id }}&destinationId={{ currentPlay.track.id }}">
-              <b>Save Transition</b>
-            </a>
-        
-        </td>
-     <td>{{ currentPlay.track.comment }}</td>
-     <td>{{ currentPlay.date_played }}</td>
-  </tr>
-  {% endfor %}
-</table>
-</div>
+         <td><a href="{% url 'admin:track_track_change' currentPlay.track.id %}">{{ currentPlay.track.title }}</a></td>
+         <td>{{ currentPlay.track.artist.name }}</td>
+         <td>{{ currentPlay.track.genre.name }}</td>
+         <td>{{ currentPlay.track.bpm|floatformat}}</td>
+         
+         <td>
+            
+                
+                  <a href="/track/add_new_transition/?trackId={{ currentPlay.track.id }}&destinationId={{ currentTrack.id }}" 
+                  id="add-row" class="btn btn-default"><i class="glyphicon glyphicon-plus icon-success"></i> Save Transition </a>
+                
+                  
+            
+            </td>
+         <td>{{ currentPlay.track.comment }}</td>
+         <td>{{ currentPlay.date_played }}</td>
+      </tr>
+      {% endfor %}
+    </table>
+  </div>
+
+  <hr>
+
+  <div class="blue_subtitle_small">Previous Transitions - What to play before this track? </div>
+  <div id="transitionsBeforeTableDiv">
+    <table id="transitionsBeforeTable" class="table table-striped table-condensed">
+            <tr>                    
+             <th>Title</td>
+             <th>Artist</td>
+             <th>Genre</td>
+             <th>Bpm</td>
+             <th>Comment</td>
+             <th>Type</td>
+             <th>Quality</td>
+             <th>Actions</td>
+            </tr>
+
+            {% for currentTransition in transitionsBefore %}
+            <tr>                    
+             <td><a href="{% url 'admin:track_track_change' currentTransition.track_source.id %}">{{ currentTransition.track_source.title }}</a></td>
+             <td>{{ currentTransition.track_source.artist.name }}</td>
+             <td>{{ currentTransition.track_source.genre.name }}</td>
+             <td>{{ currentTransition.track_source.bpm|floatformat}}</td>   
+             <td>{{ currentTransition.comment }}</td>
+             <td>{{ currentTransition.transition_type.name }}</td>
+             <td>{{ currentTransition.ranking }}</td>
+             <td>
+           
+            <ul class="list-inline m-0">
+               <li class="list-inline-item">
+                  <button class="btn btn-success btn-sm rounded-0" type="button" data-toggle="tooltip" data-placement="top" title="Edit"><i class="fa fa-edit"></i></button>
+              </li>
+
+              <li class="list-inline-item">
+                <a class="remove-btn btn-small" href="/track/delete_transition/?transitionDeleteId={{ currentTransition.id }}">
+                  <button class="btn btn-danger btn-sm rounded-0" type="button" title="Delete"><i class="fa fa-trash"></i></button>
+                </a>
+              </li>
+          </ul>
+         </td>
+            </tr>
+            {% endfor %}
+          </table>
+    </div>
 
 
 
 
-<hr>
-<hr>
-<hr>
-<br>
+    <hr>
 
+ 
 
-      <div class="row"/>
-      <div class="submit-row">
+      
         <div class="blue_subtitle_small">Transitions - what to play next?</div>&nbsp;
-        <a href="{% url 'admin:track_customtracktransition_change' currentTrack.id %}" target="_blank">
-              <input type="submit" value="Edit transition details" name="editTransitionDetails">
-        </a>  
-      </div>
+          <a href="{% url 'admin:track_customtracktransition_change' currentTrack.id %}" target="_blank">
+                <input type="submit" value="Edit transition details" name="editTransitionDetails">
+          </a>  
+      
 
-  <table id="suggestionsManualInput" class="table table-striped table-condensed">
+
+      <div id="tabletransitionsAfterTable">
+      <table id="transitionsAfterTable" class="table table-striped table-condensed">
         <tr>                    
          <th>Title</td>
          <th>Artist</td>
@@ -93,10 +135,12 @@
          <th>Comment</td>
          <th>Type</td>
          <th>Quality</td>
-         <th>Delete?</td>
+         <th>Actions</td>
+
+
         </tr>
 
-        {% for currentTransition in suggestionsManualInput %}
+        {% for currentTransition in transitionsAfter %}
         <tr>                    
          <td><a href="{% url 'admin:track_track_change' currentTransition.track_destination.id %}">{{ currentTransition.track_destination.title }}</a></td>
          <td>{{ currentTransition.track_destination.artist.name }}</td>
@@ -105,71 +149,67 @@
          <td>{{ currentTransition.comment }}</td>
          <td>{{ currentTransition.transition_type.name }}</td>
          <td>{{ currentTransition.ranking }}</td>
-         <td>
-           <a class="remove-btn" href="/track/delete_transition/?transitionDeleteId={{ currentTransition.id }}">
-              <button type="button" class="btn btn-danger">Delete</button>
-            </a>
+         
+          <td>
+          <!-- Call to action buttons -->
+          <ul class="list-inline m-0">
+              <li class="list-inline-item">
+                  <button class="btn btn-success btn-sm rounded-0" type="button" data-toggle="tooltip" data-placement="top" title="Edit"><i class="fa fa-edit"></i></button>
+              </li>
 
-         </td>
+              <li class="list-inline-item">
+                <a class="remove-btn btn-small" href="/track/delete_transition/?transitionDeleteId={{ currentTransition.id }}">
+                  <button class="btn btn-danger btn-sm rounded-0" type="button" title="Delete"><i class="fa fa-trash"></i></button>
+                </a>
+              </li>
+              
+          </ul>
+        </td>
+
+         
+        
+
         </tr>
         {% endfor %}
       </table>
-      
-      <table id="suggestionsAuto" class="table table-striped table-condensed">
-      <tr>
-        <hr>
-        <td colspan=9><h3>Suggestions from our algorithm:</h3></th>
-        
+      </div>
 
-      </tr>
-        <tr>                    
-         <th>Title</td>
-         <th>Artist</td>
-         <th>Genre</td>
-         <th>Bpm</td>
-         <th>Suggestion</td>
-         <th colspan=2 style="text-align: center">Suggestion Rating?</th>
-         <th>Comment</td>
-         <th>Last Played</td>
-        </tr>
 
-        
-       
-         <tr>                    
-         <td>ll</td>
-         <td>ll</td>
-         <td>ll</td>
-         <td>ll</td>
-         <td>Same musical genre</td>
-         <td class="good_transition">Good</td>
-         <td class="bad_transition">Poor</td>
-         <td>ll</td>
-         <td>ll</td>
-        </tr>
-         <tr>                    
-         <td>rr</td>
-         <td>rr</td>
-          <td>rr</td>
-          <td>rr</td>
-         <td>Remixed by the same artist</td>
-         <td class="good_transition">Good</td>
-         <td class="bad_transition">Poor</td>
-         <td>rr</td>
-         <td>rr</td>
-        </tr>
-         <tr>                    
-         <td>rr</td>
-         <td>rr</td>
-          <td>rr</td>
-          <td>rr</td>
-         <td>Most played after this one</td>
-         <td class="good_transition">Good</td>
-         <td class="bad_transition">Poor</td>
-         <td>rr</td>
-         <td>rr</td>
-        </tr>
-      </table>
-</div>
+      <hr>
+
+        <div class="blue_subtitle_small">Suggestions from our algorithm</div>
+        <div id="tableSuggestionAuto">
+          <table id="suggestionsAuto" class="table table-striped table-condensed">
+                
+          <tr>                    
+           <th>Title</td>
+           <th>Artist</td>
+           <th>Genre</td>
+           <th>Bpm</td>
+           <th>Key</td>
+            <th>Comment</td>
+           <th colspan=2 style="text-align: center">Suggestion Rating?</th>
+           
+          </tr>
+
+          
+         {% for currentTrackSuggestion in listTrackSuggestions %}
+           <tr>                    
+           <td>{{ currentTrackSuggestion.title }}</td>
+           <td>{{ currentTrackSuggestion.artist.name }}</td>
+           <td>{{ currentTrackSuggestion.genre }}</td>
+           <td>{{ currentTrackSuggestion.bpm |floatformat}}</td>
+           <td>{{ currentTrackSuggestion.musical_key }}</td>
+           <td>{{ currentTrackSuggestion.comment }}</td>
+           <td class="good_transition">Good</td>
+           <td class="bad_transition">Poor</td>
+           
+          </tr>
+          {% endfor %}
+        </table>
+      </div>
+
+
 
 
 <script>
@@ -195,8 +235,14 @@
              //$('#currentlyPlayingTrackBlock_second').html(data);             
           }
         });
+        $.ajax({
+          url: '../get_more_suggestion_auto_block',
+          success: function(data) {
+            $('#tableSuggestionAuto').html(data);            
+          }
+        });
 
-    }, 10000);
+    }, 100000);
 
     //asynchron action click on rating GOOD/POOR
     function add_new_transition(track_source_id, track_destination_id, transition_rating) {
@@ -221,9 +267,15 @@
 </div>
 
 <script>
-  setInterval(function() {
-       location.reload();
-    }, 10000);
+  //setInterval(function() {
+  //     location.reload();
+  //  }, 10000);
+
+
+  $(function () {
+    $('[data-toggle="tooltip"]').tooltip();
+});
+
 </script>
 
 {% endif %}

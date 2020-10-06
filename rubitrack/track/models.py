@@ -88,7 +88,7 @@ class TransitionType(models.Model):
 class Transition(models.Model):
     track_source = models.ForeignKey(Track, related_name="source", on_delete=models.CASCADE)
     track_destination = models.ForeignKey(Track, related_name="destination", on_delete=models.CASCADE)
-    transition_type = models.ForeignKey(TransitionType, on_delete=models.CASCADE)
+    transition_type = models.ForeignKey(TransitionType, on_delete=models.CASCADE, null=True)
     ranking = models.IntegerField(choices=Ranking_CHOICES, default=3)
     comment = models.TextField(max_length=200, blank=True, null=True)
     #used for sortable admin

@@ -27,12 +27,26 @@ class TrackInline(admin.TabularInline):
     extra = 1
 
 #class TrackInline(admin.StackedInline):
-class TransitionInline(admin.TabularInline):
+class TransitionInlineSource(admin.TabularInline):
     model = Transition
+    verbose_name_plural = "Transitions : What to play next?"
     extra = 1
     fk_name = "track_source"
     fields =(
         ('track_destination', 'comment'),
+    )
+    widgets = {
+          'comment': forms.Textarea(attrs={'rows':2, 'cols':2}),
+    }
+
+#class TrackInline(admin.StackedInline):
+class TransitionInlineDestination(admin.TabularInline):
+    model = Transition
+    verbose_name_plural = "Previous Transitions - Tracks to play before"
+    extra = 1
+    fk_name = "track_destination"
+    fields =(
+        ('track_source', 'comment'),
     )
     widgets = {
           'comment': forms.Textarea(attrs={'rows':2, 'cols':2}),
@@ -45,9 +59,9 @@ class TrackAdmin(admin.ModelAdmin):
         ('Notes', {'fields': ['ranking', 'comment', 'comment2']}),
         ('Details', {'fields': ['musical_key', 'bpm', 'bitrate', 'playcount', 'date_last_played']}),
     ]
-    inlines = [TransitionInline]
+    inlines = [TransitionInlineSource]
     list_display = ('title', 'artist', 'genre', 'bpm', 'is_techno', 'was_added_recently')
-    list_filter = ['genre']
+    list_filter = ['genre', 'musical_key', 'ranking']
     search_fields = ['title', 'artist__name']
     ordering = ['title']
 
@@ -88,7 +102,7 @@ class CustomTrackTransitionAdmin(TrackAdmin):
     fields =(
         ('title'),
     )
-    inlines = [TransitionInline]
+    inlines = [TransitionInlineSource, TransitionInlineDestination]
 
 admin.site.register(CustomTrackTransition, CustomTrackTransitionAdmin)
 

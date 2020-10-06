@@ -8,7 +8,7 @@ import psycopg2 as psycopg
 #from django import forms
 
 #FILE_ICECAST_PLAYLIST=
-MAX_PLAYLIST_HISTORY_SIZE=5
+MAX_PLAYLIST_HISTORY_SIZE=4
 
 def display_currently_playing(request):
 	currentTack = get_currently_playing_track(withRefresh=True)
@@ -16,19 +16,22 @@ def display_currently_playing(request):
 		return render(request, 'track/currently_playing.html', 
 			{'currentTrack': None, 
 			'playlistHistory':None, 
-			'suggestionsManualInput':None,
+			'transitionsAfter':None,
+			'transitionsBefore':None,
 			'suggestionsSameArtist' :None})
 
 	else:
 		playlistHistory = get_playing_track_list_history(withRefresh=False)
-		suggestionsManualInput = get_suggestions_manual_input(currentTack)
-		suggestionsSameArtist = get_suggestions_same_artist(currentTack)
+		transitionsAfter = get_transitions_after(currentTack)
+		transitionsBefore = get_transitions_before(currentTack)
+		listTrackSuggestions = get_list_track_suggestions_auto(currentTack)
 		#playlistHistory = playlistHistory[1:10]
 		return render(request, 'track/currently_playing.html', 
 			{'currentTrack': currentTack, 
 			'playlistHistory':playlistHistory, 
-			'suggestionsManualInput':suggestionsManualInput,
-			'suggestionsSameArtist' :suggestionsSameArtist})
+			'transitionsAfter':transitionsAfter,
+			'transitionsBefore' :transitionsBefore,
+			'listTrackSuggestions' :listTrackSuggestions})
 
 
 def get_currently_playing_track(withRefresh=True):
@@ -36,9 +39,7 @@ def get_currently_playing_track(withRefresh=True):
 		if(not refresh_currently_playing_from_log()):
 			return None
 
-	currentPlaylist = get_playing_track_list_history(withRefresh=False)
-	currentTrack = currentPlaylist[len(currentPlaylist)-1].track
-	#print(currentTrack)
+	currentTrack = get_currently_playing_track_from_db()
 	return currentTrack
 
 def get_currently_playing_track_from_db():
@@ -95,15 +96,15 @@ def refresh_currently_playing_from_log():
 	#get the last played track to check if it changed
 	lastTrackPlayed = get_currently_playing_track_from_db()
 	if(track is None or lastTrackPlayed is None or track.id == lastTrackPlayed.id):
-		print ("No new record, still playing the same track...\n")
+		#print ("No new record, still playing the same track...\n")
 		return True
 
 	currentPlay = CurrentlyPlaying()
 	currentPlay.track=track
 	currentPlay.save()
-	print ("Last track played:", lastTrackPlayed.id)
+	#print ("Last track played:", lastTrackPlayed.id)
 	#print ("Current track : ", track.id)
-	print ("1 Record inserted successfully into currently playing table\n")
+	#print ("1 Record inserted successfully into currently playing table\n")
 	return True
 
 #get last played row only
@@ -120,26 +121,8 @@ def get_more_played_history_row(request):
 
 #get last five played tracks
 def get_more_playlist_history_table(request):
-	#lastTrackPlayed = get_currently_playing_track(withRefresh=False)
-	#refresh_currently_playing_from_log()
-	#increment = int(request.GET['append_increment'])
-	#increment_to = increment + 10
-	#playlist_history_table_raw = CurrentlyPlaying.objects.order_by('date_played')
-	#if (len(playlist_history_table_raw) > 5):
-	#	playlist_history_table = playlist_history_table_raw[len(playlist_history_table_raw)-5:len(playlist_history_table_raw)]
-	#else:
-	#	playlist_history_table = playlist_history_table_raw
-	#currently_playing_track = playlist_history_table[0]
-	#if(lastTrackPlayed.id == currently_playing_track.track.id):
-	#	return HttpResponse('')
-	#else:
-
-	#remove current track from history
-	#currentTrack = playlist_history_table[len(playlist_history_table)-1]
-	#playlist_history_table = playlist_history_table[0:len(playlist_history_table)-1]
 	playlist_history_table = get_playing_track_list_history(withRefresh=True)
 	lastTrackPlayed = get_currently_playing_track(withRefresh=False)
-
 	return render(request, 'track/get_more_playlist_history_table.html', {'playlistHistory': playlist_history_table, 'currentTrack':lastTrackPlayed})
 
 def get_more_currently_playing_title_block(request):
@@ -154,6 +137,14 @@ def get_suggestions_manual_input(track):
         suggestions = Transition.objects.filter(track_source=track)
         return suggestions
 
+def get_transitions_after(track):
+        transitions = Transition.objects.filter(track_source=track)
+        return transitions
+
+def get_transitions_before(track):
+        transitions = Transition.objects.filter(track_destination=track)
+        return transitions
+
 def get_suggestions_most_played_after(track):
         suggestions = Transition.objects.filter(track_source=track)
         return suggestions
@@ -167,5 +158,15 @@ def get_suggestions_same_artist(track):
 def get_suggestions_same_genre(track):
         suggestions = Transition.objects.filter(track_source=track)
         return suggestions
+
+def get_list_track_suggestions_auto(track):
+        listTracks = Track.objects.filter(genre=track.genre, musical_key=track.musical_key)
+        return listTracks
+
+def get_more_suggestion_auto_block(request):
+		currentlyPlayingTrack = CurrentlyPlaying.objects.order_by('-date_played')[0]
+		currentTrack = currentlyPlayingTrack.track
+		listTracks = get_list_track_suggestions_auto(currentTrack)
+		return render(request, 'track/get_more_suggestion_auto_block.html', {'listTrackSuggestions': listTracks})
 
 
