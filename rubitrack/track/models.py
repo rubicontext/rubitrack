@@ -90,7 +90,7 @@ class Transition(models.Model):
     track_destination = models.ForeignKey(Track, related_name="destination", on_delete=models.CASCADE)
     transition_type = models.ForeignKey(TransitionType, on_delete=models.CASCADE)
     ranking = models.IntegerField(choices=Ranking_CHOICES, default=3)
-    comment = models.CharField(max_length=200, blank=True, null=True)
+    comment = models.TextField(max_length=200, blank=True, null=True)
     #used for sortable admin
     position = models.PositiveIntegerField(default=0, blank=False, null=False)
     class Meta(object):

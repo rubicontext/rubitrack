@@ -6,6 +6,12 @@ from django.contrib import admin
 # Register your models here.
 from .models import Artist, Track, Genre, Playlist, TransitionType, Transition, CurrentlyPlaying, Collection
 
+
+from django.forms import TextInput, Textarea
+from django.db import models
+from django import forms
+
+
 #admin.site.register(Artist)
 #admin.site.register(Track)
 admin.site.register(Genre)
@@ -25,6 +31,12 @@ class TransitionInline(admin.TabularInline):
     model = Transition
     extra = 1
     fk_name = "track_source"
+    fields =(
+        ('track_destination', 'comment'),
+    )
+    widgets = {
+          'comment': forms.Textarea(attrs={'rows':2, 'cols':2}),
+    }
 
 #@admin.register(Track)
 class TrackAdmin(admin.ModelAdmin):
@@ -56,9 +68,23 @@ class CustomTrackTransition(Track):
     class Meta:
         proxy = True
 
+
+#v2 for resize area
+class TransitionForm(forms.ModelForm):
+    comment = forms.CharField(required=False, widget=forms.Textarea(attrs={'rows': 3, 'cols': 15}))
+    class Meta:
+        model = Transition
+        exclude = ('comment',)
+        widgets = {
+          'comment': forms.Textarea(attrs={'rows':2, 'cols':2}),
+        }
+
+
+
 class CustomTrackTransitionAdmin(TrackAdmin):
     title = 'Add a new transition'
     fieldsets = None
+    #form = TransitionForm
     fields =(
         ('title'),
     )

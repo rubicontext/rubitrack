@@ -41,6 +41,11 @@ def get_currently_playing_track(withRefresh=True):
 	#print(currentTrack)
 	return currentTrack
 
+def get_currently_playing_track_from_db():
+	currentPlaylist = CurrentlyPlaying.objects.order_by('date_played')
+	currentTrack = currentPlaylist[len(currentPlaylist)-1].track
+	return currentTrack
+
 def get_playing_track_list_history(withRefresh=True):
 	if(withRefresh):
 		if(not refresh_currently_playing_from_log()):
@@ -48,6 +53,9 @@ def get_playing_track_list_history(withRefresh=True):
 	currentPlaylist = CurrentlyPlaying.objects.order_by('date_played')
 	if(len(currentPlaylist)> MAX_PLAYLIST_HISTORY_SIZE):
 		currentPlaylist = currentPlaylist[len(currentPlaylist)-MAX_PLAYLIST_HISTORY_SIZE:len(currentPlaylist)]
+	#remove current from history
+	if(len(currentPlaylist)>1):
+		currentPlaylist = currentPlaylist[0:len(currentPlaylist)-1]
 
 	return currentPlaylist
 
@@ -85,21 +93,23 @@ def refresh_currently_playing_from_log():
 		track = None
 
 	#get the last played track to check if it changed
-	lastTrackPlayed = get_currently_playing_track(withRefresh=False)
+	lastTrackPlayed = get_currently_playing_track_from_db()
 	if(track is None or lastTrackPlayed is None or track.id == lastTrackPlayed.id):
-		#print ("No new record, still playing the same track...\n")
+		print ("No new record, still playing the same track...\n")
 		return True
 
 	currentPlay = CurrentlyPlaying()
 	currentPlay.track=track
 	currentPlay.save()
-	#print ("1 Record inserted successfully into currently playing table\n")
+	print ("Last track played:", lastTrackPlayed.id)
+	#print ("Current track : ", track.id)
+	print ("1 Record inserted successfully into currently playing table\n")
 	return True
 
 #get last played row only
 def get_more_played_history_row(request):
 	lastTrackPlayed = get_currently_playing_track(withRefresh=False)
-	refresh_currently_playing_from_log()
+	#refresh_currently_playing_from_log()
 	#increment = int(request.GET['append_increment'])
 	#increment_to = increment + 10
 	currently_playing_track = CurrentlyPlaying.objects.order_by('-date_played')[0]
@@ -110,20 +120,27 @@ def get_more_played_history_row(request):
 
 #get last five played tracks
 def get_more_playlist_history_table(request):
-	lastTrackPlayed = get_currently_playing_track(withRefresh=False)
-	refresh_currently_playing_from_log()
+	#lastTrackPlayed = get_currently_playing_track(withRefresh=False)
+	#refresh_currently_playing_from_log()
 	#increment = int(request.GET['append_increment'])
 	#increment_to = increment + 10
-	playlist_history_table_raw = CurrentlyPlaying.objects.order_by('date_played')
-	if (len(playlist_history_table_raw) > 5):
-		playlist_history_table = playlist_history_table_raw[len(playlist_history_table_raw)-5:len(playlist_history_table_raw)]
-	else:
-		playlist_history_table = playlist_history_table_raw
+	#playlist_history_table_raw = CurrentlyPlaying.objects.order_by('date_played')
+	#if (len(playlist_history_table_raw) > 5):
+	#	playlist_history_table = playlist_history_table_raw[len(playlist_history_table_raw)-5:len(playlist_history_table_raw)]
+	#else:
+	#	playlist_history_table = playlist_history_table_raw
 	#currently_playing_track = playlist_history_table[0]
 	#if(lastTrackPlayed.id == currently_playing_track.track.id):
 	#	return HttpResponse('')
 	#else:
-	return render(request, 'track/get_more_playlist_history_table.html', {'playlistHistory': playlist_history_table})
+
+	#remove current track from history
+	#currentTrack = playlist_history_table[len(playlist_history_table)-1]
+	#playlist_history_table = playlist_history_table[0:len(playlist_history_table)-1]
+	playlist_history_table = get_playing_track_list_history(withRefresh=True)
+	lastTrackPlayed = get_currently_playing_track(withRefresh=False)
+
+	return render(request, 'track/get_more_playlist_history_table.html', {'playlistHistory': playlist_history_table, 'currentTrack':lastTrackPlayed})
 
 def get_more_currently_playing_title_block(request):
 	currently_playing_track = CurrentlyPlaying.objects.order_by('-date_played')[0]

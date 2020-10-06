@@ -21,3 +21,6 @@ def delete_transition(request):
 	transition=Transition.objects.get(id=transitionId)
 	transition.delete()
 	return(display_currently_playing(request))
+
+
+
