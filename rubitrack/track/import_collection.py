@@ -166,15 +166,17 @@ def handle_uploaded_file(file, user):
 			genre=None
 
 		#Check if TRACK exists or insert it
-		try:
-			trackDb = Track.objects.get(title=title, artist=artist)
+		#trackDb = Track.objects.get(title=title, artist=artist)
+		trackList = Track.objects.filter(title=title, artist=artist)
+		if(len(trackList) >0):
+			trackDb=trackList[0]
 			track = trackDb
 			cptExistingTracks = cptExistingTracks+1
-		except Track.DoesNotExist:
+		else:
 			track = Track()
 			track.title=title
 			cptNewTracks = cptNewTracks+1
-		
+
 		#update track infos
 		#track.bpm=66 #FOR DEBUG AND PURGE
 		#track.bpm=bpm
