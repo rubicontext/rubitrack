@@ -29,4 +29,7 @@ urlpatterns = [
     path('get_more_currently_playing_title_block/', currently_playing.get_more_currently_playing_title_block, name='get_more_currently_playing_title_block'),
     path('get_more_currently_playing_track_block/', currently_playing.get_more_currently_playing_track_block, name='get_more_currently_playing_track_block'),
     path('get_more_suggestion_auto_block/', currently_playing.get_more_suggestion_auto_block, name='get_more_suggestion_auto_block'),
+    path('get_more_transition_after_block/', currently_playing.get_more_transition_after_block, name='get_more_transition_after_block'),
+    path('get_more_transition_before_block/', currently_playing.get_more_transition_before_block, name='get_more_transition_before_block'),
+
 ]

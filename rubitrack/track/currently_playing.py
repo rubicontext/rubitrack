@@ -178,4 +178,17 @@ def get_more_suggestion_auto_block(request):
 		listTracks = get_list_track_suggestions_auto(currentTrack)
 		return render(request, 'track/get_more_suggestion_auto_block.html', {'listTrackSuggestions': listTracks})
 
+def get_more_transition_before_block(request):
+		currentTrack = get_currently_playing_track(withRefresh=False)
+		transitionsBefore = get_transitions_before(currentTrack)
+		print("found tronsition for track", currentTrack.title, "nb=", len(transitionsBefore))
+		return render(request, 'track/get_more_transition_before_block.html', {'transitionsBefore': transitionsBefore})
+
+def get_more_transition_after_block(request):
+		currentTrack = get_currently_playing_track(withRefresh=False)
+		transitionsAfter = get_transitions_after(currentTrack)
+		return render(request, 'track/get_more_transition_after_block.html', {'transitionsAfter': transitionsAfter})
+
+
+
 
