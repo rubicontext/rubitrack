@@ -36,29 +36,17 @@ def display_currently_playing(request):
 
 def get_currently_playing_track(withRefresh=True):
 	if(withRefresh):
-		if(not refresh_currently_playing_from_log()):
-			return None
-
-	currentTrack = get_currently_playing_track_from_db()
-	return currentTrack
+		refresh_currently_playing_from_log()
+	return get_currently_playing_track_from_db()
 
 def get_currently_playing_track_from_db():
 	currentPlaylist = CurrentlyPlaying.objects.order_by('date_played')
-	currentTrack = currentPlaylist[len(currentPlaylist)-1].track
-	return currentTrack
+	if(len(currentPlaylist) >0):
+		currentTrack = currentPlaylist[len(currentPlaylist)-1].track
+		return currentTrack
+	else:
+		return None
 
-def get_playing_track_list_history(withRefresh=True):
-	if(withRefresh):
-		if(not refresh_currently_playing_from_log()):
-			return None
-	currentPlaylist = CurrentlyPlaying.objects.order_by('date_played')
-	if(len(currentPlaylist)> MAX_PLAYLIST_HISTORY_SIZE):
-		currentPlaylist = currentPlaylist[len(currentPlaylist)-MAX_PLAYLIST_HISTORY_SIZE:len(currentPlaylist)]
-	#remove current from history
-	if(len(currentPlaylist)>1):
-		currentPlaylist = currentPlaylist[0:len(currentPlaylist)-1]
-
-	return currentPlaylist
 
 def refresh_currently_playing_from_log():
 
@@ -89,22 +77,31 @@ def refresh_currently_playing_from_log():
 	#print("search_title=", search_title)
 
 	try:
-		track = Track.objects.get(title=search_title)
+		track = Track.objects.filter(title__icontains=search_title)[0]
+		print("found a current track!", track.title)
 	except Track.DoesNotExist:
+		print("Error finding track by title:", search_title, '/')
 		track = None
 
 	#get the last played track to check if it changed
 	lastTrackPlayed = get_currently_playing_track_from_db()
-	if(track is None or lastTrackPlayed is None or track.id == lastTrackPlayed.id):
-		#print ("No new record, still playing the same track...\n")
+
+	#if None, first time for this user
+	if(lastTrackPlayed is None):
+		currentPlay = CurrentlyPlaying()
+		currentPlay.track=track
+		currentPlay.save()
 		return True
+
+
+	print("found a last track played in db!", lastTrackPlayed.title)
+	if(track is None or track.id == lastTrackPlayed.id):
+		#print ("No new record, still playing the same track...\n")
+		return False
 
 	currentPlay = CurrentlyPlaying()
 	currentPlay.track=track
 	currentPlay.save()
-	#print ("Last track played:", lastTrackPlayed.id)
-	#print ("Current track : ", track.id)
-	#print ("1 Record inserted successfully into currently playing table\n")
 	return True
 
 #get last played row only
@@ -118,6 +115,18 @@ def get_more_played_history_row(request):
 		return HttpResponse('')
 	else:
 		return render(request, 'track/get_more_played_history_row.html', {'currentTrack': currently_playing_track.track})
+
+def get_playing_track_list_history(withRefresh=True):
+	if(withRefresh):
+		refresh_currently_playing_from_log()
+	currentPlaylist = CurrentlyPlaying.objects.order_by('date_played')
+	if(len(currentPlaylist)> MAX_PLAYLIST_HISTORY_SIZE):
+		currentPlaylist = currentPlaylist[len(currentPlaylist)-MAX_PLAYLIST_HISTORY_SIZE:len(currentPlaylist)]
+	#remove current from history
+	if(len(currentPlaylist)>1):
+		currentPlaylist = currentPlaylist[0:len(currentPlaylist)-1]
+
+	return currentPlaylist
 
 #get last five played tracks
 def get_more_playlist_history_table(request):

@@ -68,7 +68,7 @@
 
   <hr>
 
-  <div class="blue_subtitle_small">Previous Transitions - What to play before this track? </div>
+  <div class="blue_subtitle_small">Previous Transitions - What to play before this track </div>
   <div id="transitionsBeforeTableDiv">
     <table id="transitionsBeforeTable" class="table table-striped table-condensed">
             <tr>                    
@@ -118,7 +118,7 @@
  
 
       
-        <div class="blue_subtitle_small">Transitions - what to play next?</div>&nbsp;
+        <div class="blue_subtitle_small">Transitions - What to play next?</div>&nbsp;
           <a href="{% url 'admin:track_customtracktransition_change' currentTrack.id %}" target="_blank">
                 <input type="submit" value="Edit transition details" name="editTransitionDetails">
           </a>  
@@ -242,7 +242,7 @@
           }
         });
 
-    }, 100000);
+    }, 10000);
 
     //asynchron action click on rating GOOD/POOR
     function add_new_transition(track_source_id, track_destination_id, transition_rating) {

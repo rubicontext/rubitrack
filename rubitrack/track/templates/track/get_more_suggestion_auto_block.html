@@ -1,0 +1,28 @@
+<table id="suggestionsAuto" class="table table-striped table-condensed">
+                
+          <tr>                    
+           <th>Title</td>
+           <th>Artist</td>
+           <th>Genre</td>
+           <th>Bpm</td>
+           <th>Key</td>
+            <th>Comment</td>
+           <th colspan=2 style="text-align: center">Suggestion Rating?</th>
+           
+          </tr>
+
+          
+         {% for currentTrackSuggestion in listTrackSuggestions %}
+           <tr>                    
+           <td>{{ currentTrackSuggestion.title }}</td>
+           <td>{{ currentTrackSuggestion.artist.name }}</td>
+           <td>{{ currentTrackSuggestion.genre }}</td>
+           <td>{{ currentTrackSuggestion.bpm |floatformat}}</td>
+           <td>{{ currentTrackSuggestion.musical_key }}</td>
+           <td>{{ currentTrackSuggestion.comment }}</td>
+           <td class="good_transition">Good</td>
+           <td class="bad_transition">Poor</td>
+           
+          </tr>
+          {% endfor %}
+        </table>
