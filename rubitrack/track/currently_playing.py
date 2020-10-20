@@ -76,13 +76,13 @@ def refresh_currently_playing_from_log():
 	search_title = trackTitle
 	#print("search_title=", search_title)
 
-	try:
-		track = Track.objects.filter(title__icontains=search_title)[0]
-		print("found a current track!", track.title)
-	except Track.DoesNotExist:
-		print("Error finding track by title:", search_title, '/')
+	trackList = Track.objects.filter(title__icontains=search_title)
+	if(len(trackList) >0):
+		track = trackList[0]
+	else:
 		track = None
-
+	#print("found a current track!", track.title)
+	
 	#get the last played track to check if it changed
 	lastTrackPlayed = get_currently_playing_track_from_db()
 
@@ -94,7 +94,7 @@ def refresh_currently_playing_from_log():
 		return True
 
 
-	print("found a last track played in db!", lastTrackPlayed.title)
+	#print("found a last track played in db!", lastTrackPlayed.title)
 	if(track is None or track.id == lastTrackPlayed.id):
 		#print ("No new record, still playing the same track...\n")
 		return False
