@@ -51,11 +51,16 @@
          <td>{{ currentPlay.track.bpm|floatformat}}</td>
          
          <td>
-                
-                  <a href="#" trackSourceId="{{ currentPlay.track.id }}" trackDestinationId="{{ currentTrack.id }}"
-                  id="add-row" class="btn btn-default saveTransitionAjax"
-                  onclick="return false;"
-                  rel="no-refresh"><i class="glyphicon glyphicon-plus icon-success"></i> Save Transition </a>              
+                <div id="{{ currentPlay.track.id }}">
+                  {% if currentPlay.related_to_current_track %}
+                    Transition saved!
+                  {% else %}
+                    <a href="#" trackSourceId="{{ currentPlay.track.id }}" trackDestinationId="{{ currentTrack.id }}"
+                    id="add-row" class="btn btn-default saveTransitionAjax"
+                    onclick="return false;"
+                    rel="no-refresh"><i class="glyphicon glyphicon-plus icon-success"></i> Save Transition </a>
+                  {% endif %}
+                </div>              
                   
             </td>
          <td>{{ currentPlay.track.comment }}</td>
@@ -98,8 +103,9 @@
               </li>
 
               <li class="list-inline-item">
-                <a class="remove-btn btn-small" href="/track/delete_transition/?transitionDeleteId={{ currentTransition.id }}">
-                  <button class="btn btn-danger btn-sm rounded-0" type="button" title="Delete"><i class="fa fa-trash"></i></button>
+                <a class="remove-btn btn-small" href="#" onclick="return false;">
+                  <button class="btn btn-danger btn-sm rounded-0 deleteTransitionBefore" 
+                  type="button" title="Delete" transitionId={{currentTransition.id}}><i class="fa fa-trash"></i></button>
                 </a>
               </li>
           </ul>
@@ -264,7 +270,20 @@
       $.ajax({
           url: '../add_new_transition?trackSourceId='+$(this).attr('trackSourceId')+'&trackDestinationId='+$(this).attr('trackDestinationId'),
           success: function(data) {
-            $('#transitionsBeforeTableDiv').html(data);                      
+            $('#transitionsBeforeTableDiv').html(data); 
+            $('#'+$(this).attr('trackSourceId')).html('Transition saved!');
+            //$('#2423').html('saved!');                     
+          }
+        });
+      
+    })
+
+    //ajax call to DELETE transition with no refresh
+    $(document).on("click", ".deleteTransitionBefore", function(){
+      $.ajax({
+          url: '../delete_transition?transitionDeleteId='+$(this).attr('transitionId')+'&type=before',
+          success: function(data) {
+             $('#transitionsBeforeTableDiv').html(data);                     
           }
         });
       

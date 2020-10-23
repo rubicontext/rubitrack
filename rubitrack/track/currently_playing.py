@@ -5,7 +5,6 @@ from django.http import HttpResponse
 #from django.http import HttpResponseRedirect
 from django.shortcuts import render
 import psycopg2 as psycopg
-#from django import forms
 
 #FILE_ICECAST_PLAYLIST=
 MAX_PLAYLIST_HISTORY_SIZE=4
@@ -124,7 +123,13 @@ def get_playing_track_list_history(withRefresh=True):
 		currentPlaylist = currentPlaylist[len(currentPlaylist)-MAX_PLAYLIST_HISTORY_SIZE:len(currentPlaylist)]
 	#remove current from history
 	if(len(currentPlaylist)>1):
+		currentTrack = currentPlaylist[len(currentPlaylist)-1]
 		currentPlaylist = currentPlaylist[0:len(currentPlaylist)-1]
+
+		#add data if related
+		for currentHistItem in currentPlaylist:
+			if(are_track_related(currentHistItem.track, currentTrack.track)):
+				currentHistItem.related_to_current_track=True
 
 	return currentPlaylist
 
@@ -189,6 +194,11 @@ def get_more_transition_after_block(request):
 		transitionsAfter = get_transitions_after(currentTrack)
 		return render(request, 'track/get_more_transition_after_block.html', {'transitionsAfter': transitionsAfter})
 
-
+#check if two tracks are related
+def are_track_related(trackSource, trackDestination):
+	transitionList=Transition.objects.filter(track_source=trackSource, track_destination=trackDestination)
+	if(len(transitionList)>0):
+		return(True)
+	return(False)
 
 

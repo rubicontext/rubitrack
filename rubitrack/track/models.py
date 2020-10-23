@@ -102,5 +102,6 @@ class Transition(models.Model):
 class CurrentlyPlaying(models.Model):
     date_played = models.DateTimeField('date played', auto_now_add=True, blank=True, null=True)
     track = models.ForeignKey(Track, on_delete=models.CASCADE)
+    related_to_current_track=False
     def __str__(self):
         return self.track.title + " - " +  self.date_played.strftime("%H:%M:%S, %d/%m/%Y")

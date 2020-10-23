@@ -27,8 +27,9 @@
               </li>
 
               <li class="list-inline-item">
-                <a class="remove-btn btn-small" href="/track/delete_transition/?transitionDeleteId={{ currentTransition.id }}">
-                  <button class="btn btn-danger btn-sm rounded-0" type="button" title="Delete"><i class="fa fa-trash"></i></button>
+                <a class="remove-btn btn-small" href="#" onclick="return false;">
+                  <button class="btn btn-danger btn-sm rounded-0 deleteTransitionBefore" 
+                  type="button" title="Delete" transitionId={{currentTransition.id}}><i class="fa fa-trash"></i></button>
                 </a>
               </li>
           </ul>

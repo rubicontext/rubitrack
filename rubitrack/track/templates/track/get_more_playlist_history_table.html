@@ -1,4 +1,4 @@
-<table id="_appendHere" class="table table-striped table-condensed">
+ <table id="_appendHere" class="table table-striped table-condensed">
       <tr>
         <th>Track Title</th>
         <th>Artist</th>
@@ -18,11 +18,16 @@
          <td>{{ currentPlay.track.bpm|floatformat}}</td>
          
          <td>
-                
-                  <a href="#" trackSourceId="{{ currentPlay.track.id }}" trackDestinationId="{{ currentTrack.id }}"
-                  id="add-row" class="btn btn-default saveTransitionAjax"
-                  onclick="return false;"
-                  rel="no-refresh"><i class="glyphicon glyphicon-plus icon-success"></i> Save Transition </a>              
+                <div id="{{ currentPlay.track.id }}">
+                  {% if currentPlay.related_to_current_track %}
+                    Transition saved!
+                  {% else %}
+                    <a href="#" trackSourceId="{{ currentPlay.track.id }}" trackDestinationId="{{ currentTrack.id }}"
+                    id="add-row" class="btn btn-default saveTransitionAjax"
+                    onclick="return false;"
+                    rel="no-refresh"><i class="glyphicon glyphicon-plus icon-success"></i> Save Transition </a>
+                  {% endif %}
+                </div>              
                   
             </td>
          <td>{{ currentPlay.track.comment }}</td>

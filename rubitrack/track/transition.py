@@ -20,9 +20,15 @@ def add_new_transition(request):
 #DELETE TRANSITION
 def delete_transition(request):
 	transitionId = request.GET['transitionDeleteId']
+	TransitionType=request.GET['type']
 	transition=Transition.objects.get(id=transitionId)
 	transition.delete()
-	return(display_currently_playing(request))
+	if(TransitionType=='before'):
+		return(get_more_transition_before_block(request))
+	else:
+		return(get_more_transition_after_block(request))
+
+
 
 
 
