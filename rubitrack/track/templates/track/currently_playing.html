@@ -51,13 +51,12 @@
          <td>{{ currentPlay.track.bpm|floatformat}}</td>
          
          <td>
-            
                 
-                  <a href="/track/add_new_transition/?trackId={{ currentPlay.track.id }}&destinationId={{ currentTrack.id }}" 
-                  id="add-row" class="btn btn-default"><i class="glyphicon glyphicon-plus icon-success"></i> Save Transition </a>
-                
+                  <a href="#" trackSourceId="{{ currentPlay.track.id }}" trackDestinationId="{{ currentTrack.id }}"
+                  id="add-row" class="btn btn-default saveTransitionAjax"
+                  onclick="return false;"
+                  rel="no-refresh"><i class="glyphicon glyphicon-plus icon-success"></i> Save Transition </a>              
                   
-            
             </td>
          <td>{{ currentPlay.track.comment }}</td>
          <td>{{ currentPlay.date_played }}</td>
@@ -260,12 +259,16 @@
 
     }, 10000);
 
-    //asynchron action click on rating GOOD/POOR
-    function add_new_transition(track_source_id, track_destination_id, transition_rating) {
-        $.get('../add_new_transition/'+track_source_id+'/'+track_destination_id+'/'+transition_rating+'/', function (data) {
-            alert("New transition saved!");
+    //ajax call to save transition with no refresh
+    $('.saveTransitionAjax').click(function(){
+      $.ajax({
+          url: '../add_new_transition?trackSourceId='+$(this).attr('trackSourceId')+'&trackDestinationId='+$(this).attr('trackDestinationId'),
+          success: function(data) {
+            $('#transitionsBeforeTableDiv').html(data);                      
+          }
         });
-    }
+      
+    })
 
    
 
