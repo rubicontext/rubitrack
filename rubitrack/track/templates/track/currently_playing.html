@@ -266,7 +266,7 @@
     }, 10000);
 
     //ajax call to save transition with no refresh
-    $('.saveTransitionAjax').click(function(){
+    $(document).on("click", ".saveTransitionAjax'", function(){
       $.ajax({
           url: '../add_new_transition?trackSourceId='+$(this).attr('trackSourceId')+'&trackDestinationId='+$(this).attr('trackDestinationId'),
           success: function(data) {
