@@ -18,13 +18,12 @@
          <td>{{ currentPlay.track.bpm|floatformat}}</td>
          
          <td>
-            
                 
-                  <a href="/track/add_new_transition/?trackId={{ currentPlay.track.id }}&destinationId={{ currentTrack.id }}" 
-                  id="add-row" class="btn btn-default"><i class="glyphicon glyphicon-plus icon-success"></i> Save Transition </a>
-                
+                  <a href="#" trackSourceId="{{ currentPlay.track.id }}" trackDestinationId="{{ currentTrack.id }}"
+                  id="add-row" class="btn btn-default saveTransitionAjax"
+                  onclick="return false;"
+                  rel="no-refresh"><i class="glyphicon glyphicon-plus icon-success"></i> Save Transition </a>              
                   
-            
             </td>
          <td>{{ currentPlay.track.comment }}</td>
          <td>{{ currentPlay.date_played }}</td>

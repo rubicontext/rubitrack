@@ -23,7 +23,7 @@
 
      <div class="grey_subtitle">
       Genre: {{ currentTrack.genre.name }}  - {{ currentTrack.bpm|floatformat}} bpm - 
-      <a href="{% url 'admin:track_track_change' currentTrack.id %}">Edit track info</a>
+      <a href="{% url 'admin:track_track_change' currentTrack.id %}"><i class="fa fa-edit"></i> Edit track info  </a>
       </div>
   </div>
 </div>
@@ -67,7 +67,7 @@
 
   <hr>
 
-  <div class="blue_subtitle_small">Previous Transitions - What to play before this track </div>
+  <div class="blue_subtitle_small">Previous Transitions - What to play before this track?</div>
   <div id="transitionsBeforeTableDiv">
     <table id="transitionsBeforeTable" class="table table-striped table-condensed">
             <tr>                    
@@ -117,7 +117,7 @@
  
 
       
-        <div class="blue_subtitle_small">Transitions - What to play next?</div>&nbsp;
+        <div class="blue_subtitle_small">Next Transitions - What to play next?</div>&nbsp;
           <a href="{% url 'admin:track_customtracktransition_change' currentTrack.id %}" target="_blank">
                 <input type="submit" value="Edit transition details" name="editTransitionDetails">
           </a>  
