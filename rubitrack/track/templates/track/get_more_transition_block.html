@@ -1,0 +1,76 @@
+ <table id="transitionsAllTable" class="table table-striped table-condensed">
+            <tr>                    
+             <th>Title</th>
+             <th>Artist</th>
+             <th>Genre/BPM</th>
+             <th>Type</th>
+             <th>Comment</th>
+             <th>Actions</th>
+            </tr>
+
+            {% for currentTransition in transitionsBefore %}
+            <tr>                    
+             <td><a href="{% url 'admin:track_track_change' currentTransition.track_source.id %}">{{ currentTransition.track_source.title }}</a></td>
+             <td>{{ currentTransition.track_source.artist.name }}</td>
+             <td>{{ currentTransition.track_source.genre.name }}<br>
+                  {{ currentTransition.track_source.bpm|floatformat}}
+              </td> 
+            <td><i class="fa fa-fast-backward"></i></td>
+             <td>
+              
+              <input type="text" class="commentTransitionInput"
+              value="{{ currentTransition.comment }}" transitionId="{{currentTransition.id}}"><br><br>
+             </td>
+             <td>
+           
+            <ul class="list-inline m-0">
+               <li class="list-inline-item">
+                  <button class="btn btn-success btn-sm rounded-0" type="button" data-toggle="tooltip" data-placement="top" title="Edit"><i class="fa fa-edit"></i></button>
+              </li>
+
+              <li class="list-inline-item">
+                <a class="remove-btn btn-small" href="#" onclick="return false;">
+                  <button class="btn btn-danger btn-sm rounded-0 deleteTransition" 
+                  type="button" title="Delete" transitionId="{{currentTransition.id}}"><i class="fa fa-trash"></i></button>
+                </a>
+              </li>
+          </ul>
+         </td>
+            </tr>
+            {% endfor %}
+
+
+        {% for currentTransition in transitionsAfter %}
+            <tr>                    
+             <td><a href="{% url 'admin:track_track_change' currentTransition.track_source.id %}">
+                  {{ currentTransition.track_destination.title|slice:":20" }}
+              </a></td>
+             <td>{{ currentTransition.track_destination.artist.name }}</td>
+             <td>{{ currentTransition.track_destination.genre.name }}<br>
+                  {{ currentTransition.track_destination.bpm|floatformat}}
+              </td> 
+            <td><i class="fa fa-play"></i></td>
+             <td>
+              
+              <input type="text" class="commentTransitionInput"
+              value="{{ currentTransition.comment }}" transitionId="{{currentTransition.id}}"><br><br>
+             </td>
+             <td>
+           
+            <ul class="list-inline m-0">
+               <li class="list-inline-item">
+                  <button class="btn btn-success btn-sm rounded-0" type="button" data-toggle="tooltip" data-placement="top" title="Edit"><i class="fa fa-edit"></i></button>
+              </li>
+
+              <li class="list-inline-item">
+                <a class="remove-btn btn-small" href="#" onclick="return false;">
+                  <button class="btn btn-danger btn-sm rounded-0 deleteTransition" 
+                  type="button" title="Delete" transitionId="{{currentTransition.id}}"><i class="fa fa-trash"></i></button>
+                </a>
+              </li>
+          </ul>
+         </td>
+            </tr>
+            {% endfor %}
+
+          </table>
