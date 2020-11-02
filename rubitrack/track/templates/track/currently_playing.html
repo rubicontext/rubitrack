@@ -35,11 +35,9 @@
       <tr>
         <th>Track Title</th>
         <th>Artist</th>
-        <th>Genre</th>
-        <th>BPM</th>
         <th style="text-align: center">Save</th>
         <th>Comment</th>
-        <th>Date played</th>
+        
       </tr>
       {% for currentPlay in playlistHistory %}
         <tr>                    
@@ -47,9 +45,6 @@
 
          <td><a href="{% url 'admin:track_track_change' currentPlay.track.id %}">{{ currentPlay.track.title }}</a></td>
          <td>{{ currentPlay.track.artist.name }}</td>
-         <td>{{ currentPlay.track.genre.name }}</td>
-         <td>{{ currentPlay.track.bpm|floatformat}}</td>
-         
          <td>
                 <div id="{{ currentPlay.track.id }}">
                   {% if currentPlay.related_to_current_track %}
@@ -64,7 +59,7 @@
                   
             </td>
          <td>{{ currentPlay.track.comment }}</td>
-         <td>{{ currentPlay.date_played }}</td>
+         
       </tr>
       {% endfor %}
     </table>
@@ -76,25 +71,21 @@
   <div id="transitionsBeforeTableDiv">
     <table id="transitionsBeforeTable" class="table table-striped table-condensed">
             <tr>                    
-             <th>Title</td>
-             <th>Artist</td>
-             <th>Genre</td>
-             <th>Bpm</td>
-             <th>Comment</td>
-             <th>Type</td>
-             <th>Quality</td>
-             <th>Actions</td>
+             <th>Title</th>
+             <th>Artist</th>
+             <th>Genre/BPM</th>
+             <th>Comment</th>
+             <th>Actions</th>
             </tr>
 
             {% for currentTransition in transitionsBefore %}
             <tr>                    
              <td><a href="{% url 'admin:track_track_change' currentTransition.track_source.id %}">{{ currentTransition.track_source.title }}</a></td>
              <td>{{ currentTransition.track_source.artist.name }}</td>
-             <td>{{ currentTransition.track_source.genre.name }}</td>
-             <td>{{ currentTransition.track_source.bpm|floatformat}}</td>   
+             <td>{{ currentTransition.track_source.genre.name }}<br>
+                  {{ currentTransition.track_source.bpm|floatformat}}
+              </td> 
              <td>{{ currentTransition.comment }}</td>
-             <td>{{ currentTransition.transition_type.name }}</td>
-             <td>{{ currentTransition.ranking }}</td>
              <td>
            
             <ul class="list-inline m-0">
@@ -163,8 +154,9 @@
               </li>
 
               <li class="list-inline-item">
-                <a class="remove-btn btn-small" href="/track/delete_transition/?transitionDeleteId={{ currentTransition.id }}">
-                  <button class="btn btn-danger btn-sm rounded-0" type="button" title="Delete"><i class="fa fa-trash"></i></button>
+                <a class="remove-btn btn-small" href="#" onclick="return false;">
+                  <button class="btn btn-danger btn-sm rounded-0 deleteTransitionAfter" 
+                  type="button" title="Delete" transitionId={{currentTransition.id}}><i class="fa fa-trash"></i></button>
                 </a>
               </li>
               
@@ -284,6 +276,17 @@
           url: '../delete_transition?transitionDeleteId='+$(this).attr('transitionId')+'&type=before',
           success: function(data) {
              $('#transitionsBeforeTableDiv').html(data);                     
+          }
+        });
+      
+    })
+
+    //ajax call to DELETE transition with no refresh
+    $(document).on("click", ".deleteTransitionAfter", function(){
+      $.ajax({
+          url: '../delete_transition?transitionDeleteId='+$(this).attr('transitionId')+'&type=afterr',
+          success: function(data) {
+             $('#transitionsAfterTableDiv').html(data);                     
           }
         });
       

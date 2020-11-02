@@ -1,5 +1,5 @@
 
-from .models import Track, Transition, CurrentlyPlaying, TransitionType
+from .models import Track, Artist, Transition, CurrentlyPlaying, TransitionType
 from django.http import HttpResponse
 
 #from django.http import HttpResponseRedirect
@@ -8,6 +8,7 @@ import psycopg2 as psycopg
 
 #FILE_ICECAST_PLAYLIST=
 MAX_PLAYLIST_HISTORY_SIZE=4
+MAX_SUGGESTIONS_AUTO_SIZE=20
 
 def display_currently_playing(request):
 	currentTack = get_currently_playing_track(withRefresh=True)
@@ -61,8 +62,13 @@ def refresh_currently_playing_from_log():
 
 	#split the line to get the track title + artist
 	indexSep = lastLine.find('-')
-	artistName = lastLine[0:indexSep-1]
+	artistNameTime = lastLine[0:indexSep-1]
 	trackTitle = lastLine[indexSep+2:len(lastLine)-1]
+
+	#clean artist and time
+	indexSepTime = artistNameTime.rfind('|')
+	#print("sepTime", indexSepTime, "length", len(artistNameTime))
+	artistName = artistNameTime[indexSepTime+1:len(artistNameTime)-1]
 
 	#print("Track/Artist=",trackTitle,"/", artistName)
 	#postgres_select_query = " SELECT id from track_track WHERE title like %s;"
@@ -75,11 +81,7 @@ def refresh_currently_playing_from_log():
 	search_title = trackTitle
 	#print("search_title=", search_title)
 
-	trackList = Track.objects.filter(title__icontains=search_title)
-	if(len(trackList) >0):
-		track = trackList[0]
-	else:
-		track = None
+	track = get_track_by_title_and_artist_name(search_title, artistName)
 	#print("found a current track!", track.title)
 	
 	#get the last played track to check if it changed
@@ -102,6 +104,49 @@ def refresh_currently_playing_from_log():
 	currentPlay.track=track
 	currentPlay.save()
 	return True
+
+#get track from title and artist name
+def get_track_by_title_and_artist_name(trackTitle, artistName):
+	trackDb = None
+	artistDb = None
+	print("about to look for track:", trackTitle, "By artist :", artistName)
+	artistList = Artist.objects.filter(name=artistName)
+	#create artist if neeeded
+	if(len(artistList) <1):
+		#check for close matches by same artists
+		artistList = Artist.objects.filter(name__icontains=artistName)
+		if(len(artistList)>0):
+			artistDb = artistList[0]
+		else:
+			artistDb = Artist()
+			artistDb.name = artistName
+			artistDb.save()
+			print("Created new artist:", artistName)
+	else:
+		artistDb = artistList[0]
+
+	trackList = Track.objects.filter(title=trackTitle, artist=artistDb)
+	if(len(trackList) <1):
+		#no exact match found
+		#check for close matches by same artists
+		searchTitle = trackTitle.lstrip()
+		trackList = Track.objects.filter(title__icontains=searchTitle, artist=artistDb)
+		if(len(trackList)>0):
+			trackDb = trackList[0]
+		else:
+			#create track
+			trackDb = Track()
+			trackDb.title = trackTitle
+			trackDb.artist = artistDb
+			#trackDb.save()
+			print("Created new track:", trackTitle)
+	else:
+		trackDb = trackList[0]
+
+	#print("Found or created trackDb:", trackDb)
+
+	return trackDb
+
 
 #get last played row only
 def get_more_played_history_row(request):
@@ -175,6 +220,9 @@ def get_suggestions_same_genre(track):
 
 def get_list_track_suggestions_auto(track):
         listTracks = Track.objects.filter(genre=track.genre, musical_key=track.musical_key)
+        if(len(listTracks) > MAX_SUGGESTIONS_AUTO_SIZE):
+        	listTracks = listTracks[0:MAX_SUGGESTIONS_AUTO_SIZE-1]
+        #TODO filter on similar BPM!
         return listTracks
 
 def get_more_suggestion_auto_block(request):
@@ -186,7 +234,7 @@ def get_more_suggestion_auto_block(request):
 def get_more_transition_before_block(request):
 		currentTrack = get_currently_playing_track(withRefresh=False)
 		transitionsBefore = get_transitions_before(currentTrack)
-		print("found tronsition for track", currentTrack.title, "nb=", len(transitionsBefore))
+		#print("found transition for track", currentTrack.title, "nb=", len(transitionsBefore))
 		return render(request, 'track/get_more_transition_before_block.html', {'transitionsBefore': transitionsBefore})
 
 def get_more_transition_after_block(request):
