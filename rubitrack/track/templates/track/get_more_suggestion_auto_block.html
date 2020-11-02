@@ -7,7 +7,7 @@
            <th>Bpm</td>
            <th>Key</td>
             <th>Comment</td>
-           <th colspan=2 style="text-align: center">Suggestion Rating?</th>
+           <th>Suggestion Rating?</th>
            
           </tr>
 
@@ -20,8 +20,9 @@
            <td>{{ currentTrackSuggestion.bpm |floatformat}}</td>
            <td>{{ currentTrackSuggestion.musical_key }}</td>
            <td>{{ currentTrackSuggestion.comment }}</td>
-           <td class="good_transition">Good</td>
-           <td class="bad_transition">Poor</td>
+           <td><i class="fa fa-thumbs-o-up  good_transition""></i> &nbsp;
+            <i class="fa fa-thumbs-o-down bad_transition"></i>
+           </td>
            
           </tr>
           {% endfor %}

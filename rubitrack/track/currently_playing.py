@@ -121,7 +121,7 @@ def get_track_by_title_and_artist_name(trackTitle, artistName):
 			artistDb = Artist()
 			artistDb.name = artistName
 			artistDb.save()
-			print("Created new artist:", artistName)
+			#print("Created new artist:", artistName)
 	else:
 		artistDb = artistList[0]
 
@@ -138,8 +138,8 @@ def get_track_by_title_and_artist_name(trackTitle, artistName):
 			trackDb = Track()
 			trackDb.title = trackTitle
 			trackDb.artist = artistDb
-			#trackDb.save()
-			print("Created new track:", trackTitle)
+			trackDb.save()
+			#print("Created new track:", trackTitle)
 	else:
 		trackDb = trackList[0]
 
@@ -231,16 +231,20 @@ def get_more_suggestion_auto_block(request):
 		listTracks = get_list_track_suggestions_auto(currentTrack)
 		return render(request, 'track/get_more_suggestion_auto_block.html', {'listTrackSuggestions': listTracks})
 
-def get_more_transition_before_block(request):
-		currentTrack = get_currently_playing_track(withRefresh=False)
-		transitionsBefore = get_transitions_before(currentTrack)
-		#print("found transition for track", currentTrack.title, "nb=", len(transitionsBefore))
-		return render(request, 'track/get_more_transition_before_block.html', {'transitionsBefore': transitionsBefore})
+def get_more_transition_block(request):
+	currentTrackDb = get_currently_playing_track(withRefresh=False)
+	if(request.method  == 'GET' and 'currentTrackId' in request.GET):
+		currentTrackFormId = request.GET['currentTrackId']
+		print("found track id in REQ", currentTrackFormId, "old ID is:", currentTrackDb.id)
+		if(currentTrackFormId == str(currentTrackDb.id)):
+			#print('IDS are same!')
+			return render(request, 'track/blank.html');
 
-def get_more_transition_after_block(request):
-		currentTrack = get_currently_playing_track(withRefresh=False)
-		transitionsAfter = get_transitions_after(currentTrack)
-		return render(request, 'track/get_more_transition_after_block.html', {'transitionsAfter': transitionsAfter})
+	transitionsBefore = get_transitions_before(currentTrackDb)
+	transitionsAfter = get_transitions_after(currentTrackDb)
+	#print("found transition after", transitionsAfter)
+	return render(request, 'track/get_more_transition_block.html', {'transitionsBefore': transitionsBefore, 'transitionsAfter': transitionsAfter})
+		
 
 #check if two tracks are related
 def are_track_related(trackSource, trackDestination):

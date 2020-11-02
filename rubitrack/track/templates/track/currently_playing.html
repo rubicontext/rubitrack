@@ -11,6 +11,10 @@
 
 
 <div class='now_playing_track' id='currentlyPlayingTrackBlock'>
+
+
+  <input type="hidden" id="currentTrackId" name="currentTrackId" value="{{ currentTrack.pk }}" />
+
   <div class="row">
     <div class="grey_subtitle">Now Playing: </div>
   </div>
@@ -36,7 +40,6 @@
         <th>Track Title</th>
         <th>Artist</th>
         <th style="text-align: center">Save</th>
-        <th>Comment</th>
         
       </tr>
       {% for currentPlay in playlistHistory %}
@@ -58,7 +61,7 @@
                 </div>              
                   
             </td>
-         <td>{{ currentPlay.track.comment }}</td>
+
          
       </tr>
       {% endfor %}
@@ -67,13 +70,19 @@
 
   <hr>
 
-  <div class="blue_subtitle_small">Previous Transitions - What to play before this track?</div>
-  <div id="transitionsBeforeTableDiv">
-    <table id="transitionsBeforeTable" class="table table-striped table-condensed">
+  <div class="blue_subtitle_small">Transitions - What to play along this track?</div>
+  <a href="{% url 'admin:track_customtracktransition_change' currentTrack.id %}" target="_blank">
+                <b><i class="fa fa-edit"></i> Edit Transitions Info</b>
+          </a>  
+
+
+  <div id="transitionsAllTableDiv">
+    <table id="transitionsAllTable" class="table table-striped table-condensed">
             <tr>                    
              <th>Title</th>
              <th>Artist</th>
              <th>Genre/BPM</th>
+             <th>Type</th>
              <th>Comment</th>
              <th>Actions</th>
             </tr>
@@ -85,7 +94,12 @@
              <td>{{ currentTransition.track_source.genre.name }}<br>
                   {{ currentTransition.track_source.bpm|floatformat}}
               </td> 
-             <td>{{ currentTransition.comment }}</td>
+            <td><i class="fa fa-fast-backward"></i></td>
+             <td>
+              
+              <input type="text" class="commentTransitionInput" size="50"
+              value="{{ currentTransition.comment }}" transitionId="{{currentTransition.id}}"><br><br>
+             </td>
              <td>
            
             <ul class="list-inline m-0">
@@ -95,84 +109,53 @@
 
               <li class="list-inline-item">
                 <a class="remove-btn btn-small" href="#" onclick="return false;">
-                  <button class="btn btn-danger btn-sm rounded-0 deleteTransitionBefore" 
-                  type="button" title="Delete" transitionId={{currentTransition.id}}><i class="fa fa-trash"></i></button>
+                  <button class="btn btn-danger btn-sm rounded-0 deleteTransition" 
+                  type="button" title="Delete" transitionId="{{currentTransition.id}}"><i class="fa fa-trash"></i></button>
                 </a>
               </li>
           </ul>
          </td>
             </tr>
             {% endfor %}
-          </table>
-    </div>
 
-
-
-
-    <hr>
-
- 
-
-      
-        <div class="blue_subtitle_small">Next Transitions - What to play next?</div>&nbsp;
-          <a href="{% url 'admin:track_customtracktransition_change' currentTrack.id %}" target="_blank">
-                <input type="submit" value="Edit transition details" name="editTransitionDetails">
-          </a>  
-      
-
-
-      <div id="transitionsAfterTableDiv">
-      <table id="transitionsAfterTable" class="table table-striped table-condensed">
-        <tr>                    
-         <th>Title</td>
-         <th>Artist</td>
-         <th>Genre</td>
-         <th>Bpm</td>
-         <th>Comment</td>
-         <th>Type</td>
-         <th>Quality</td>
-         <th>Actions</td>
-
-
-        </tr>
 
         {% for currentTransition in transitionsAfter %}
-        <tr>                    
-         <td><a href="{% url 'admin:track_track_change' currentTransition.track_destination.id %}">{{ currentTransition.track_destination.title }}</a></td>
-         <td>{{ currentTransition.track_destination.artist.name }}</td>
-         <td>{{ currentTransition.track_destination.genre.name }}</td>
-         <td>{{ currentTransition.track_destination.bpm|floatformat}}</td>   
-         <td>{{ currentTransition.comment }}</td>
-         <td>{{ currentTransition.transition_type.name }}</td>
-         <td>{{ currentTransition.ranking }}</td>
-         
-          <td>
-          <!-- Call to action buttons -->
-          <ul class="list-inline m-0">
-              <li class="list-inline-item">
+            <tr>                    
+              <td><a href="{% url 'admin:track_track_change' currentTransition.track_source.id %}">
+                  {{ currentTransition.track_destination.title|slice:":20" }}
+              </a></td>
+             <td>{{ currentTransition.track_destination.artist.name }}</td>
+             <td>{{ currentTransition.track_destination.genre.name }}<br>
+                  {{ currentTransition.track_destination.bpm|floatformat}}
+              </td> 
+            <td><i class="fa fa-forward"></i></td>
+             <td>
+              
+              <input type="text" class="commentTransitionInput"
+              value="{{ currentTransition.comment }}" transitionId="{{currentTransition.id}}"><br><br>
+             </td>
+             <td>
+           
+            <ul class="list-inline m-0">
+               <li class="list-inline-item">
                   <button class="btn btn-success btn-sm rounded-0" type="button" data-toggle="tooltip" data-placement="top" title="Edit"><i class="fa fa-edit"></i></button>
               </li>
 
               <li class="list-inline-item">
                 <a class="remove-btn btn-small" href="#" onclick="return false;">
-                  <button class="btn btn-danger btn-sm rounded-0 deleteTransitionAfter" 
-                  type="button" title="Delete" transitionId={{currentTransition.id}}><i class="fa fa-trash"></i></button>
+                  <button class="btn btn-danger btn-sm rounded-0 deleteTransition" 
+                  type="button" title="Delete" transitionId="{{currentTransition.id}}"><i class="fa fa-trash"></i></button>
                 </a>
               </li>
-              
           </ul>
-        </td>
+         </td>
+            </tr>
+            {% endfor %}
 
-         
-        
-
-        </tr>
-        {% endfor %}
-      </table>
-      </div>
+          </table>
+    </div>
 
 
-      <hr>
 
         <div class="blue_subtitle_small">Suggestions from our algorithm</div>
         <div id="tableSuggestionAuto">
@@ -185,7 +168,7 @@
            <th>Bpm</td>
            <th>Key</td>
             <th>Comment</td>
-           <th colspan=2 style="text-align: center">Suggestion Rating?</th>
+           <th>Suggestion Rating?</th>
            
           </tr>
 
@@ -198,8 +181,9 @@
            <td>{{ currentTrackSuggestion.bpm |floatformat}}</td>
            <td>{{ currentTrackSuggestion.musical_key }}</td>
            <td>{{ currentTrackSuggestion.comment }}</td>
-           <td class="good_transition">Good</td>
-           <td class="bad_transition">Poor</td>
+           <td><i class="fa fa-thumbs-o-up  good_transition""></i> &nbsp;
+            <i class="fa fa-thumbs-o-down bad_transition"></i>
+           </td>
            
           </tr>
           {% endfor %}
@@ -235,18 +219,13 @@
         });
         
         $.ajax({
-          url: '../get_more_transition_before_block',
+          url: '../get_more_transition_block?currentTrackId='+$('#currentTrackId').val(),
           success: function(data) {
-            $('#transitionsBeforeTableDiv').html(data);
-             //$('#currentlyPlayingTrackBlock_second').html(data);             
-          }
-        });
-        $.ajax({
-          url: '../get_more_transition_after_block',
-          success: function(data) {
-            $('#transitionsAfterTableDiv').html(data);
-             //$('#currentlyPlayingTrackBlock_second').html(data);             
-          }
+            if(data !='<div></div>') {
+              $('#transitionsAllTableDiv').html(data);        
+            }
+              
+          },
         });
         $.ajax({
           url: '../get_more_suggestion_auto_block',
@@ -262,7 +241,7 @@
       $.ajax({
           url: '../add_new_transition?trackSourceId='+$(this).attr('trackSourceId')+'&trackDestinationId='+$(this).attr('trackDestinationId'),
           success: function(data) {
-            $('#transitionsBeforeTableDiv').html(data); 
+            $('#transitionsAllTableDiv').html(data); 
             $('#'+$(this).attr('trackSourceId')).html('Transition saved!');
             //$('#2423').html('saved!');                     
           }
@@ -271,23 +250,26 @@
     })
 
     //ajax call to DELETE transition with no refresh
-    $(document).on("click", ".deleteTransitionBefore", function(){
+    $(document).on("click", ".deleteTransition", function(){
       $.ajax({
-          url: '../delete_transition?transitionDeleteId='+$(this).attr('transitionId')+'&type=before',
+          url: '../delete_transition?transitionDeleteId='+$(this).attr('transitionId'),
           success: function(data) {
-             $('#transitionsBeforeTableDiv').html(data);                     
+            if(data) {
+              $('#transitionsAllTableDiv').html(data);
+            }
+                                 
           }
+
         });
       
     })
 
-    //ajax call to DELETE transition with no refresh
-    $(document).on("click", ".deleteTransitionAfter", function(){
+
+    //inline comment edition
+    $(".commentTransitionInput").change(function(){
+      //alert( this.value );
       $.ajax({
-          url: '../delete_transition?transitionDeleteId='+$(this).attr('transitionId')+'&type=afterr',
-          success: function(data) {
-             $('#transitionsAfterTableDiv').html(data);                     
-          }
+          url: '../update_transition_comment?transitionUpdateId='+$(this).attr('transitionId')+'&newComment='+this.value,
         });
       
     })
