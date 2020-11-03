@@ -104,9 +104,9 @@
            
             <ul class="list-inline m-0">
                <li class="list-inline-item">
-                  <button class="btn btn-success btn-sm rounded-0" type="button" data-toggle="tooltip" data-placement="top" title="Edit"><i class="fa fa-edit"></i></button>
-              </li>
-
+                <a href="{% url 'admin:track_customtracktransition_change' currentTrack.id %}" target="_blank">
+                    <button class="btn btn-success btn-sm rounded-0" type="button" data-toggle="tooltip" data-placement="top" title="Edit"><i class="fa fa-edit"></i></button>
+              </a>  
               <li class="list-inline-item">
                 <a class="remove-btn btn-small" href="#" onclick="return false;">
                   <button class="btn btn-danger btn-sm rounded-0 deleteTransition" 
