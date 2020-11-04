@@ -264,17 +264,17 @@
       
     })
 
-
-    //inline comment edition
-    $(".commentTransitionInput").change(function(){
-      //alert( this.value );
+    $(document).on("change", ".commentTransitionInput", function(){
       $.ajax({
           url: '../update_transition_comment?transitionUpdateId='+$(this).attr('transitionId')+'&newComment='+this.value,
+          success: function(data) {
+                                             
+          }
+
         });
       
     })
-
-   
+ 
 
 </script>
 
