@@ -89,7 +89,7 @@
 
             {% for currentTransition in transitionsBefore %}
             <tr>                    
-             <td><a href="{% url 'admin:track_track_change' currentTransition.track_source.id %}">{{ currentTransition.track_source.title }}</a></td>
+             <td><a href="{% url 'admin:track_track_change' currentTransition.track_destination.id %}">{{ currentTransition.track_source.title }}</a></td>
              <td>{{ currentTransition.track_source.artist.name }}</td>
              <td>{{ currentTransition.track_source.genre.name }}<br>
                   {{ currentTransition.track_source.bpm|floatformat}}

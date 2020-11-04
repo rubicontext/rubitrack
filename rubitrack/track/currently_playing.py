@@ -232,6 +232,7 @@ def get_more_suggestion_auto_block(request):
 		return render(request, 'track/get_more_suggestion_auto_block.html', {'listTrackSuggestions': listTracks})
 
 def get_more_transition_block(request):
+	print("BEGINS get_more_transition_block")
 	currentTrackDb = get_currently_playing_track(withRefresh=False)
 	if(request.method  == 'GET' and 'currentTrackId' in request.GET):
 		currentTrackFormId = request.GET['currentTrackId']
@@ -242,8 +243,9 @@ def get_more_transition_block(request):
 
 	transitionsBefore = get_transitions_before(currentTrackDb)
 	transitionsAfter = get_transitions_after(currentTrackDb)
-	#print("found transition after", transitionsAfter)
-	return render(request, 'track/get_more_transition_block.html', {'transitionsBefore': transitionsBefore, 'transitionsAfter': transitionsAfter})
+	print("ENDS found transition after", transitionsAfter)
+	return render(request, 'track/get_more_transition_block.html', 
+		{'transitionsBefore': transitionsBefore, 'transitionsAfter': transitionsAfter, 'currentTrack': currentTrackDb})
 		
 
 #check if two tracks are related
