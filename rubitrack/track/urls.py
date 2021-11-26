@@ -20,6 +20,7 @@ urlpatterns = [
     path('export_collection/', export_collection.export_collection, name='export_collection_view'),
 
     path('currently_playing/', currently_playing.display_currently_playing, name='currently_playing_view'),
+    path('history_playing/<int:trackId>', currently_playing.display_history_playing, name='history_playing_view'),
 
     path('add_new_transition/', transition.add_new_transition, name='add_new_transition_view'),
     path('delete_transition/', transition.delete_transition, name='delete_transition_view'),

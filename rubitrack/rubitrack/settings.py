@@ -79,6 +79,8 @@ DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': 'rubitrack_dev',
+        # 'USER': 'postgres',
+        # 'PASSWORD': 'ibat_db',
         'USER': 'rubi',
         'PASSWORD': 'rubi_db',
         'HOST': 'localhost',

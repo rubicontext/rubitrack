@@ -57,6 +57,10 @@ def handle_uploaded_file(file, user):
 		#print("LOCATION: ", location)
 		info = current_entry.getElementsByTagName('INFO')
 		#print("INFO: ", info)
+
+		#sample auto imported must be ignored
+		if not info:
+			continue
 		
 		#comment
 		if('GENRE' in info[0].attributes):

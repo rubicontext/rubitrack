@@ -7,12 +7,12 @@ from django.shortcuts import render
 import psycopg2 as psycopg
 
 #FILE_ICECAST_PLAYLIST=
-MAX_PLAYLIST_HISTORY_SIZE=4
+MAX_PLAYLIST_HISTORY_SIZE=5
 MAX_SUGGESTIONS_AUTO_SIZE=20
 
 def display_currently_playing(request):
-	currentTack = get_currently_playing_track(withRefresh=True)
-	if(currentTack is None):
+	currentTrack = get_currently_playing_track(withRefresh=True)
+	if(currentTrack is None):
 		return render(request, 'track/currently_playing.html', 
 			{'currentTrack': None, 
 			'playlistHistory':None, 
@@ -22,17 +22,39 @@ def display_currently_playing(request):
 
 	else:
 		playlistHistory = get_playing_track_list_history(withRefresh=False)
-		transitionsAfter = get_transitions_after(currentTack)
-		transitionsBefore = get_transitions_before(currentTack)
-		listTrackSuggestions = get_list_track_suggestions_auto(currentTack)
+		transitionsAfter = get_transitions_after(currentTrack)
+		transitionsBefore = get_transitions_before(currentTrack)
+		listTrackSuggestions = get_list_track_suggestions_auto(currentTrack)
 		#playlistHistory = playlistHistory[1:10]
 		return render(request, 'track/currently_playing.html', 
-			{'currentTrack': currentTack, 
+			{'currentTrack': currentTrack, 
 			'playlistHistory':playlistHistory, 
 			'transitionsAfter':transitionsAfter,
 			'transitionsBefore' :transitionsBefore,
 			'listTrackSuggestions' :listTrackSuggestions})
 
+def display_history_playing(request, trackId):
+	currentTrack = Track.objects.get(id=trackId)
+	if(currentTrack is None):
+		return render(request, 'track/history_playing.html', 
+			{'currentTrack': None, 
+			'playlistHistory':None, 
+			'transitionsAfter':None,
+			'transitionsBefore':None,
+			'suggestionsSameArtist' :None})
+
+	else:
+		playlistHistory = get_playing_track_list_history(withRefresh=False)
+		transitionsAfter = get_transitions_after(currentTrack)
+		transitionsBefore = get_transitions_before(currentTrack)
+		listTrackSuggestions = get_list_track_suggestions_auto(currentTrack)
+		#playlistHistory = playlistHistory[1:10]
+		return render(request, 'track/history_playing.html', 
+			{'currentTrack': currentTrack, 
+			'playlistHistory':playlistHistory, 
+			'transitionsAfter':transitionsAfter,
+			'transitionsBefore' :transitionsBefore,
+			'listTrackSuggestions' :listTrackSuggestions})
 
 def get_currently_playing_track(withRefresh=True):
 	if(withRefresh):
@@ -52,6 +74,7 @@ def refresh_currently_playing_from_log():
 
 	#file = open('/home/rubicontext/Downloads/playlist.log', 'r')
 	file = open('/var/log/icecast2/playlist.log', 'r')
+	# file = open('c:/acar/perso/icecast.log', 'r')
 	lineList = file.readlines()
 	if(len(lineList)<1):
 		#print("Nothing to scrap in playlist log")
