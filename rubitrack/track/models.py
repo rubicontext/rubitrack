@@ -38,7 +38,7 @@ class Track(models.Model):
     position = models.PositiveIntegerField(default=0, blank=False, null=False)
     bitrate = models.IntegerField(blank=True, null=True)
     playcount = models.IntegerField(blank=True, null=True)
-    energy = models.IntegerField(blank=True, null=True)
+    # energy = models.IntegerField(blank=True, null=True)
 
     #all dates
     date_collection_created = models.DateTimeField('date added to collection', auto_now_add=True, blank=True, null=True)
