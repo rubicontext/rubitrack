@@ -38,6 +38,7 @@ class Track(models.Model):
     position = models.PositiveIntegerField(default=0, blank=False, null=False)
     bitrate = models.IntegerField(blank=True, null=True)
     playcount = models.IntegerField(blank=True, null=True)
+    energy = models.IntegerField(blank=True, null=True)
 
     #all dates
     date_collection_created = models.DateTimeField('date added to collection', auto_now_add=True, blank=True, null=True)
@@ -80,7 +81,7 @@ class Collection(models.Model):
 
 class TransitionType(models.Model):
     name = models.CharField(max_length=50)
-    acronym = models.CharField(max_length=3)
+    acronym = models.CharField(max_length=3, blank=True, null=True)
     description = models.CharField(max_length=200, blank=True, null=True)
     def __str__(self):
         return self.name

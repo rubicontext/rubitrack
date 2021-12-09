@@ -5,9 +5,11 @@ from django.http import HttpResponse
 #from django.http import HttpResponseRedirect
 from django.shortcuts import render
 import psycopg2 as psycopg
+from datetime import datetime 
 
 #FILE_ICECAST_PLAYLIST=
-MAX_PLAYLIST_HISTORY_SIZE=5
+MAX_PLAYLIST_HISTORY_SIZE=10
+# MAX_PLAYLIST_HISTORY_SIZE_EXPANDED=10
 MAX_SUGGESTIONS_AUTO_SIZE=20
 
 def display_currently_playing(request):
@@ -73,16 +75,16 @@ def get_currently_playing_track_from_db():
 def refresh_currently_playing_from_log():
 
 	#file = open('/home/rubicontext/Downloads/playlist.log', 'r')
-	file = open('/var/log/icecast2/playlist.log', 'r')
-	# file = open('c:/acar/perso/icecast.log', 'r')
+	# file = open('/var/log/icecast2/playlist.log', 'r')
+	file = open('c:/acar/perso/icecast.log', 'r')
 	lineList = file.readlines()
 	if(len(lineList)<1):
 		#print("Nothing to scrap in playlist log")
 		return False
 	lastLine = lineList[len(lineList)-1]
-	#print("Current last line in log: ",lastLine) # already has newline
+	print("Current last line in log: ",lastLine) 
 
-
+	#08/Dec/2021:14:59:43 +0000|/|0|LALLA - Narcos  (Extended Remix) - Bm - 5
 	#split the line to get the track title + artist
 	indexSep = lastLine.find('-')
 	artistNameTime = lastLine[0:indexSep-1]
@@ -92,6 +94,56 @@ def refresh_currently_playing_from_log():
 	indexSepTime = artistNameTime.rfind('|')
 	#print("sepTime", indexSepTime, "length", len(artistNameTime))
 	artistName = artistNameTime[indexSepTime+1:len(artistNameTime)-1]
+
+	##V2 with mixed in key
+	
+	lastLineToProcess = lastLine
+	countSep = lastLineToProcess.count('-')
+
+	if (countSep == 3):
+		#mixed in key : LALLA - Narcos  (Extended Remix) - Bm - 5
+		
+		#energy
+		indexSep = lastLineToProcess.rfind('-')
+		energy = lastLineToProcess[indexSep+2:len(lastLineToProcess)-1]
+		lastLineToProcess = lastLineToProcess[0:indexSep-1]
+		print("energy : ", energy)
+		print("to process :", lastLineToProcess)
+
+		#key
+		indexSep = lastLineToProcess.rfind('-')
+		initialKey = lastLineToProcess[indexSep+2:len(lastLineToProcess)-1]
+		lastLineToProcess = lastLineToProcess[0:indexSep-1]
+		print("initialKey : ", initialKey)
+		print("to process :", lastLineToProcess)
+
+	else:
+		#no key and energy, just titel - artist
+		energy = None
+		initialKey = None
+
+	#common fields
+	#title
+	indexSep = lastLineToProcess.rfind('-')
+	trackTitle = lastLineToProcess[indexSep+2:len(lastLineToProcess)]
+	lastLineToProcess = lastLineToProcess[0:indexSep-1]
+	print("trackTitle : ", trackTitle)
+	print("to process :", lastLineToProcess)
+
+	#artist
+	indexSep = lastLineToProcess.rfind('|')
+	artistName = lastLineToProcess[indexSep+1:len(lastLineToProcess)]
+	lastLineToProcess = lastLine[0:indexSep-1]
+	print("artistName : ", artistName)
+	print("to process :", lastLineToProcess)
+
+	#time played
+	indexSep = lastLineToProcess.find(' +')
+	dateTimePlayed = lastLineToProcess[0:indexSep]
+	print("dateTimePlayed RAW : ", dateTimePlayed)
+	# dateTimePlayed='08/Dec/2021:14:59:43'
+	formatDate = datetime.strptime(dateTimePlayed, "%d/%b/%Y:%H:%M:%S")
+	print("dateTimePlayed FORMAT : ", formatDate)
 
 	#print("Track/Artist=",trackTitle,"/", artistName)
 	#postgres_select_query = " SELECT id from track_track WHERE title like %s;"
