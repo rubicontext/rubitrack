@@ -76,8 +76,8 @@ def get_currently_playing_track_from_db():
 def refresh_currently_playing_from_log():
 
 	#file = open('/home/rubicontext/Downloads/playlist.log', 'r')
-	# file = open('/var/log/icecast2/playlist.log', 'r')
-	file = open('c:/acar/perso/icecast.log', 'r')
+	file = open('/var/log/icecast2/playlist.log', 'r')
+	# file = open('c:/acar/perso/icecast.log', 'r')
 	lineList = file.readlines()
 	if(len(lineList)<1):
 		#print("Nothing to scrap in playlist log")
