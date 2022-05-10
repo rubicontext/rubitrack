@@ -243,8 +243,9 @@
           url: '../add_new_transition?trackSourceId='+$(this).attr('trackSourceId')+'&trackDestinationId='+$(this).attr('trackDestinationId'),
           success: function(data) {
             $('#transitionsAllTableDiv').html(data); 
-            $('#'+$(this).attr('trackSourceId')).html('Transition saved!');
-            //$('#2423').html('saved!');                     
+            $('#'+$(this).attr('trackSourceId')).html('Transition savedac!');
+            //$('#2423').html('saved!'); 
+            // alert('#'+$(this).attr('trackSourceId'));                     
           }
         });
       

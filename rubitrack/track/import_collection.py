@@ -4,6 +4,7 @@ from django.shortcuts import render
 from .models import Track, Artist, Genre, Collection
 #from .forms import UploadFileForm
 from django.shortcuts import get_object_or_404
+from django.contrib.auth.decorators import login_required
 
 import xml.dom.minidom
 #from .tt_utils import traverseTree
@@ -207,7 +208,7 @@ def handle_uploaded_file(file, user):
 
 	#traverseTree(xml.documentElement)
 
-
+@login_required
 def upload_file(request):
     if request.method == 'POST':
         form = UploadCollectionForm(request.POST, request.FILES)

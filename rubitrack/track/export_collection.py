@@ -2,6 +2,7 @@ from django import forms
 from django.http import HttpResponseRedirect
 from django.shortcuts import render
 from .models import Track, Artist, Genre
+from django.contrib.auth.decorators import login_required
 
 class ExportCollectionForm(forms.Form):
     #title = forms.CharField(max_length=50)
@@ -14,11 +15,13 @@ class ExportCollectionForm(forms.Form):
 # Imaginary function to handle an uploaded file.
 #from somewhere import handle_uploaded_file
 
+@login_required
 def handle_export_collection(file):
 	#print('xml parsing BEGINs')
 	xmldoc = xml.dom.minidom.parse(file)
 	values = []
 
+@login_required
 def export_collection(request):
     if request.method == 'POST':
         form = ExportCollectionForm(request.POST, request.FILES)

@@ -1,4 +1,4 @@
-
+from django.contrib.auth.decorators import login_required
 from .models import Track, Artist, Transition, CurrentlyPlaying, TransitionType
 from django.http import HttpResponse
 
@@ -12,6 +12,7 @@ MAX_PLAYLIST_HISTORY_SIZE=10
 # MAX_PLAYLIST_HISTORY_SIZE_EXPANDED=10
 MAX_SUGGESTIONS_AUTO_SIZE=20
 
+@login_required
 def display_currently_playing(request):
 	currentTrack = get_currently_playing_track(withRefresh=True)
 	if(currentTrack is None):
@@ -35,6 +36,7 @@ def display_currently_playing(request):
 			'transitionsBefore' :transitionsBefore,
 			'listTrackSuggestions' :listTrackSuggestions})
 
+@login_required
 def display_history_playing(request, trackId):
 	currentTrack = Track.objects.get(id=trackId)
 	if(currentTrack is None):
@@ -71,12 +73,11 @@ def get_currently_playing_track_from_db():
 	else:
 		return None
 
-
 def refresh_currently_playing_from_log():
 
 	#file = open('/home/rubicontext/Downloads/playlist.log', 'r')
-	file = open('/var/log/icecast2/playlist.log', 'r')
-	# file = open('c:/acar/perso/icecast.log', 'r')
+	# file = open('/var/log/icecast2/playlist.log', 'r')
+	file = open('c:/acar/perso/icecast.log', 'r')
 	lineList = file.readlines()
 	if(len(lineList)<1):
 		#print("Nothing to scrap in playlist log")
@@ -254,6 +255,7 @@ def get_playing_track_list_history(withRefresh=True):
 	return currentPlaylist
 
 #get last five played tracks
+@login_required
 def get_more_playlist_history_table(request):
 	playlist_history_table = get_playing_track_list_history(withRefresh=True)
 	lastTrackPlayed = get_currently_playing_track(withRefresh=False)

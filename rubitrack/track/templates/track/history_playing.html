@@ -205,7 +205,8 @@
           success: function(data) {
             $('#transitionsAllTableDiv').html(data); 
             $('#'+$(this).attr('trackSourceId')).html('Transition saved!');
-            //$('#2423').html('saved!');                     
+            //$('#2423').html('saved!');    
+            alert('#'+$(this).attr('trackSourceId'));                 
           }
         });
       
@@ -244,20 +245,22 @@
         $('#tablePlaylistHistory').html(data); 
       }
     });
+
+
     //works too
-    $.ajax({
-      url: '../get_more_currently_playing_title_block',
-      success: function(data) {
-        $('#currentlyPlayingTitleBlock').html(data); 
-      }
-    });
-    $.ajax({
-      url: '../get_more_currently_playing_track_block',
-      success: function(data) {
-        $('#currentlyPlayingTrackBlock').html(data);
-         //$('#currentlyPlayingTrackBlock_second').html(data);             
-      }
-    });
+    // $.ajax({
+    //   url: '../get_more_currently_playing_title_block',
+    //   success: function(data) {
+    //     // $('#currentlyPlayingTitleBlock').html(data); 
+    //   }
+    // });
+    // $.ajax({
+    //   url: '../get_more_currently_playing_track_block',
+    //   success: function(data) {
+    //     // $('#currentlyPlayingTrackBlock').html(data);
+    //      //$('#currentlyPlayingTrackBlock_second').html(data);             
+    //   }
+    // });
     
     $.ajax({
       url: '../get_more_transition_block?currentTrackId='+$('#currentTrackId').val(),
