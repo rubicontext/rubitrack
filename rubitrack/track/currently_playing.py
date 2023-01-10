@@ -1,14 +1,17 @@
 from django.contrib.auth.decorators import login_required
-from .models import Track, Artist, Transition, CurrentlyPlaying, TransitionType
 from django.http import HttpResponse
-
 #from django.http import HttpResponseRedirect
 from django.shortcuts import render
+
 import psycopg2 as psycopg
 from datetime import datetime 
+import pytz #for timezone opérations
+
+from .models import Track, Artist, Transition, CurrentlyPlaying, TransitionType
+from .rubi_conf import RUBI_ICECAST_PLAYLIST_FILE
 
 #FILE_ICECAST_PLAYLIST=
-MAX_PLAYLIST_HISTORY_SIZE=10
+MAX_PLAYLIST_HISTORY_SIZE=6
 # MAX_PLAYLIST_HISTORY_SIZE_EXPANDED=10
 MAX_SUGGESTIONS_AUTO_SIZE=20
 
@@ -73,23 +76,61 @@ def get_currently_playing_track_from_db():
 	else:
 		return None
 
+def get_currently_playing_track_time_from_db():
+	currentPlaylist = CurrentlyPlaying.objects.order_by('date_played')
+	if(len(currentPlaylist) >0):
+		currentTrackTime = currentPlaylist[len(currentPlaylist)-1].date_played
+		return currentTrackTime
+	else:
+		return None
+
 def refresh_currently_playing_from_log():
 
+	#path_to_playlist_log='c:/rubi/playlist.log'
+	path_to_playlist_log=RUBI_ICECAST_PLAYLIST_FILE
 	#file = open('/home/rubicontext/Downloads/playlist.log', 'r')
-	file = open('/var/log/icecast2/playlist.log', 'r')
-	# file = open('c:/acar/perso/icecast.log', 'r')
+	#file = open('/var/log/icecast2/playlist.log', 'r')
+	file = open(path_to_playlist_log, 'r')
 	lineList = file.readlines()
 	if(len(lineList)<1):
-		#print("Nothing to scrap in playlist log")
+		print("Nothing to scrap in playlist log")
 		return False
-	lastLine = lineList[len(lineList)-1]
-	print("Current last line in log: ",lastLine) 
 
+
+	lastLine = lineList[len(lineList)-1]
+	#print("Current last line in log: ",lastLine) 
+
+	#we check if the previous lines have been added from log to db
+	lastDbPlayedTime =get_currently_playing_track_time_from_db()
+	print("Current last time played in DB: ",lastDbPlayedTime) 
+
+	#new version to iterate on lines, to see if past tracks have been saved into DB
+	with open(path_to_playlist_log) as playlistFile:
+		for currentLine in playlistFile:
+			#print(currentLine,)  # The comma to suppress the extra new line char
+
+			#get time of log 08/Jan/2023:20:57:58 and place after
+			indexSep = currentLine.find(' ')
+			logTimeRaw = currentLine[0:indexSep-1]
+			logTimeObject = datetime.strptime(logTimeRaw, '%d/%b/%Y:%H:%M:%S')
+			#print('Time raw:',logTimeRaw, ' // formatted:',logTimeObject)
+
+			#manage timezone for comparison
+			utc=pytz.UTC
+			logTimeObject=utc.localize(logTimeObject)
+			#lastDbPlayedTime=utc.localize(lastDbPlayedTime)
+
+			if(logTimeObject>lastDbPlayedTime):
+				print('Last DB time (',lastDbPlayedTime,') is anterior to previous logs time ==> saving past logs:', currentLine)
+				save_track_played_to_db_from_log_line(currentLine)
+
+
+def save_track_played_to_db_from_log_line(trackLineLog):
 	#08/Dec/2021:14:59:43 +0000|/|0|LALLA - Narcos  (Extended Remix) - Bm - 5
 	#split the line to get the track title + artist
-	indexSep = lastLine.find('-')
-	artistNameTime = lastLine[0:indexSep-1]
-	trackTitle = lastLine[indexSep+2:len(lastLine)-1]
+	indexSep = trackLineLog.find('-')
+	artistNameTime = trackLineLog[0:indexSep-1]
+	trackTitle = trackLineLog[indexSep+2:len(trackLineLog)-1]
 
 	#clean artist and time
 	indexSepTime = artistNameTime.rfind('|')
@@ -98,7 +139,7 @@ def refresh_currently_playing_from_log():
 
 	##V2 with mixed in key
 	
-	lastLineToProcess = lastLine
+	lastLineToProcess = trackLineLog
 	countSep = lastLineToProcess.count('-')
 
 	if (countSep == 3):
@@ -108,15 +149,15 @@ def refresh_currently_playing_from_log():
 		indexSep = lastLineToProcess.rfind('-')
 		energy = lastLineToProcess[indexSep+2:len(lastLineToProcess)-1]
 		lastLineToProcess = lastLineToProcess[0:indexSep-1]
-		print("energy : ", energy)
-		print("to process :", lastLineToProcess)
+		#print("energy : ", energy)
+		#print("to process :", lastLineToProcess)
 
 		#key
 		indexSep = lastLineToProcess.rfind('-')
 		initialKey = lastLineToProcess[indexSep+2:len(lastLineToProcess)-1]
 		lastLineToProcess = lastLineToProcess[0:indexSep-1]
-		print("initialKey : ", initialKey)
-		print("to process :", lastLineToProcess)
+		#print("initialKey : ", initialKey)
+		#print("to process :", lastLineToProcess)
 
 	else:
 		#no key and energy, just titel - artist
@@ -129,55 +170,51 @@ def refresh_currently_playing_from_log():
 	trackTitle = lastLineToProcess[indexSep+2:len(lastLineToProcess)]
 	lastLineToProcess = lastLineToProcess[0:indexSep-1]
 	print("trackTitle : ", trackTitle)
-	print("to process :", lastLineToProcess)
+	#print("to process :", lastLineToProcess)
 
 	#artist
 	indexSep = lastLineToProcess.rfind('|')
 	artistName = lastLineToProcess[indexSep+1:len(lastLineToProcess)]
-	lastLineToProcess = lastLine[0:indexSep-1]
+	lastLineToProcess = trackLineLog[0:indexSep-1]
 	print("artistName : ", artistName)
-	print("to process :", lastLineToProcess)
+	#print("to process :", lastLineToProcess)
 
 	#time played
-	indexSep = lastLineToProcess.find(' +')
-	dateTimePlayed = lastLineToProcess[0:indexSep]
-	print("dateTimePlayed RAW : ", dateTimePlayed)
+	#indexSep = lastLineToProcess.find(' +')
+	#dateTimePlayed = lastLineToProcess[0:indexSep]
+	#print("dateTimePlayed RAW : ", dateTimePlayed)
 	# dateTimePlayed='08/Dec/2021:14:59:43'
-	formatDate = datetime.strptime(dateTimePlayed, "%d/%b/%Y:%H:%M:%S")
-	print("dateTimePlayed FORMAT : ", formatDate)
-
-	#print("Track/Artist=",trackTitle,"/", artistName)
-	#postgres_select_query = " SELECT id from track_track WHERE title like %s;"
-
-	#postgres_select_query = 'SELECT * from track_track tt WHERE LOWER(tt.title) LIKE LOWER(%s)'
-	#search_term = trackTitle[1:-1]
-	#like_pattern = '%{}%'.format(search_term)
-	#cursor.execute(postgres_select_query, (like_pattern,))
-	#search_title = trackTitle[1:-1]
+	#formatDate = datetime.strptime(dateTimePlayed, "%d/%b/%Y:%H:%M:%S")
+	#print("dateTimePlayed FORMAT : ", formatDate)
+	
 	search_title = trackTitle
-	#print("search_title=", search_title)
-
 	track = get_track_by_title_and_artist_name(search_title, artistName)
-	#print("found a current track!", track.title)
 	
 	#get the last played track to check if it changed
 	lastTrackPlayed = get_currently_playing_track_from_db()
-
-	#if None, first time for this user
-	if(lastTrackPlayed is None):
-		currentPlay = CurrentlyPlaying()
-		currentPlay.track=track
-		currentPlay.save()
-		return True
-
-
 	#print("found a last track played in db!", lastTrackPlayed.title)
-	if(track is None or track.id == lastTrackPlayed.id):
+
+	# #if None, first time for this user
+	# if(lastTrackPlayed is None):
+	# 	currentPlay = CurrentlyPlaying()
+	# 	currentPlay.track=track
+	# 	currentPlay.save()
+	# 	return True
+
+	if(lastTrackPlayed is not None and (track is None or track.id == lastTrackPlayed.id)):
 		#print ("No new record, still playing the same track...\n")
 		return False
 
+	#get time of log 08/Jan/2023:20:57:58 and place after
+	indexSep = lastLineToProcess.find(' ')
+	logTimeRaw = trackLineLog[0:indexSep-1]
+	logTimeObject = datetime.strptime(logTimeRaw, '%d/%b/%Y:%H:%M:%S')
+	#print('\n\nTime played before save :',logTimeObject)
+
 	currentPlay = CurrentlyPlaying()
 	currentPlay.track=track
+	currentPlay.date_played=logTimeObject
+	#print('\nTime played on OBJET :',currentPlay.date_played)
 	currentPlay.save()
 	return True
 
@@ -309,7 +346,7 @@ def get_more_suggestion_auto_block(request):
 		return render(request, 'track/get_more_suggestion_auto_block.html', {'listTrackSuggestions': listTracks})
 
 def get_more_transition_block(request):
-	print("BEGINS get_more_transition_block")
+	print("\nBEGINS get_more_transition_block")
 	currentTrackDb = get_currently_playing_track(withRefresh=False)
 	if(request.method  == 'GET' and 'currentTrackId' in request.GET):
 		currentTrackFormId = request.GET['currentTrackId']
@@ -331,5 +368,4 @@ def are_track_related(trackSource, trackDestination):
 	if(len(transitionList)>0):
 		return(True)
 	return(False)
-
 
