@@ -9,6 +9,8 @@ from . import transition
 from django.views.generic.base import RedirectView
 from django.contrib.staticfiles.storage import staticfiles_storage
 from django.views.generic.base import RedirectView
+from django.conf import settings
+from django.conf.urls.static import static
 
 
 
@@ -34,4 +36,4 @@ urlpatterns = [
     path('get_more_suggestion_auto_block/', currently_playing.get_more_suggestion_auto_block, name='get_more_suggestion_auto_block'),
     path('get_more_transition_block/', currently_playing.get_more_transition_block, name='get_more_transition_block'),
 
-]
+]+ static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
