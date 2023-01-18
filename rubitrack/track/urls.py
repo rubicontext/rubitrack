@@ -15,6 +15,7 @@ from django.views.generic.base import RedirectView
 urlpatterns = [
     path('', views.index, name='index'),
     path('favicon.ico', RedirectView.as_view(url=staticfiles_storage.url('favicon.ico'))),
+    path('static/favicon.ico', RedirectView.as_view(url=staticfiles_storage.url('favicon.ico'))),
 
     path('import_collection/', import_collection.upload_file, name='import_collection_view'),
     path('export_collection/', export_collection.export_collection, name='export_collection_view'),
