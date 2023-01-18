@@ -83,6 +83,7 @@ DATABASES = {
         # 'PASSWORD': 'ibat_db',
         'USER': 'rubi',
         'PASSWORD': 'rubi_db',
+        #'HOST': 'lula',
         'HOST': 'localhost',
         'PORT': '5432',
     }
@@ -126,5 +127,10 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/3.0/howto/static-files/
 
 STATIC_URL = '/static/'
+STATICFILES_DIRS = [
+   os.path.join(BASE_DIR, "static"),
+   ]
 
 LOGIN_URL = '/admin/login/'
+
+
