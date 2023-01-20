@@ -59,7 +59,7 @@
                   {% if currentPlay.related_to_current_track %}
                     Transition saved!
                   {% else %}
-                    <a href="#" trackSourceId="{{ currentPlay.track.id }}" trackDestinationId="{{ currentTrack.id }}"
+                    <a href="#" trackSourceId="{{ currentPlay.track.id }}" trackDestinationId="{{ currentTrack.id }}" currentTrackId="{{ currentTrack.id }}"
                     id="add-row" class="btn btn-default saveTransitionAjax"
                     onclick="return false;"
                     rel="no-refresh"><i class="glyphicon glyphicon-plus icon-success"></i> Save Transition </a>
@@ -104,7 +104,7 @@
              <td>
               
               <input type="text" class="commentTransitionInput" size="50"
-              value="{{ currentTransition.comment }}" transitionId="{{currentTransition.id}}"><br><br>
+              value="{{ currentTransition.comment }}" transitionId="{{currentTransition.id}}" currentTrackId="{{ currentTrack.id }}"><br><br>
              </td>
              <td>
            
@@ -116,7 +116,7 @@
               <li class="list-inline-item">
                 <a class="remove-btn btn-small" href="#" onclick="return false;">
                   <button class="btn btn-danger btn-sm rounded-0 deleteTransition" 
-                  type="button" title="Delete" transitionId="{{currentTransition.id}}"><i class="fa fa-trash"></i></button>
+                  type="button" title="Delete" transitionId="{{currentTransition.id}}" currentTrackId="{{ currentTrack.id }}"><i class="fa fa-trash"></i></button>
                 </a>
               </li>
           </ul>
@@ -138,7 +138,7 @@
              <td>
               
               <input type="text" class="commentTransitionInput" size="50"
-              value="{{ currentTransition.comment }}" transitionId="{{currentTransition.id}}"><br><br>
+              value="{{ currentTransition.comment }}" transitionId="{{currentTransition.id}}" currentTrackId="{{ currentTrack.id }}"><br><br>
              </td>
              <td>
            
@@ -150,7 +150,7 @@
               <li class="list-inline-item">
                 <a class="remove-btn btn-small" href="#" onclick="return false;">
                   <button class="btn btn-danger btn-sm rounded-0 deleteTransition" 
-                  type="button" title="Delete" transitionId="{{currentTransition.id}}"><i class="fa fa-trash"></i></button>
+                  type="button" title="Delete" transitionId="{{currentTransition.id}}" currentTrackId="{{ currentTrack.id }}"><i class="fa fa-trash"></i></button>
                 </a>
               </li>
           </ul>
@@ -206,7 +206,8 @@
     //ajax call to save transition with no refresh
     $(document).on("click", ".saveTransitionAjax", function(){
       $.ajax({
-          url: '../add_new_transition?trackSourceId='+$(this).attr('trackSourceId')+'&trackDestinationId='+$(this).attr('trackDestinationId')+'&history=true',
+          url: '../add_new_transition?trackSourceId='+$(this).attr('trackSourceId')+'&trackDestinationId='+$(this).attr('trackDestinationId')
+          +'&history=true&currentTrackId='+$(this).attr('currentTrackId'),
           success: function(data) {
             $('#transitionsAllTableDiv').html(data); 
             $('#'+$(this).attr('trackSourceId')).html('Transition saved!');
@@ -222,7 +223,7 @@
       $.ajax({
           //var trackId=document.getElementById('currentTrackId');
         //alert($("currentTrackId").html());
-          url: '../delete_transition?transitionDeleteId='+$(this).attr('transitionId')+'&history=true',
+          url: '../delete_transition?transitionDeleteId='+$(this).attr('transitionId')+'&history=true&currentTrackId='+$(this).attr('currentTrackId'),
           success: function(data) {
             if(data) {
               $('#transitionsAllTableDiv').html(data);
@@ -237,7 +238,7 @@
     //ajax call to UPDATE comment on transition
     $(document).on("change", ".commentTransitionInput", function(){
       $.ajax({
-          url: '../update_transition_comment?transitionUpdateId='+$(this).attr('transitionId')+'&newComment='+this.value+'&history=true',
+          url: '../update_transition_comment?transitionUpdateId='+$(this).attr('transitionId')+'&newComment&currentTrackId='+$(this).attr('currentTrackId'),
           success: function(data) {
                                              
           }

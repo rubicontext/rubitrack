@@ -12,12 +12,13 @@ def add_new_transition(request):
 	transition.comment='Added automatically'
 	transition.transition_type=TransitionType.objects.get(id=1)
 	transition.save()
-	print('Transition ADDED ',trackSourceId, '/',trackDestinationId)
+	print('Transition ADDED ',transition.track_source.title, '/',transition.track_destination.title)
 
 	#get context history or playing
 	history=request.GET['history']
 	if(history is not None and history=='true'):
-		return(get_more_transition_block_history(request))
+		currentTrackId = request.GET['currentTrackId']
+		return(get_more_transition_block_history(request, currentTrackId))
 
 	return(get_more_transition_block(request))
 
@@ -25,12 +26,12 @@ def add_new_transition(request):
 def delete_transition(request):
 	transitionId = request.GET['transitionDeleteId']
 	transition=Transition.objects.get(id=transitionId)
-	currentTrackId = transition.track_source.pk
 	transition.delete()
 
 	#get context history or playing
 	history=request.GET['history']
 	if(history is not None and history=='true'):
+		currentTrackId = request.GET['currentTrackId']
 		return(get_more_transition_block_history(request, currentTrackId))
 
 	return(get_more_transition_block(request))
@@ -47,7 +48,8 @@ def update_transition_comment(request):
 	#get context history or playing
 	history=request.GET['history']
 	if(history is not None and history=='true'):
-		return(get_more_transition_block_history(request))
+		currentTrackId = request.GET['currentTrackId']
+		return(get_more_transition_block_history(request, currentTrackId))
 
 	return get_more_transition_block(request)
 
