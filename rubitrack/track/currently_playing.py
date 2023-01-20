@@ -40,10 +40,10 @@ def display_currently_playing(request):
 			'listTrackSuggestions' :listTrackSuggestions})
 
 @login_required
-def display_history_playing(request, trackId):
+def display_history_editing(request, trackId):
 	currentTrack = Track.objects.get(id=trackId)
 	if(currentTrack is None):
-		return render(request, 'track/history_playing.html', 
+		return render(request, 'track/history_editing.html', 
 			{'currentTrack': None, 
 			'playlistHistory':None, 
 			'transitionsAfter':None,
@@ -57,7 +57,7 @@ def display_history_playing(request, trackId):
 		listTrackSuggestions = get_list_track_suggestions_auto(currentTrack)
 		#playlistHistory = playlistHistory[1:10]
 		print("Edit history for track : ",currentTrack)
-		return render(request, 'track/history_playing.html', 
+		return render(request, 'track/history_editing.html', 
 			{'currentTrack': currentTrack, 
 			'playlistHistory':playlistHistory, 
 			'transitionsAfter':transitionsAfter,
@@ -362,10 +362,15 @@ def get_more_transition_block(request):
 	return render(request, 'track/get_more_transition_block.html', 
 		{'transitionsBefore': transitionsBefore, 'transitionsAfter': transitionsAfter, 'currentTrack': currentTrackDb})
 
-def get_more_transition_block_editing(request):
+def get_more_transition_block_history(request, currentTrackId=None):
 	#print("\nBEGINS get_more_transition_block_editing")
-	if(request.method  == 'GET' and 'currentTrackId' in request.GET):
-		currentTrackFormId = request.GET['currentTrackId']
+	if(request.method  == 'GET' and ('currentTrackId' in request.GET or 'trackSourceId' in request.GET or currentTrackId is not None)):
+		if('currentTrackId' in request.GET):
+			currentTrackFormId = request.GET['currentTrackId']
+		elif('trackSourceId' in request.GET):
+			currentTrackFormId = request.GET['trackSourceId']
+		else:
+			currentTrackFormId=currentTrackId
 		#print("found track id in REQ", currentTrackFormId)
 		currentTrackDb=Track.objects.get(pk=currentTrackFormId)
 		if(currentTrackDb is not None):

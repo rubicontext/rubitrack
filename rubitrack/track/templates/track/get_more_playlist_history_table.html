@@ -15,7 +15,7 @@
 
 
          <td><a href="{% url 'admin:track_track_change' currentPlay.track.id %}">{{ currentPlay.track.title }}</a>
-          <a href="{% url 'history_playing_view' currentPlay.track.id%}"><i class="fa fa-backward  good_transition""></i></a></td></td>
+          <a href="{% url 'history_editing_view' currentPlay.track.id%}"><i class="fa fa-backward  good_transition""></i></a></td></td>
          <td>{{ currentPlay.track.artist.name }}</td>
          <td>
                 <div id="{{ currentPlay.track.id }}">

@@ -2,7 +2,7 @@
 {% load admin_urls %}
 <link rel="stylesheet" href="http://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.min.css">
  
-{% block title %}History Editing - Tonial{% endblock title %}
+{% block title %}History Editing - {{ currentTrack.title }}{% endblock title %}
   
   {% block content %}
 
@@ -52,7 +52,7 @@
          {% endif %}                   
 
          <td><a href="{% url 'admin:track_track_change' currentPlay.track.id %}">{{ currentPlay.track.title }}</a>
-          <a href="{% url 'history_playing_view' currentPlay.track.id%}"><i class="fa fa-backward  good_transition"></i></a></td></td>
+          <a href="{% url 'history_editing_view' currentPlay.track.id%}"><i class="fa fa-backward  good_transition"></i></a></td></td>
          <td>{{ currentPlay.track.artist.name }}</td>
          <td>
                 <div id="{{ currentPlay.track.id }}">
@@ -206,12 +206,12 @@
     //ajax call to save transition with no refresh
     $(document).on("click", ".saveTransitionAjax", function(){
       $.ajax({
-          url: '../add_new_transition?trackSourceId='+$(this).attr('trackSourceId')+'&trackDestinationId='+$(this).attr('trackDestinationId'),
+          url: '../add_new_transition?trackSourceId='+$(this).attr('trackSourceId')+'&trackDestinationId='+$(this).attr('trackDestinationId')+'&history=true',
           success: function(data) {
             $('#transitionsAllTableDiv').html(data); 
             $('#'+$(this).attr('trackSourceId')).html('Transition saved!');
             //$('#2423').html('saved!');    
-            alert('#'+$(this).attr('trackSourceId'));                 
+            //alert('#'+$(this).attr('trackSourceId'));                 
           }
         });
       
@@ -220,7 +220,9 @@
     //ajax call to DELETE transition with no refresh
     $(document).on("click", ".deleteTransition", function(){
       $.ajax({
-          url: '../delete_transition?transitionDeleteId='+$(this).attr('transitionId'),
+          //var trackId=document.getElementById('currentTrackId');
+        //alert($("currentTrackId").html());
+          url: '../delete_transition?transitionDeleteId='+$(this).attr('transitionId')+'&history=true',
           success: function(data) {
             if(data) {
               $('#transitionsAllTableDiv').html(data);
@@ -232,9 +234,10 @@
       
     })
 
+    //ajax call to UPDATE comment on transition
     $(document).on("change", ".commentTransitionInput", function(){
       $.ajax({
-          url: '../update_transition_comment?transitionUpdateId='+$(this).attr('transitionId')+'&newComment='+this.value,
+          url: '../update_transition_comment?transitionUpdateId='+$(this).attr('transitionId')+'&newComment='+this.value+'&history=true',
           success: function(data) {
                                              
           }
@@ -243,18 +246,18 @@
       
     })
 
-    //not sure if I need all these
+    //a priori inutile!!!
     
-    $.ajax({
+    /*$.ajax({
       //console.log('ANTOINE!'+$('#currentTrackId').val())
-      url: '../get_more_transition_block_editing?currentTrackId='+$('#currentTrackId').val(),
+      url: '../get_more_transition_block_history?currentTrackId='+$('#currentTrackId').val(),
       success: function(data) {
         if(data !='<div></div>') {
           $('#transitionsAllTableDiv').html(data);        
         }
           
       },
-    });
+    });*/
     
  
 
