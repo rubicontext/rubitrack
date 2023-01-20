@@ -238,7 +238,7 @@
     //ajax call to UPDATE comment on transition
     $(document).on("change", ".commentTransitionInput", function(){
       $.ajax({
-          url: '../update_transition_comment?transitionUpdateId='+$(this).attr('transitionId')+'&newComment&currentTrackId='+$(this).attr('currentTrackId'),
+          url: '../update_transition_comment?transitionUpdateId='+$(this).attr('transitionId')+'&history=true&newComment='+this.value+'&currentTrackId='+$(this).attr('currentTrackId'),
           success: function(data) {
                                              
           }
