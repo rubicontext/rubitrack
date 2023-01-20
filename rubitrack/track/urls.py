@@ -35,5 +35,6 @@ urlpatterns = [
     path('get_more_currently_playing_track_block/', currently_playing.get_more_currently_playing_track_block, name='get_more_currently_playing_track_block'),
     path('get_more_suggestion_auto_block/', currently_playing.get_more_suggestion_auto_block, name='get_more_suggestion_auto_block'),
     path('get_more_transition_block/', currently_playing.get_more_transition_block, name='get_more_transition_block'),
+    path('get_more_transition_block_editing/', currently_playing.get_more_transition_block_editing, name='get_more_transition_block_editing'),
 
 ]+ static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)

@@ -51,11 +51,12 @@ def display_history_playing(request, trackId):
 			'suggestionsSameArtist' :None})
 
 	else:
-		playlistHistory = get_playing_track_list_history(withRefresh=False)
+		playlistHistory = get_playing_track_list_history(withRefresh=False, removeLast=False)
 		transitionsAfter = get_transitions_after(currentTrack)
 		transitionsBefore = get_transitions_before(currentTrack)
 		listTrackSuggestions = get_list_track_suggestions_auto(currentTrack)
 		#playlistHistory = playlistHistory[1:10]
+		print("Edit history for track : ",currentTrack)
 		return render(request, 'track/history_playing.html', 
 			{'currentTrack': currentTrack, 
 			'playlistHistory':playlistHistory, 
@@ -273,14 +274,14 @@ def get_more_played_history_row(request):
 	else:
 		return render(request, 'track/get_more_played_history_row.html', {'currentTrack': currently_playing_track.track})
 
-def get_playing_track_list_history(withRefresh=True):
+def get_playing_track_list_history(withRefresh=True, removeLast=True):
 	if(withRefresh):
 		refresh_currently_playing_from_log()
 	currentPlaylist = CurrentlyPlaying.objects.order_by('date_played')
 	if(len(currentPlaylist)> MAX_PLAYLIST_HISTORY_SIZE):
 		currentPlaylist = currentPlaylist[len(currentPlaylist)-MAX_PLAYLIST_HISTORY_SIZE:len(currentPlaylist)]
 	#remove current from history
-	if(len(currentPlaylist)>1):
+	if(len(currentPlaylist)>1 and removeLast):
 		currentTrack = currentPlaylist[len(currentPlaylist)-1]
 		currentPlaylist = currentPlaylist[0:len(currentPlaylist)-1]
 
@@ -346,20 +347,35 @@ def get_more_suggestion_auto_block(request):
 		return render(request, 'track/get_more_suggestion_auto_block.html', {'listTrackSuggestions': listTracks})
 
 def get_more_transition_block(request):
-	print("\nBEGINS get_more_transition_block")
+	#print("\nBEGINS get_more_transition_block")
 	currentTrackDb = get_currently_playing_track(withRefresh=False)
 	if(request.method  == 'GET' and 'currentTrackId' in request.GET):
 		currentTrackFormId = request.GET['currentTrackId']
-		print("found track id in REQ", currentTrackFormId, "old ID is:", currentTrackDb.id)
+		#print("found track id in REQ", currentTrackFormId, "old ID is:", currentTrackDb.id)
 		if(currentTrackFormId == str(currentTrackDb.id)):
 			#print('IDS are same!')
 			return render(request, 'track/blank.html');
 
 	transitionsBefore = get_transitions_before(currentTrackDb)
 	transitionsAfter = get_transitions_after(currentTrackDb)
-	print("ENDS found transition after", transitionsAfter)
+	print("TRANSITIONS (playing) found before/after", transitionsBefore, '/', transitionsAfter)
 	return render(request, 'track/get_more_transition_block.html', 
 		{'transitionsBefore': transitionsBefore, 'transitionsAfter': transitionsAfter, 'currentTrack': currentTrackDb})
+
+def get_more_transition_block_editing(request):
+	#print("\nBEGINS get_more_transition_block_editing")
+	if(request.method  == 'GET' and 'currentTrackId' in request.GET):
+		currentTrackFormId = request.GET['currentTrackId']
+		#print("found track id in REQ", currentTrackFormId)
+		currentTrackDb=Track.objects.get(pk=currentTrackFormId)
+		if(currentTrackDb is not None):
+			transitionsBefore = get_transitions_before(currentTrackDb)
+			transitionsAfter = get_transitions_after(currentTrackDb)
+			print("TRANSITIONS (editing) found before/after", transitionsBefore, '/', transitionsAfter)
+			return render(request, 'track/get_more_transition_block.html', 
+				{'transitionsBefore': transitionsBefore, 'transitionsAfter': transitionsAfter, 'currentTrack': currentTrackDb})
+	print('ERROR TRACK NOT FOUND')
+	return render(request, 'track/blank.html');
 		
 
 #check if two tracks are related

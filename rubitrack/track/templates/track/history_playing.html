@@ -43,11 +43,16 @@
         
       </tr>
       {% for currentPlay in playlistHistory %}
-        <tr>                    
-
+         {% if currentPlay.track.title == currentTrack.title%}
+            <tr class='current_track_editing_highlight'>
+          {% elif forloop.last %}
+            <tr class='current_track_playing_highlight' id='current_track_playing'>
+          {% else %}
+            <tr>
+         {% endif %}                   
 
          <td><a href="{% url 'admin:track_track_change' currentPlay.track.id %}">{{ currentPlay.track.title }}</a>
-          <a href="{% url 'history_playing_view' currentPlay.track.id%}"><i class="fa fa-backward  good_transition""></i></a></td></td>
+          <a href="{% url 'history_playing_view' currentPlay.track.id%}"><i class="fa fa-backward  good_transition"></i></a></td></td>
          <td>{{ currentPlay.track.artist.name }}</td>
          <td>
                 <div id="{{ currentPlay.track.id }}">
@@ -239,31 +244,10 @@
     })
 
     //not sure if I need all these
-    $.ajax({
-      url: '../get_more_playlist_history_table',
-      success: function(data) {
-        $('#tablePlaylistHistory').html(data); 
-      }
-    });
-
-
-    //works too
-    // $.ajax({
-    //   url: '../get_more_currently_playing_title_block',
-    //   success: function(data) {
-    //     // $('#currentlyPlayingTitleBlock').html(data); 
-    //   }
-    // });
-    // $.ajax({
-    //   url: '../get_more_currently_playing_track_block',
-    //   success: function(data) {
-    //     // $('#currentlyPlayingTrackBlock').html(data);
-    //      //$('#currentlyPlayingTrackBlock_second').html(data);             
-    //   }
-    // });
     
     $.ajax({
-      url: '../get_more_transition_block?currentTrackId='+$('#currentTrackId').val(),
+      //console.log('ANTOINE!'+$('#currentTrackId').val())
+      url: '../get_more_transition_block_editing?currentTrackId='+$('#currentTrackId').val(),
       success: function(data) {
         if(data !='<div></div>') {
           $('#transitionsAllTableDiv').html(data);        
@@ -271,12 +255,7 @@
           
       },
     });
-    $.ajax({
-      url: '../get_more_suggestion_auto_block',
-      success: function(data) {
-        $('#tableSuggestionAuto').html(data);            
-      }
-    });
+    
  
 
 </script>

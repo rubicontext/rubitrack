@@ -6,7 +6,12 @@
         
       </tr>
       {% for currentPlay in playlistHistory %}
-        <tr>                    
+        
+        {% if currentPlay.track.title == currentTrack.title%}
+            <tr class='current_track_editing_highlight'>
+          {% else %}
+            <tr>
+         {% endif %}                   
 
 
          <td><a href="{% url 'admin:track_track_change' currentPlay.track.id %}">{{ currentPlay.track.title }}</a>
@@ -14,14 +19,11 @@
          <td>{{ currentPlay.track.artist.name }}</td>
          <td>
                 <div id="{{ currentPlay.track.id }}">
-                  {% if currentPlay.related_to_current_track %}
-                    Transition saved!
-                  {% else %}
+
                     <a href="#" trackSourceId="{{ currentPlay.track.id }}" trackDestinationId="{{ currentTrack.id }}"
                     id="add-row" class="btn btn-default saveTransitionAjax"
                     onclick="return false;"
                     rel="no-refresh"><i class="glyphicon glyphicon-plus icon-success"></i> Save Transition </a>
-                  {% endif %}
                 </div>              
                   
             </td>
