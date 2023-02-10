@@ -57,10 +57,16 @@
          <td>
                 <div id="{{ currentPlay.track.id }}">
 
+                  {% if currentPlay.related_to_current_track %}
+                    Transition saved!
+                  {% else %}
+
                     <a href="#" trackSourceId="{{ currentPlay.track.id }}" trackDestinationId="{{ currentTrack.id }}"
                     id="add-row" class="btn btn-default saveTransitionAjax"
                     onclick="return false;"
                     rel="no-refresh"><i class="glyphicon glyphicon-plus icon-success"></i> Save Transition </a>
+
+                  {% endif %}
                 </div>              
                   
             </td>
