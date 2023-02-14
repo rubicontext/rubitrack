@@ -21,7 +21,7 @@
                 <div id="{{ currentPlay.track.id }}">
 
                   {% if currentPlay.related_to_current_track %}
-                    Transition saved!
+                    {{currentPlay.related_to_current_track_text}}
                   {% else %}
 
                     <a href="#" trackSourceId="{{ currentPlay.track.id }}" trackDestinationId="{{ currentTrack.id }}"

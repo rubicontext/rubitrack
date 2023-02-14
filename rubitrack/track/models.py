@@ -39,6 +39,7 @@ class Track(models.Model):
     bitrate = models.IntegerField(blank=True, null=True)
     playcount = models.IntegerField(blank=True, null=True)
     energy = models.IntegerField(blank=True, null=True)
+    audio_id = models.CharField(max_length=2000, blank=True, null=True)
 
     #all dates
     date_collection_created = models.DateTimeField('date added to collection', auto_now_add=True, blank=True, null=True)
@@ -104,5 +105,6 @@ class CurrentlyPlaying(models.Model):
     date_played = models.DateTimeField('date played', blank=True, null=True)
     track = models.ForeignKey(Track, on_delete=models.CASCADE)
     related_to_current_track=False
+    related_to_current_track_text=''
     def __str__(self):
         return self.track.title + " - " +  self.date_played.strftime("%H:%M:%S, %d/%m/%Y")

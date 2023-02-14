@@ -45,7 +45,7 @@ def handle_uploaded_file(file, user):
 	cptExistingTracks = 0
 	for current_entry in entry_list :
 		#print(current_entry)
-		#print()
+		#print(current_entry.attributes)
 		title = current_entry.attributes['TITLE'].value
 		#artistName = current_entry.attributes['ARTIST'].value
 		if('ARTIST' in current_entry.attributes):

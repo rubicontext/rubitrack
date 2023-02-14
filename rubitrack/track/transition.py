@@ -9,7 +9,7 @@ def add_new_transition(request):
 	transition=Transition()
 	transition.track_source=Track.objects.get(id=trackSourceId)
 	transition.track_destination=Track.objects.get(id=trackDestinationId)
-	transition.comment='Added automatically'
+	transition.comment='Added!'
 	transition.transition_type=TransitionType.objects.get(id=1)
 	transition.save()
 	print('Transition ADDED ',transition.track_source.title, '/',transition.track_destination.title)

@@ -51,7 +51,7 @@ def display_history_editing(request, trackId):
 			'suggestionsSameArtist' :None})
 
 	else:
-		playlistHistory = get_playing_track_list_history(withRefresh=False, removeLast=False)
+		playlistHistory = get_playing_track_list_history(withRefresh=False, removeLast=False, currentTrack=currentTrack)
 		transitionsAfter = get_transitions_after(currentTrack)
 		transitionsBefore = get_transitions_before(currentTrack)
 		listTrackSuggestions = get_list_track_suggestions_auto(currentTrack)
@@ -274,21 +274,28 @@ def get_more_played_history_row(request):
 	else:
 		return render(request, 'track/get_more_played_history_row.html', {'currentTrack': currently_playing_track.track})
 
-def get_playing_track_list_history(withRefresh=True, removeLast=True):
+def get_playing_track_list_history(withRefresh=True, removeLast=True, currentTrack=None):
 	if(withRefresh):
 		refresh_currently_playing_from_log()
 	currentPlaylist = CurrentlyPlaying.objects.order_by('date_played')
 	if(len(currentPlaylist)> MAX_PLAYLIST_HISTORY_SIZE):
 		currentPlaylist = currentPlaylist[len(currentPlaylist)-MAX_PLAYLIST_HISTORY_SIZE:len(currentPlaylist)]
-	#remove current from history
-	if(len(currentPlaylist)>1 and removeLast):
-		currentTrack = currentPlaylist[len(currentPlaylist)-1]
-		currentPlaylist = currentPlaylist[0:len(currentPlaylist)-1]
+	
+	if(len(currentPlaylist)>1):
+		if(currentTrack is None):
+			currentTrackHist = currentPlaylist[len(currentPlaylist)-1]
+			currentTrack=currentTrackHist.track
+		
+		#remove current from history
+		if(removeLast):
+			#currentTrack = currentPlaylist[len(currentPlaylist)-1]
+			currentPlaylist = currentPlaylist[0:len(currentPlaylist)-1]
 
 		#add data if related
 		for currentHistItem in currentPlaylist:
-			if(are_track_related(currentHistItem.track, currentTrack.track)):
+			if(are_track_related(currentHistItem.track, currentTrack)):
 				currentHistItem.related_to_current_track=True
+				currentHistItem.related_to_current_track_text=get_track_related_text(currentHistItem.track, currentTrack)
 
 	return currentPlaylist
 
@@ -389,4 +396,11 @@ def are_track_related(trackSource, trackDestination):
 	if(len(transitionList)>0):
 		return(True)
 	return(False)
+
+#get transition text for related tracks
+def get_track_related_text(trackSource, trackDestination):
+	transitionList=Transition.objects.filter(track_source=trackSource, track_destination=trackDestination)
+	if(len(transitionList)>0):
+		return(transitionList[0].comment)
+	return(None)
 
