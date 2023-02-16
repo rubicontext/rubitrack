@@ -185,15 +185,25 @@ def handle_uploaded_file(file, user):
 
 		#Check if TRACK exists or insert it
 		#trackDb = Track.objects.get(title=title, artist=artist)
+		# 1 find by artist and title
 		trackList = Track.objects.filter(title=title, artist=artist)
 		if(len(trackList) >0):
 			trackDb=trackList[0]
 			track = trackDb
 			cptExistingTracks = cptExistingTracks+1
 		else:
-			track = Track()
-			track.title=title
-			cptNewTracks = cptNewTracks+1
+			#2 find by audio ID
+			trackList = Track.objects.filter(audio_id=audio_id)
+			if(len(trackList) >0):
+				trackDb=trackList[0]
+				track = trackDb
+				track.title=title
+				cptExistingTracks = cptExistingTracks+1
+			#3 create it!
+			else:
+				track = Track()
+				track.title=title
+				cptNewTracks = cptNewTracks+1
 
 		#update track infos
 		#track.bpm=66 #FOR DEBUG AND PURGE
