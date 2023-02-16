@@ -47,6 +47,19 @@ def handle_uploaded_file(file, user):
 		#print(current_entry)
 		#print(current_entry.attributes)
 		title = current_entry.attributes['TITLE'].value
+
+		#TESTS sur audio ID
+		if('AUDIO_ID' in current_entry.attributes):
+			audio_id=current_entry.attributes['AUDIO_ID'].value
+		else:
+			audio_id = None
+			print('WARNING no audio_id tag for entry : ', title)
+		# if(title=='Au pas, au trot, au galop'):
+		# 	print('AU PAS ID : ', audio_id)
+		
+		#Si pas de audio ID 
+
+		
 		#artistName = current_entry.attributes['ARTIST'].value
 		if('ARTIST' in current_entry.attributes):
 			artistName = current_entry.attributes['ARTIST'].value
@@ -196,6 +209,7 @@ def handle_uploaded_file(file, user):
 		track.musical_key=musicalKey
 		track.bitrate=bitrate
 		track.bpm=bpm
+		track.audio_id=audio_id
 
 		#print('About to save track with artist :', artist)
 		track.save() #force save to add children
