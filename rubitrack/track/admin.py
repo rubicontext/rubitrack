@@ -1,8 +1,5 @@
 from django.contrib import admin
 
-#ac
-#from adminsortable2.admin import SortableAdminMixin
-
 # Register your models here.
 from .models import Artist, Track, Genre, Playlist, TransitionType, Transition, CurrentlyPlaying, Collection
 
@@ -11,9 +8,6 @@ from django.forms import TextInput, Textarea
 from django.db import models
 from django import forms
 
-
-#admin.site.register(Artist)
-#admin.site.register(Track)
 admin.site.register(Genre)
 admin.site.register(Playlist)
 admin.site.register(Transition)
@@ -21,41 +15,41 @@ admin.site.register(TransitionType)
 admin.site.register(CurrentlyPlaying)
 admin.site.register(Collection)
 
-#class TrackInline(admin.StackedInline):
+
+# class TrackInline(admin.StackedInline):
 class TrackInline(admin.TabularInline):
     model = Track
     extra = 1
 
-#class TrackInline(admin.StackedInline):
+
+# class TrackInline(admin.StackedInline):
 class TransitionInlineSource(admin.TabularInline):
     model = Transition
     verbose_name_plural = "Transitions : What to play next?"
     extra = 1
     fk_name = "track_source"
-    fields =(
-        ('track_destination', 'comment'),
-    )
+    fields = (('track_destination', 'comment'),)
     widgets = {
-          'comment': forms.Textarea(attrs={'rows':2, 'cols':2}),
+        'comment': forms.Textarea(attrs={'rows': 2, 'cols': 2}),
     }
 
-#class TrackInline(admin.StackedInline):
+
+# class TrackInline(admin.StackedInline):
 class TransitionInlineDestination(admin.TabularInline):
     model = Transition
     verbose_name_plural = "Previous Transitions - Tracks to play before"
     extra = 1
     fk_name = "track_destination"
-    fields =(
-        ('track_source', 'comment'),
-    )
+    fields = (('track_source', 'comment'),)
     widgets = {
-          'comment': forms.Textarea(attrs={'rows':2, 'cols':2}),
+        'comment': forms.Textarea(attrs={'rows': 2, 'cols': 2}),
     }
 
-#@admin.register(Track)
+
+# @admin.register(Track)
 class TrackAdmin(admin.ModelAdmin):
     fieldsets = [
-        (None,               {'fields': ['title', 'artist', 'genre']}),
+        (None, {'fields': ['title', 'artist', 'genre']}),
         ('Notes', {'fields': ['ranking', 'comment', 'comment2']}),
         ('Details', {'fields': ['musical_key', 'bpm', 'bitrate', 'playcount', 'date_last_played']}),
     ]
@@ -65,45 +59,48 @@ class TrackAdmin(admin.ModelAdmin):
     search_fields = ['title', 'artist__name']
     ordering = ['title']
 
-    #def get_queryset(self, request):
+    # def get_queryset(self, request):
     #    return self.model.objects.filter(user = request.user)
+
 
 class ArtistAdmin(admin.ModelAdmin):
     fieldsets = [
-        ('Say my name!',               {'fields': ['name']}),
+        ('Say my name!', {'fields': ['name']}),
     ]
     inlines = [TrackInline]
+
 
 admin.site.register(Track, TrackAdmin)
 admin.site.register(Artist, ArtistAdmin)
 
-#custom track admin view 
+
+# custom track admin view
 class CustomTrackTransition(Track):
     class Meta:
         proxy = True
 
 
-#v2 for resize area
+# v2 for resize area
 class TransitionForm(forms.ModelForm):
     comment = forms.CharField(required=False, widget=forms.Textarea(attrs={'rows': 3, 'cols': 15}))
+
     class Meta:
         model = Transition
         exclude = ('comment',)
         widgets = {
-          'comment': forms.Textarea(attrs={'rows':2, 'cols':2}),
+            'comment': forms.Textarea(attrs={'rows': 2, 'cols': 2}),
         }
-
 
 
 class CustomTrackTransitionAdmin(TrackAdmin):
     title = 'Add a new transition'
     fieldsets = None
-    #form = TransitionForm
-    fields =(
-        ('title'),
-    )
+    # form = TransitionForm
+    fields = (('title'),)
     inlines = [TransitionInlineSource, TransitionInlineDestination]
+
 
 admin.site.register(CustomTrackTransition, CustomTrackTransitionAdmin)
 
 
+#Custom playlist admin view

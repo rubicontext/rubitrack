@@ -1,17 +1,18 @@
 <input type="hidden" id="currentTrackId" name="currentTrackId" value="{{ currentTrack.pk }}" />
 
-  <div class="row">
-    <div class="grey_subtitle">Now Playing: </div>
+<div class="row">
+  <div class="on_air">
+    ON AIR: 
+   </div>
+  <div class="track_medium_blue" >
+     {{ currentTrack.title }}  
   </div>
-  <div class="row">
-    <div class="track_big_blue" >
-       {{ currentTrack.title }}  
+
+   <div class="artist_green_flashy"> - {{ currentTrack.artist.name }}</div>
+
+   <div class="grey_subtitle_small">
+    Genre: {{ currentTrack.genre.name }}  - {{ currentTrack.bpm|floatformat}} bpm - 
+    <a href="{% url 'admin:track_track_change' currentTrack.id %}"><i class="fa fa-edit"></i> Edit track info  </a>
     </div>
-
-     <div class="green_flashy"> - {{ currentTrack.artist.name }}</div>
-
-     <div class="grey_subtitle">
-      Genre: {{ currentTrack.genre.name }}  - {{ currentTrack.bpm|floatformat}} bpm - 
-      <a href="{% url 'admin:track_track_change' currentTrack.id %}"><i class="fa fa-edit"></i> Edit track info  </a>
-      </div>
-  </div>
+</div>
+</div>

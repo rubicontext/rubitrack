@@ -32,7 +32,7 @@ ALLOWED_HOSTS = ['lula', 'http://193.70.86.101/', 'https://193.70.86.101/', '193
 
 INSTALLED_APPS = [
     'track.apps.TrackConfig',
-    #'adminsortable2',      
+    #'adminsortable2',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -78,7 +78,7 @@ WSGI_APPLICATION = 'rubitrack.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'rubitrack_dev',
+        'NAME': 'rubi_dev',
         # 'USER': 'postgres',
         # 'PASSWORD': 'ibat_db',
         'USER': 'rubi',
@@ -89,6 +89,13 @@ DATABASES = {
     }
 }
 
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.sqlite3',
+#         'NAME': 'mydatabase', # This is where you put the name of the db file.
+#                  # If one doesn't exist, it will be created at migration time.
+#     }
+# }
 
 # Password validation
 # https://docs.djangoproject.com/en/3.0/ref/settings/#auth-password-validators
@@ -131,9 +138,7 @@ STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(PROJECT_ROOT, 'static')
 
 STATICFILES_DIRS = [
-   os.path.join(BASE_DIR, "static"),
-   ]
+    os.path.join(BASE_DIR, "static"),
+]
 
 LOGIN_URL = '/admin/login/'
-
-
