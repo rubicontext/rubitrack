@@ -3,8 +3,12 @@ import datetime
 import json
 import pytz
 
+import ast
+
 from django import forms
 from django.shortcuts import render
+
+from track.playlist.playlist_transitions import get_order_rank
 from .models import Playlist, Track, Artist, Genre, Collection
 
 from django.shortcuts import get_object_or_404
@@ -271,8 +275,8 @@ def import_playlist_from_xml_doc(xmldoc, user):
     track_found_count = 0
     track_not_found_count = 0
 
-    for current_playlist in playlist_list[0:10]:
-    # for current_playlist in playlist_list:
+    # for current_playlist in playlist_list[0:10]:
+    for current_playlist in playlist_list:
 
         # NODE TYPE
         node_type = current_playlist.attributes['TYPE'].value
@@ -281,14 +285,19 @@ def import_playlist_from_xml_doc(xmldoc, user):
 
         # PLAYLIST NAME
         name = current_playlist.attributes['NAME'].value
+        # if name != '2025_CRE_creuse_T':
+        #     continue
         print('PLAYLIST NAME: ', name)
         existing_playlists = Playlist.objects.filter(name=name)
         if len(existing_playlists) > 0:
             playlist = existing_playlists[0]
+            playlist.rank = get_order_rank(name) #TODO remove this
+            playlist.save()
             existing_playlist_count = existing_playlist_count + 1
         else:
             playlist = Playlist()
             playlist.name = name
+            playlist.rank = get_order_rank(name)
             new_playlist_count = new_playlist_count + 1
             playlist.save()
 
@@ -308,11 +317,10 @@ def import_playlist_from_xml_doc(xmldoc, user):
                 track = trackList[0]
                 track_found_count = track_found_count + 1
                 track_ids.append(track.id)
+                print('track id added : ', track.id)
                 if track not in playlist.tracks.all():
                     playlist.tracks.add(track)
 
-            playlist.track_ids = json.dumps(track_ids)
-            # to read back the list of track ids
-            jsonDec = json.decoder.JSONDecoder()
-            print('Playlist tracks ids: ', jsonDec.decode(playlist.track_ids))
-            playlist.save()
+        print('Playlist tracks ids: ', track_ids)
+        playlist.track_ids = track_ids
+        playlist.save()

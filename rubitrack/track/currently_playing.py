@@ -1,14 +1,12 @@
 from django.contrib.auth.decorators import login_required
 from django.http import HttpResponse
 
-# from django.http import HttpResponseRedirect
 from django.shortcuts import render
 
-import psycopg2 as psycopg
 from datetime import datetime
-import pytz  # for timezone opérations
+import pytz
 
-from .models import Track, Artist, Transition, CurrentlyPlaying, TransitionType
+from .models import Track, Artist, Transition, CurrentlyPlaying
 from .rubi_conf import RUBI_ICECAST_PLAYLIST_FILE
 
 # FILE_ICECAST_PLAYLIST=
@@ -170,26 +168,20 @@ def save_track_played_to_db_from_log_line(trackLineLog):
     artistName = artistNameTime[indexSepTime + 1 : len(artistNameTime) - 1]
 
     ##V2 with mixed in key
-
     lastLineToProcess = trackLineLog
     countSep = lastLineToProcess.count('-')
 
     if countSep == 3:
         # mixed in key : LALLA - Narcos  (Extended Remix) - Bm - 5
-
         # energy
         indexSep = lastLineToProcess.rfind('-')
         energy = lastLineToProcess[indexSep + 2 : len(lastLineToProcess) - 1]
         lastLineToProcess = lastLineToProcess[0 : indexSep - 1]
-        # print("energy : ", energy)
-        # print("to process :", lastLineToProcess)
 
         # key
         indexSep = lastLineToProcess.rfind('-')
         initialKey = lastLineToProcess[indexSep + 2 : len(lastLineToProcess) - 1]
         lastLineToProcess = lastLineToProcess[0 : indexSep - 1]
-        # print("initialKey : ", initialKey)
-        # print("to process :", lastLineToProcess)
 
     else:
         # no key and energy, just titel - artist
@@ -211,27 +203,12 @@ def save_track_played_to_db_from_log_line(trackLineLog):
     print("artistName : ", artistName)
     # print("to process :", lastLineToProcess)
 
-    # time played
-    # indexSep = lastLineToProcess.find(' +')
-    # dateTimePlayed = lastLineToProcess[0:indexSep]
-    # print("dateTimePlayed RAW : ", dateTimePlayed)
-    # dateTimePlayed='08/Dec/2021:14:59:43'
-    # formatDate = datetime.strptime(dateTimePlayed, "%d/%b/%Y:%H:%M:%S")
-    # print("dateTimePlayed FORMAT : ", formatDate)
-
     search_title = trackTitle
     track = get_track_by_title_and_artist_name(search_title, artistName)
 
     # get the last played track to check if it changed
     lastTrackPlayed = get_currently_playing_track_from_db()
     # print("found a last track played in db!", lastTrackPlayed.title)
-
-    # #if None, first time for this user
-    # if(lastTrackPlayed is None):
-    # 	currentPlay = CurrentlyPlaying()
-    # 	currentPlay.track=track
-    # 	currentPlay.save()
-    # 	return True
 
     if lastTrackPlayed is not None and (track is None or track.id == lastTrackPlayed.id):
         # print ("No new record, still playing the same track...\n")
@@ -241,12 +218,10 @@ def save_track_played_to_db_from_log_line(trackLineLog):
     indexSep = lastLineToProcess.find(' ')
     logTimeRaw = trackLineLog[0 : indexSep - 1]
     logTimeObject = datetime.strptime(logTimeRaw, '%d/%b/%Y:%H:%M:%S')
-    # print('\n\nTime played before save :',logTimeObject)
 
     currentPlay = CurrentlyPlaying()
     currentPlay.track = track
     currentPlay.date_played = logTimeObject
-    # print('\nTime played on OBJET :',currentPlay.date_played)
     currentPlay.save()
     return True
 
@@ -459,7 +434,6 @@ def get_more_transition_block_history(request, currentTrackId=None):
             )
     print('ERROR TRACK NOT FOUND')
     return render(request, 'track/blank.html')
-
 
 # check if two tracks are related
 def are_track_related(trackSource, trackDestination):

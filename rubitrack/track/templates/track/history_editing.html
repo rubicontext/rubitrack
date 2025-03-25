@@ -6,9 +6,6 @@
   
   {% block content %}
 
-  {% if currentTrack %}
-
-
 
 <div class='now_playing_track' id='currentlyPlayingTrackBlock'>
 
@@ -264,15 +261,6 @@
 </script>
 
 
-{% else %}
-
-<div class='now_playing_track' id='currentlyPlayingTrackBlock'>
-  <div class="row">
-    <div class="track_big_blue" > Please select a track to edit here </div>
-    <div class="green_flashy">- Broadcasto your Mix to http://193.70.86.101/</div> 
-    <div class="track_big_blue" >- Port 8059</div>
-  </div>
-</div>
 
 <script>
   //setInterval(function() {
@@ -285,9 +273,6 @@
 });
 
 </script>
-
-{% endif %}
-
 
 
  {% endblock content %}

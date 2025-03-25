@@ -1,0 +1,127 @@
+{% extends "admin/base_site.html" %}
+{% load admin_urls %}
+<link rel="stylesheet" href="http://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.min.css">
+ 
+{% block title %}Playlist transitions - {{ currentPlaylist.name }}{% endblock title %}
+  
+  {% block content %}
+
+
+<div class='now_playing_track' id='currentlyPlayingTrackBlock'>
+
+
+  <input type="hidden" id="currentTrackId" name="currentTrackId" value="{{ currentTrack.pk }}" />
+
+  <div class="row">
+
+    <div class="on_air">
+      Playlist: 
+     </div>
+
+    <div class="track_medium_blue" >
+       {{ currentPlaylist.name }}  
+    </div>
+
+  </div>
+</div>
+
+  <div class="blue_subtitle_small">Transitions</div><br>
+  <div class="blue_subtitle_xsmall">First Track : {{ firstTrack.title }} - {{ firstTrack.artist.name }} - {{ firstTrack.genre.name }} - {{ firstTrack.bpm|floatformat}}</div>
+
+  <div id="transitionsAllTableDiv">
+    <table id="transitionsAllTable" class="table table-striped table-condensed">
+      <tr>                    
+        <th>Title</th>
+        <th>Artist</th>
+        <th>Type</th>
+        <th>Comment</th>
+        <th>Actions</th>
+        <th>Genre/BPM</th>
+       </tr>
+
+       {% for currentTransition in playlistTransitions %}
+       <tr>                    
+         <td><a href="{% url 'admin:track_track_change' currentTransition.track_source.id %}">
+             {{ currentTransition.track_destination.title|slice:":20" }}
+         </a></td>
+        <td>{{ currentTransition.track_destination.artist.name }}</td>
+       <td><i class="fa fa-forward"></i></td>
+        <td>
+         
+         <input type="text" class="commentTransitionInput" size="50"
+         value="{{ currentTransition.comment }}" transitionId="{{currentTransition.id}}"><br><br>
+        </td>
+        <td>
+      
+       <ul class="list-inline m-0">
+          <li class="list-inline-item">
+             <button class="btn btn-success btn-sm rounded-0" type="button" data-toggle="tooltip" data-placement="top" title="Edit"><i class="fa fa-edit"></i></button>
+         </li>
+
+         <li class="list-inline-item">
+           <a class="remove-btn btn-small" href="#" onclick="return false;">
+             <button class="btn btn-danger btn-sm rounded-0 deleteTransition" 
+             type="button" title="Delete" transitionId="{{currentTransition.id}}"><i class="fa fa-trash"></i></button>
+           </a>
+         </li>
+     </ul>
+    </td>
+    <td>{{ currentTransition.track_destination.genre.name }}
+     {{ currentTransition.track_destination.bpm|floatformat}}
+     </td> 
+     </tr>
+       {% endfor %}
+
+          </table>
+    </div>
+
+    <div class="blue_subtitle_small">Track List</div>
+
+  <div id="tracksDiv">
+    <table id="tracksTable" class="table table-striped table-condensed">
+      <tr>                    
+        <th>Title</th>
+        <th>Artist</th>
+        <th>Genre/BPM</th>
+        <th>Comment</th>
+       </tr>
+
+       {% for currentTrack in playlistTracks %}
+       <tr>                    
+         <!-- <td><a href="{% url 'admin:track_track_change' currentTrack.id %}"> -->
+          <td><a href="#"></a>
+             {{ currentTrack.title|slice:":20" }}
+         </a></td>
+        <td>{{ currentTrack.artist.name }}</td>
+        <td>{{ currentTrack.genre.name }}
+          {{ currentTrack.bpm|floatformat}}
+          </td> 
+       <td>{{ currentTrack.comment }}</td>
+
+     </tr>
+       {% endfor %}
+
+          </table>
+    </div>
+
+
+ <script>
+  //ajax call to UPDATE comment on transition
+  $(document).on("change", ".commentTransitionInput", function(){
+    $.ajax({
+        url: '../update_transition_comment?transitionUpdateId='+$(this).attr('transitionId')+'&playlist=true&newComment='+this.value,
+          success: function(data) {                                  
+        }
+      });
+  })
+</script>
+<!-- 
+<script>
+
+  $(function () {
+    $('[data-toggle="tooltip"]').tooltip();
+});
+
+</script> -->
+
+{% endblock content %}

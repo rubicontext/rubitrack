@@ -78,8 +78,9 @@ class Track(models.Model):
 
 class Playlist(models.Model):
     name = models.CharField(max_length=200)
-    track_ids = models.CharField(max_length=2000, blank=True, null=True)
+    track_ids = models.CharField(max_length=20000, blank=True, null=True)
     tracks = models.ManyToManyField(Track)
+    rank = models.IntegerField(blank=True, null=True)
 
     def __str__(self):
         return self.name
