@@ -111,7 +111,7 @@ admin.site.register(CustomTrackTransition, CustomTrackTransitionAdmin)
 
 class CustomPlaylistAdmin(admin.ModelAdmin):
     # list_display = ['name', 'playlist_transitions', 'rank']
-    list_display = ['name', 'rank']
+    list_display = ['name', 'id']
     search_fields = ['name']
     ordering = ['rank']
 
