@@ -1,9 +1,6 @@
 
 import datetime
-import json
 import pytz
-
-import ast
 
 from django import forms
 from django.shortcuts import render
@@ -11,7 +8,6 @@ from django.shortcuts import render
 from track.playlist.playlist_transitions import get_order_rank
 from .models import Playlist, Track, Artist, Genre, Collection
 
-from django.shortcuts import get_object_or_404
 from django.contrib.auth.decorators import login_required
 
 import xml.dom.minidom
@@ -31,16 +27,12 @@ def handle_uploaded_file(file, user):
     xmldoc = xml.dom.minidom.parse(file)
     collection = xmldoc.getElementsByTagName('COLLECTION')
     entry_list = collection[0].getElementsByTagName('ENTRY')
-    # key_list = entry_list[0].getElementsByTagName('KEY')
-
-    # get or init a collection object for this user
     userCollection = get_default_collection_for_user(user)
 
     cptNewTracks = 0
     cptExistingTracks = 0
-    # for current_entry in entry_list :
-    for current_entry in entry_list[0:10]:
-        # print(current_entry.attributes)
+    for current_entry in entry_list :
+    # for current_entry in entry_list[0:10]:
         title = current_entry.attributes['TITLE'].value
 
         # audio ID
@@ -59,7 +51,6 @@ def handle_uploaded_file(file, user):
         file_name = location[0].attributes['FILE'].value
         location_dir = location[0].attributes['VOLUME'].value + location[0].attributes['DIR'].value
         file_path = location_dir + file_name
-        # print("FILE: ", file_name, " DIR: ", location_dir)
 
         # sample auto imported must be ignored
         info = current_entry.getElementsByTagName('INFO')
@@ -99,12 +90,6 @@ def handle_uploaded_file(file, user):
         else:
             lastPlayedDate = None
 
-        if 'IMPORT_DATE' in info[0].attributes:
-            importDateStr = info[0].attributes['IMPORT_DATE'].value
-            importDate = datetime.datetime.strptime(importDateStr, '%Y/%m/%d').strftime('%Y-%m-%d')
-        else:
-            importDate = None
-
         # musicalKey
         if 'KEY' in info[0].attributes:
             musicalKey = info[0].attributes['KEY'].value
@@ -125,29 +110,9 @@ def handle_uploaded_file(file, user):
             bpm = None
 
         ranking = get_ranking_from_xml_info(info)
+        artist = get_artist_db_from_artist_name(artistName)
+        genre = get_genre_db_from_genre_name(genreName)
 
-        # check if ARTIST exists, or insert it
-        try:
-            ArtistDb = Artist.objects.get(name=artistName)
-            artist = ArtistDb
-        except Artist.DoesNotExist:
-            artist = Artist()
-            artist.name = artistName
-            artist.save()
-
-        # check if GENRE exists, or insert it
-        if genreName is not None:
-            try:
-                GenreDb = Genre.objects.get(name=genreName)
-                genre = GenreDb
-                # print("Found existing genre : ", genreName)
-            except Genre.DoesNotExist:
-                genre = Genre()
-                genre.name = genreName
-                genre.save()
-                # print("Created new genre : ", genreName)
-        else:
-            genre = None
 
         # Check if TRACK exists or insert it
         # trackDb = Track.objects.get(title=title, artist=artist)
@@ -198,17 +163,41 @@ def handle_uploaded_file(file, user):
     # traverseTree(xml.documentElement)
 
 
+def get_artist_db_from_artist_name(artistName):
+    try:
+        ArtistDb = Artist.objects.get(name=artistName)
+        artist = ArtistDb
+    except Artist.DoesNotExist:
+        artist = Artist()
+        artist.name = artistName
+        artist.save()
+
+    return artist
+
+
+def get_genre_db_from_genre_name(genreName):
+    if genreName is not None:
+        try:
+            GenreDb = Genre.objects.get(name=genreName)
+            genre = GenreDb
+            # print("Found existing genre : ", genreName)
+        except Genre.DoesNotExist:
+            genre = Genre()
+            genre.name = genreName
+            genre.save()
+            # print("Created new genre : ", genreName)
+    else:
+        genre = None
+
+    return genre
+
 @login_required
 def upload_file(request):
     if request.method == 'POST':
         form = UploadCollectionForm(request.POST, request.FILES)
         if form.is_valid():
-            # print('Form is valid!')
-            # get user
             current_user = request.user
-            # print current_user.id
             cptNewTracks, cptExistingTracks = handle_uploaded_file(request.FILES['file'], current_user)
-            # return HttpResponseRedirect('/admin/')
             return render(
                 request,
                 'track/import_collection.html',
@@ -227,7 +216,6 @@ def upload_file(request):
 def get_default_collection_for_user(currentUser):
     collectionList = Collection.objects.filter(user=currentUser)
     if len(collectionList) < 1:
-        # create new collection
         collection = Collection()
         collection.user = currentUser
         collection.name = 'User collection'

@@ -161,6 +161,7 @@ def save_track_played_to_db_from_log_line(trackLineLog):
     indexSep = trackLineLog.find('-')
     artistNameTime = trackLineLog[0 : indexSep - 1]
     trackTitle = trackLineLog[indexSep + 2 : len(trackLineLog) - 1]
+    print("track title from log /", trackTitle, "/")
 
     # clean artist and time
     indexSepTime = artistNameTime.rfind('|')
@@ -242,30 +243,43 @@ def get_track_by_title_and_artist_name(trackTitle, artistName):
             artistDb = Artist()
             artistDb.name = artistName
             artistDb.save()
-            # print("Created new artist:", artistName)
+            print("WARNING Created new artist:", artistName)
     else:
         artistDb = artistList[0]
 
+    return get_track_db_from_title_artist(trackTitle, artistDb)
+
+
+def get_track_db_from_title_artist(trackTitle: str, artistDb: Artist):
     trackList = Track.objects.filter(title=trackTitle, artist=artistDb)
-    if len(trackList) < 1:
-        # no exact match found
-        # check for close matches by same artists
-        searchTitle = trackTitle.lstrip()
-        trackList = Track.objects.filter(title__icontains=searchTitle, artist=artistDb)
-        if len(trackList) > 0:
-            trackDb = trackList[0]
-        else:
-            # create track
-            trackDb = Track()
-            trackDb.title = trackTitle
-            trackDb.artist = artistDb
-            trackDb.save()
-            # print("Created new track:", trackTitle)
-    else:
-        trackDb = trackList[0]
+    if len(trackList) == 1:
+        return trackList[0]
 
-    # print("Found or created trackDb:", trackDb)
+    if len(trackList) > 1:
+        print("WARNING DUPLICATE track :", trackTitle, "By artist :", artistDb.name)
+        return trackList[0]
 
+    # no exact match found
+    # check for close matches by same artists
+    searchTitle = trackTitle.lstrip()
+    trackList = Track.objects.filter(title__icontains=searchTitle, artist=artistDb)
+    if len(trackList) > 0:
+        print("FOUND with strip")
+        return trackList[0]
+
+    # happends with wierd formatting il log file
+    searchTitle = trackTitle[:-1]
+    trackList = Track.objects.filter(title__icontains=searchTitle, artist=artistDb)
+    if len(trackList) > 0:
+        print("FOUND with 1 char removed")
+        return trackList[0]
+
+    # create new track, should only happend if no import of collection
+    print("WARNING Created new track, :", trackTitle)
+    trackDb = Track()
+    trackDb.title = trackTitle
+    trackDb.artist = artistDb
+    trackDb.save()
     return trackDb
 
 
@@ -309,7 +323,7 @@ def get_playing_track_list_history(withRefresh=True, removeLast=True, currentTra
                     currentHistItem.track, currentTrack
                 )
 
-    return currentPlaylist
+    return reversed(currentPlaylist)
 
 
 # get last five played tracks

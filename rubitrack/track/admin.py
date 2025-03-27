@@ -16,7 +16,6 @@ from django.utils.safestring import mark_safe
 from django.utils.html import format_html
 
 admin.site.register(Genre)
-# admin.site.register(Playlist)
 admin.site.register(Transition)
 admin.site.register(TransitionType)
 admin.site.register(CurrentlyPlaying)
@@ -111,13 +110,15 @@ admin.site.register(CustomTrackTransition, CustomTrackTransitionAdmin)
 
 
 class CustomPlaylistAdmin(admin.ModelAdmin):
-    list_display = ['name', 'playlist_transitions', 'rank']
+    # list_display = ['name', 'playlist_transitions', 'rank']
+    list_display = ['name', 'rank']
     search_fields = ['name']
     ordering = ['rank']
 
-    @admin.display(description="See All Tranitions")
-    def playlist_transitions(self, obj):
-        return format_html("<a href='/track/playlist_transitions/{url}'>{label} (All Transitions)</a>", url=obj.id, label=obj.name)
+    # @admin.display(description="See All Tranitions")
+    # def playlist_transitions(self, obj):
+    #     return format_html("<a href='/track/playlist_transitions/{url}'>{label} (All Transitions)</a>", url=obj.id, label=obj.name)
 
 
 admin.site.register(Playlist, CustomPlaylistAdmin)
+# admin.site.register(Playlist)
