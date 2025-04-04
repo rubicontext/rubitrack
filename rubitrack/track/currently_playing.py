@@ -9,9 +9,7 @@ import pytz
 from .models import Track, Artist, Transition, CurrentlyPlaying
 from .rubi_conf import RUBI_ICECAST_PLAYLIST_FILE
 
-# FILE_ICECAST_PLAYLIST=
 MAX_PLAYLIST_HISTORY_SIZE = 10
-# MAX_PLAYLIST_HISTORY_SIZE_EXPANDED=10
 MAX_SUGGESTIONS_AUTO_SIZE = 20
 
 
@@ -36,7 +34,6 @@ def display_currently_playing(request):
         transitionsAfter = get_transitions_after(currentTrack)
         transitionsBefore = get_transitions_before(currentTrack)
         listTrackSuggestions = get_list_track_suggestions_auto(currentTrack)
-        # playlistHistory = playlistHistory[1:10]
         return render(
             request,
             'track/currently_playing.html',
@@ -71,7 +68,6 @@ def display_history_editing(request, trackId):
         transitionsAfter = get_transitions_after(currentTrack)
         transitionsBefore = get_transitions_before(currentTrack)
         listTrackSuggestions = get_list_track_suggestions_auto(currentTrack)
-        # playlistHistory = playlistHistory[1:10]
         print("Edit history for track : ", currentTrack)
         return render(
             request,
@@ -112,18 +108,12 @@ def get_currently_playing_track_time_from_db():
 
 def refresh_currently_playing_from_log():
 
-    # path_to_playlist_log='c:/rubi/playlist.log'
     path_to_playlist_log = RUBI_ICECAST_PLAYLIST_FILE
-    # file = open('/home/rubicontext/Downloads/playlist.log', 'r')
-    # file = open('/var/log/icecast2/playlist.log', 'r')
     file = open(path_to_playlist_log, 'r')
     lineList = file.readlines()
     if len(lineList) < 1:
         print("Nothing to scrap in playlist log")
         return False
-
-    lastLine = lineList[len(lineList) - 1]
-    # print("Current last line in log: ",lastLine)
 
     # we check if the previous lines have been added from log to db
     lastDbPlayedTime = get_currently_playing_track_time_from_db()
@@ -132,18 +122,15 @@ def refresh_currently_playing_from_log():
     # new version to iterate on lines, to see if past tracks have been saved into DB
     with open(path_to_playlist_log) as playlistFile:
         for currentLine in playlistFile:
-            # print(currentLine,)  # The comma to suppress the extra new line char
 
             # get time of log 08/Jan/2023:20:57:58 and place after
             indexSep = currentLine.find(' ')
             logTimeRaw = currentLine[0 : indexSep - 1]
             logTimeObject = datetime.strptime(logTimeRaw, '%d/%b/%Y:%H:%M:%S')
-            # print('Time raw:',logTimeRaw, ' // formatted:',logTimeObject)
 
             # manage timezone for comparison
             utc = pytz.UTC
             logTimeObject = utc.localize(logTimeObject)
-            # lastDbPlayedTime=utc.localize(lastDbPlayedTime)
 
             if logTimeObject > lastDbPlayedTime:
                 print(
@@ -161,11 +148,9 @@ def save_track_played_to_db_from_log_line(trackLineLog):
     indexSep = trackLineLog.find('-')
     artistNameTime = trackLineLog[0 : indexSep - 1]
     trackTitle = trackLineLog[indexSep + 2 : len(trackLineLog) - 1]
-    print("track title from log /", trackTitle, "/")
 
     # clean artist and time
     indexSepTime = artistNameTime.rfind('|')
-    # print("sepTime", indexSepTime, "length", len(artistNameTime))
     artistName = artistNameTime[indexSepTime + 1 : len(artistNameTime) - 1]
 
     ##V2 with mixed in key
@@ -206,13 +191,9 @@ def save_track_played_to_db_from_log_line(trackLineLog):
 
     search_title = trackTitle
     track = get_track_by_title_and_artist_name(search_title, artistName)
-
-    # get the last played track to check if it changed
     lastTrackPlayed = get_currently_playing_track_from_db()
-    # print("found a last track played in db!", lastTrackPlayed.title)
 
     if lastTrackPlayed is not None and (track is None or track.id == lastTrackPlayed.id):
-        # print ("No new record, still playing the same track...\n")
         return False
 
     # get time of log 08/Jan/2023:20:57:58 and place after
@@ -286,9 +267,6 @@ def get_track_db_from_title_artist(trackTitle: str, artistDb: Artist):
 # get last played row only
 def get_more_played_history_row(request):
     lastTrackPlayed = get_currently_playing_track(withRefresh=False)
-    # refresh_currently_playing_from_log()
-    # increment = int(request.GET['append_increment'])
-    # increment_to = increment + 10
     currently_playing_track = CurrentlyPlaying.objects.order_by('-date_played')[0]
     if lastTrackPlayed.id == currently_playing_track.track.id:
         return HttpResponse('')
@@ -312,7 +290,6 @@ def get_playing_track_list_history(withRefresh=True, removeLast=True, currentTra
 
         # remove current from history
         if removeLast:
-            # currentTrack = currentPlaylist[len(currentPlaylist)-1]
             currentPlaylist = currentPlaylist[0 : len(currentPlaylist) - 1]
 
         # add data if related
@@ -401,13 +378,10 @@ def get_more_suggestion_auto_block(request):
 
 
 def get_more_transition_block(request):
-    # print("\nBEGINS get_more_transition_block")
     currentTrackDb = get_currently_playing_track(withRefresh=False)
     if request.method == 'GET' and 'currentTrackId' in request.GET:
         currentTrackFormId = request.GET['currentTrackId']
-        # print("found track id in REQ", currentTrackFormId, "old ID is:", currentTrackDb.id)
         if currentTrackFormId == str(currentTrackDb.id):
-            # print('IDS are same!')
             return render(request, 'track/blank.html')
 
     transitionsBefore = get_transitions_before(currentTrackDb)
@@ -421,7 +395,6 @@ def get_more_transition_block(request):
 
 
 def get_more_transition_block_history(request, currentTrackId=None):
-    # print("\nBEGINS get_more_transition_block_editing")
     if request.method == 'GET' and (
         'currentTrackId' in request.GET or 'trackSourceId' in request.GET or currentTrackId is not None
     ):
@@ -431,12 +404,11 @@ def get_more_transition_block_history(request, currentTrackId=None):
             currentTrackFormId = request.GET['trackSourceId']
         else:
             currentTrackFormId = currentTrackId
-        # print("found track id in REQ", currentTrackFormId)
+
         currentTrackDb = Track.objects.get(pk=currentTrackFormId)
         if currentTrackDb is not None:
             transitionsBefore = get_transitions_before(currentTrackDb)
             transitionsAfter = get_transitions_after(currentTrackDb)
-            print("TRANSITIONS (editing) found before/after", transitionsBefore, '/', transitionsAfter)
             return render(
                 request,
                 'track/get_more_transition_block.html',

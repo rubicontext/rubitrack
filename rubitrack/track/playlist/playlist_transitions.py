@@ -49,8 +49,8 @@ def get_transitions_from_playlist(current_playlist: Playlist):
     transitions = []
     track_ids = get_track_ids_from_playlist(current_playlist)
     for index_track_id in range(len(track_ids)-1):
-        track_source_id=track_ids[index_track_id]
-        track_destination_id=track_ids[index_track_id+1]
+        track_source_id = track_ids[index_track_id]
+        track_destination_id = track_ids[index_track_id+1]
         current_transition: Transition = Transition.objects.filter(track_source_id=track_source_id,
                                                        track_destination_id=track_destination_id)
         if not current_transition:
@@ -60,10 +60,9 @@ def get_transitions_from_playlist(current_playlist: Playlist):
                                                    PLAYLIST_TRANSITION_AUTO_GENERATED + current_playlist.name)
             print('Generated auto transition : ', current_transition)
         else:
-            #TODO peut on avoir plusieurs transitions pour un couple de tracks ?
+            #TODO attention si multiples transitions pour 2 tracks, pas géré
             current_transition = current_transition[0]
         transitions.append(current_transition)
-        print('Transition : ', current_transition.track_source.id, ' -> ', current_transition.track_destination.id)
 
     return transitions
 
@@ -124,3 +123,23 @@ def get_order_rank(playlist_name:str) -> int:
         return 999
 
     return string.ascii_lowercase.index(playlist_name[0].lower()) + 200
+
+def delete_playlist_transitions(request):
+    print('DELETE playlist transitions....')
+    playlistId = request.GET['playlistId']
+    all_playlist_transitions = get_transitions_from_playlist(Playlist.objects.get(id=playlistId))
+    for current_transition in all_playlist_transitions:
+        print('COMMENT : ', current_transition.comment)
+        if PLAYLIST_TRANSITION_AUTO_GENERATED in current_transition.comment:
+            current_transition.delete()
+            print('Transition DELETED ', current_transition.track_source.title, '/', current_transition.track_destination.title)
+
+    #TODO a date on ne renvoit rien, page non mise à jour car sinon on va re générer ces transitions..
+    return None
+
+
+def delete_all_generated_transitions(request):
+    print('DELETE ALL generated transitions....')
+    all_genrated_transitions = Transition.objects.filter(comment__contains=PLAYLIST_TRANSITION_AUTO_GENERATED)
+    all_genrated_transitions.delete()
+    return None

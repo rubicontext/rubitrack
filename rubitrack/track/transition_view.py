@@ -1,6 +1,7 @@
 
+from track.models import Transition
 from track.transition import create_transition
-from .models import Transition, TransitionType, Track
+
 from .currently_playing import (get_more_transition_block,
                                 get_more_transition_block_history)
 
@@ -18,16 +19,6 @@ def add_new_transition(request):
         return get_more_transition_block_history(request, currentTrackId)
 
     return get_more_transition_block(request)
-
-
-# def create_transition(trackSourceId, trackDestinationId, comment):
-#     transition = Transition()
-#     transition.track_source = Track.objects.get(id=trackSourceId)
-#     transition.track_destination = Track.objects.get(id=trackDestinationId)
-#     transition.comment = comment
-#     transition.transition_type = TransitionType.objects.get(id=1)
-#     transition.save()
-#     return transition
 
 
 # DELETE TRANSITION

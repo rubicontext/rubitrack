@@ -10,7 +10,7 @@
 <div class='now_playing_track' id='currentlyPlayingTrackBlock'>
 
 
-  <input type="hidden" id="currentTrackId" name="currentTrackId" value="{{ currentTrack.pk }}" />
+  <input type="hidden" id="currentTrackId" name="currentTrackId" value="{{ currentTrack.id }}" />
 
   <div class="row">
 
@@ -103,7 +103,7 @@
          <li class="list-inline-item">
            <a class="remove-btn btn-small" href="#" onclick="return false;">
              <button class="btn btn-danger btn-sm rounded-0 deleteTransition" 
-             type="button" title="Delete" transitionId="{{currentTransition.id}}"><i class="fa fa-trash"></i></button>
+             type="button" title="Delete" transitionId="{{currentTransition.id}}", currentTrackId="{{currentTrack.id}}"><i class="fa fa-trash"></i></button>
            </a>
          </li>
      </ul>

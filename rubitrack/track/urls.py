@@ -61,5 +61,7 @@ urlpatterns = [
 
     #PLAYLISTS
     path('playlist_transitions/<int:PlaylistId>', playlist_transitions.display_playlist_transitions, name='playlist_transitions_view'),
+    path('delete_playlist_transitions/', playlist_transitions.delete_playlist_transitions, name='delete_playlist_transition_view'),
+    path('delete_all_generated_transitions/', playlist_transitions.delete_all_generated_transitions, name='delete_all_generated_transitions_view'),
 
 ] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)

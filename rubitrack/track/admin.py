@@ -60,13 +60,14 @@ class TrackAdmin(admin.ModelAdmin):
         ('Details', {'fields': ['musical_key', 'bpm', 'bitrate', 'playcount', 'date_last_played']}),
     ]
     inlines = [TransitionInlineSource]
-    list_display = ('title', 'artist', 'genre', 'bpm', 'is_techno', 'was_added_recently')
+    list_display = ('title', 'artist', 'history_editing', 'genre', 'musical_key', 'ranking')
     list_filter = ['genre', 'musical_key', 'ranking']
     search_fields = ['title', 'artist__name']
     ordering = ['title']
 
-    # def get_queryset(self, request):
-    #    return self.model.objects.filter(user = request.user)
+    @admin.display(description="Edit Transitions")
+    def history_editing(self, obj):
+        return format_html("<a href='/track/history_editing/{url}'>{label} (All Transitions)</a>", url=obj.id, label=obj.title)
 
 
 class ArtistAdmin(admin.ModelAdmin):
@@ -101,7 +102,6 @@ class TransitionForm(forms.ModelForm):
 class CustomTrackTransitionAdmin(TrackAdmin):
     title = 'Add a new transition'
     fieldsets = None
-    # form = TransitionForm
     fields = (('title'),)
     inlines = [TransitionInlineSource, TransitionInlineDestination]
 
@@ -110,14 +110,14 @@ admin.site.register(CustomTrackTransition, CustomTrackTransitionAdmin)
 
 
 class CustomPlaylistAdmin(admin.ModelAdmin):
-    # list_display = ['name', 'playlist_transitions', 'rank']
-    list_display = ['name', 'id']
+    list_display = ['name', 'playlist_transitions']
+    # list_display = ['name', 'id']
     search_fields = ['name']
     ordering = ['rank']
 
-    # @admin.display(description="See All Tranitions")
-    # def playlist_transitions(self, obj):
-    #     return format_html("<a href='/track/playlist_transitions/{url}'>{label} (All Transitions)</a>", url=obj.id, label=obj.name)
+    @admin.display(description="See All Tranitions")
+    def playlist_transitions(self, obj):
+        return format_html("<a href='/track/playlist_transitions/{url}'>{label} (All Transitions)</a>", url=obj.id, label=obj.name)
 
 
 admin.site.register(Playlist, CustomPlaylistAdmin)

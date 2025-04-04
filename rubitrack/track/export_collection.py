@@ -1,21 +1,14 @@
 from django import forms
-from django.http import HttpResponseRedirect
 from django.shortcuts import render
-from .models import Track, Artist, Genre
 from django.contrib.auth.decorators import login_required
 
 
 class ExportCollectionForm(forms.Form):
-    # title = forms.CharField(max_length=50)
     original_file = forms.FileField()
     old_path_for_music_folder = forms.CharField(initial='C:\\rubi\\son\\')
     new_path_for_music_folder = forms.CharField(initial='C:\\rubi\\son\\01-Mix-Youtube\\')
-    # new_path_for_music_folder = forms.CharField(widget=forms.TextInput(attrs={'placeholder': 'C:\\My\\Folder\\Path\\'}))
     tag_for_transition = forms.CharField(widget=forms.TextInput(attrs={'placeholder': 'Default: RATING'}))
 
-
-# Imaginary function to handle an uploaded file.
-# from somewhere import handle_uploaded_file
 
 
 @login_required

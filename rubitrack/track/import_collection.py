@@ -1,5 +1,7 @@
 
 import datetime
+from xml.dom.minicompat import NodeList
+from xml.dom.minidom import Element
 import pytz
 
 from django import forms
@@ -57,38 +59,11 @@ def handle_uploaded_file(file, user):
         if not info:
             continue
 
-        # genre
-        if 'GENRE' in info[0].attributes:
-            genreName = info[0].attributes['GENRE'].value
-            if len(genreName) > MAX_GENRE_LENGTH:
-                genreName = genreName[0:MAX_GENRE_LENGTH]
-        else:
-            genreName = None
-
-        # comment
-        if 'COMMENT' in info[0].attributes:
-            comment = info[0].attributes['COMMENT'].value
-            if len(comment) > MAX_COMMENT_LENGTH:
-                comment = comment[0:MAX_COMMENT_LENGTH]
-        else:
-            comment = ''
-
-        if 'RATING' in info[0].attributes:
-            comment2 = info[0].attributes['RATING'].value
-        else:
-            comment2 = ''
-
-        if 'PLAYCOUNT' in info[0].attributes:
-            playcount = info[0].attributes['PLAYCOUNT'].value
-        else:
-            playcount = 0
-
-        if 'LAST_PLAYED' in info[0].attributes:
-            lastPlayedDateStr = info[0].attributes['LAST_PLAYED'].value
-            lastPlayedDate = datetime.datetime.strptime(lastPlayedDateStr, '%Y/%m/%d')
-            lastPlayedDate = lastPlayedDate.replace(tzinfo=pytz.UTC)
-        else:
-            lastPlayedDate = None
+        genreName = get_genre_from_info(info)
+        comment = get_comment_from_info(info)
+        comment2 = get_rating_from_info(info)
+        playcount = get_playcount_from_info(info)
+        lastPlayedDate = get_last_played_date_from_info(info)
 
         # musicalKey
         if 'KEY' in info[0].attributes:
@@ -155,12 +130,51 @@ def handle_uploaded_file(file, user):
         track.save()
         add_track_to_user_collection(userCollection, track)
 
-    import_playlist_from_xml_doc(xmldoc, user)
+    import_playlist_from_xml_doc(xmldoc)
 
-    # print('xml parsing DONE!')
     return cptNewTracks, cptExistingTracks
 
-    # traverseTree(xml.documentElement)
+def get_last_played_date_from_info(info):
+    if 'LAST_PLAYED' in info[0].attributes:
+        lastPlayedDateStr = info[0].attributes['LAST_PLAYED'].value
+        lastPlayedDate = datetime.datetime.strptime(lastPlayedDateStr, '%Y/%m/%d')
+        lastPlayedDate = lastPlayedDate.replace(tzinfo=pytz.UTC)
+    else:
+        lastPlayedDate = None
+    return lastPlayedDate
+
+def get_playcount_from_info(info):
+    if 'PLAYCOUNT' in info[0].attributes:
+        playcount = info[0].attributes['PLAYCOUNT'].value
+    else:
+        playcount = 0
+    return playcount
+
+def get_rating_from_info(info):
+    if 'RATING' in info[0].attributes:
+        comment2 = info[0].attributes['RATING'].value
+    else:
+        comment2 = ''
+    return comment2
+
+def get_comment_from_info(info):
+    if 'COMMENT' in info[0].attributes:
+        comment = info[0].attributes['COMMENT'].value
+        if len(comment) > MAX_COMMENT_LENGTH:
+            comment = comment[0:MAX_COMMENT_LENGTH]
+    else:
+        comment = ''
+    return comment
+
+
+def get_genre_from_info(info: NodeList[Element]):
+    if 'GENRE' in info[0].attributes:
+        genreName = info[0].attributes['GENRE'].value
+        if len(genreName) > MAX_GENRE_LENGTH:
+            genreName = genreName[0:MAX_GENRE_LENGTH]
+    else:
+        genreName = None
+    return genreName
 
 
 def get_artist_db_from_artist_name(artistName):
@@ -180,12 +194,10 @@ def get_genre_db_from_genre_name(genreName):
         try:
             GenreDb = Genre.objects.get(name=genreName)
             genre = GenreDb
-            # print("Found existing genre : ", genreName)
         except Genre.DoesNotExist:
             genre = Genre()
             genre.name = genreName
             genre.save()
-            # print("Created new genre : ", genreName)
     else:
         genre = None
 
@@ -225,7 +237,7 @@ def get_default_collection_for_user(currentUser):
     return collection
 
 
-def add_track_to_user_collection(collection, track):
+def add_track_to_user_collection(collection: Collection, track: Track) -> bool:
     existingTrack = collection.tracks.filter(title=track.title, artist=track.artist)
     if existingTrack is None:
         collection.tracks.append(track)
@@ -233,7 +245,7 @@ def add_track_to_user_collection(collection, track):
     return False
 
 
-def get_ranking_from_xml_info(info):
+def get_ranking_from_xml_info(info) -> int:
     """convert ranking from traktor (0-255) to regular 1-5 star system"""
     if 'RANKING' not in info[0].attributes:
         return None
@@ -253,7 +265,7 @@ def get_ranking_from_xml_info(info):
     return ranking
 
 
-def import_playlist_from_xml_doc(xmldoc, user):
+def import_playlist_from_xml_doc(xmldoc):
 
     playlists = xmldoc.getElementsByTagName('PLAYLISTS')
     playlist_list = playlists[0].getElementsByTagName('NODE')
@@ -273,25 +285,21 @@ def import_playlist_from_xml_doc(xmldoc, user):
 
         # PLAYLIST NAME
         name = current_playlist.attributes['NAME'].value
-        # if name != '2025_CRE_creuse_T':
-        #     continue
-        print('PLAYLIST NAME: ', name)
-        existing_playlists = Playlist.objects.filter(name=name)
-        if len(existing_playlists) > 0:
-            playlist = existing_playlists[0]
-            playlist.rank = get_order_rank(name) #TODO remove this
-            playlist.save()
-            existing_playlist_count = existing_playlist_count + 1
-        else:
-            playlist = Playlist()
-            playlist.name = name
-            playlist.rank = get_order_rank(name)
-            new_playlist_count = new_playlist_count + 1
-            playlist.save()
+        playlist = get_or_create_single_playlist_from_name(existing_playlist_count, new_playlist_count, name)
 
         # PLAYLIST TRACKS
         playlist_entry_list = current_playlist.getElementsByTagName('ENTRY')
         track_ids = []
+        
+        # option 1 we reset all tracks to avoid deletion undetected (could be improved?)
+        # playlist.tracks.clear()
+
+        # option 2, we check if number of track has changed (DANGEROUS!)
+        if len(playlist_entry_list) == len(playlist.tracks.all()):
+            continue
+
+        # option 3, we check for equality in track ids list and order?
+
         for current_entry in playlist_entry_list:
             for key in current_entry.getElementsByTagName('PRIMARYKEY'):
                 file_path = key.attributes['KEY'].value
@@ -305,10 +313,26 @@ def import_playlist_from_xml_doc(xmldoc, user):
                 track = trackList[0]
                 track_found_count = track_found_count + 1
                 track_ids.append(track.id)
-                print('track id added : ', track.id)
-                if track not in playlist.tracks.all():
-                    playlist.tracks.add(track)
+                playlist.tracks.add(track)  
 
         print('Playlist tracks ids: ', track_ids)
         playlist.track_ids = track_ids
         playlist.save()
+
+
+def get_or_create_single_playlist_from_name(existing_playlist_count: int,
+                                            new_playlist_count: int,
+                                            name: str) -> Playlist:
+    print('PLAYLIST NAME: ', name)
+    existing_playlists = Playlist.objects.filter(name=name)
+    if len(existing_playlists) > 0:
+        playlist = existing_playlists[0]
+        playlist.save()
+        existing_playlist_count = existing_playlist_count + 1
+    else:
+        playlist = Playlist()
+        playlist.name = name
+        playlist.rank = get_order_rank(name)
+        new_playlist_count = new_playlist_count + 1
+        playlist.save()
+    return playlist

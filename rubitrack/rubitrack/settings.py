@@ -78,7 +78,7 @@ WSGI_APPLICATION = 'rubitrack.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'rubitrack_dev',
+        'NAME': 'rubi_dev',
         # 'USER': 'postgres',
         # 'PASSWORD': 'ibat_db',
         'USER': 'rubi',
