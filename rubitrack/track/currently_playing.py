@@ -6,12 +6,11 @@ from django.shortcuts import render
 from datetime import datetime
 import pytz
 
+from track.suggestions import get_list_track_suggestions_auto
+
 from .models import Track, Artist, Transition, CurrentlyPlaying
-from .rubi_conf import RUBI_ICECAST_PLAYLIST_FILE
-
-MAX_PLAYLIST_HISTORY_SIZE = 10
-MAX_SUGGESTIONS_AUTO_SIZE = 20
-
+from .rubi_conf import (RUBI_ICECAST_PLAYLIST_FILE,
+                        MAX_PLAYLIST_HISTORY_SIZE)
 
 @login_required
 def display_currently_playing(request):
@@ -143,6 +142,7 @@ def refresh_currently_playing_from_log():
 
 
 def save_track_played_to_db_from_log_line(trackLineLog):
+    #TODO refactor this
     # 08/Dec/2021:14:59:43 +0000|/|0|LALLA - Narcos  (Extended Remix) - Bm - 5
     # split the line to get the track title + artist
     indexSep = trackLineLog.find('-')
@@ -156,6 +156,8 @@ def save_track_played_to_db_from_log_line(trackLineLog):
     ##V2 with mixed in key
     lastLineToProcess = trackLineLog
     countSep = lastLineToProcess.count('-')
+    energy = None
+    initialKey = None
 
     if countSep == 3:
         # mixed in key : LALLA - Narcos  (Extended Remix) - Bm - 5
@@ -168,11 +170,6 @@ def save_track_played_to_db_from_log_line(trackLineLog):
         indexSep = lastLineToProcess.rfind('-')
         initialKey = lastLineToProcess[indexSep + 2 : len(lastLineToProcess) - 1]
         lastLineToProcess = lastLineToProcess[0 : indexSep - 1]
-
-    else:
-        # no key and energy, just titel - artist
-        energy = None
-        initialKey = None
 
     # common fields
     # title
@@ -329,11 +326,6 @@ def get_more_currently_playing_track_block(request):
     )
 
 
-def get_suggestions_manual_input(track):
-    suggestions = Transition.objects.filter(track_source=track)
-    return suggestions
-
-
 def get_transitions_after(track):
     transitions = Transition.objects.filter(track_source=track)
     return transitions
@@ -342,32 +334,6 @@ def get_transitions_after(track):
 def get_transitions_before(track):
     transitions = Transition.objects.filter(track_destination=track)
     return transitions
-
-
-def get_suggestions_most_played_after(track):
-    suggestions = Transition.objects.filter(track_source=track)
-    return suggestions
-
-
-def get_suggestions_same_artist(track):
-    suggestions = None
-    if track is not None:
-        suggestions = Track.objects.filter(artist=track.artist)
-    return suggestions
-
-
-def get_suggestions_same_genre(track):
-    suggestions = Transition.objects.filter(track_source=track)
-    return suggestions
-
-
-def get_list_track_suggestions_auto(track):
-    listTracks = Track.objects.filter(genre=track.genre, musical_key=track.musical_key)
-    if len(listTracks) > MAX_SUGGESTIONS_AUTO_SIZE:
-        listTracks = listTracks[0 : MAX_SUGGESTIONS_AUTO_SIZE - 1]
-    # TODO filter on similar BPM!
-    # TODO filter identical track
-    return listTracks
 
 
 def get_more_suggestion_auto_block(request):
@@ -420,6 +386,7 @@ def get_more_transition_block_history(request, currentTrackId=None):
             )
     print('ERROR TRACK NOT FOUND')
     return render(request, 'track/blank.html')
+
 
 # check if two tracks are related
 def are_track_related(trackSource, trackDestination):

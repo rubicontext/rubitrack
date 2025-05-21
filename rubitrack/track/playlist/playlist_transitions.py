@@ -54,7 +54,6 @@ def get_transitions_from_playlist(current_playlist: Playlist):
         current_transition: Transition = Transition.objects.filter(track_source_id=track_source_id,
                                                        track_destination_id=track_destination_id)
         if not current_transition:
-            # TODO risqué d'avoir de nombreuses transitions 'Bidon', on verra a l'usage...
             current_transition: Transition = create_transition(track_source_id, 
                                                    track_destination_id,
                                                    PLAYLIST_TRANSITION_AUTO_GENERATED + current_playlist.name)
@@ -83,7 +82,6 @@ def get_ordered_tracks_from_playlist(current_playlist: Playlist):
 def get_track_ids_from_playlist(current_playlist: Playlist):
     if not current_playlist or not current_playlist.track_ids:
         return []
-
     return ast.literal_eval(current_playlist.track_ids)
 
 
@@ -114,15 +112,19 @@ def get_order_rank(playlist_name:str) -> int:
     elif playlist_name.startswith('2019'):
         return 195
     
-    if (not playlist_name
-        or len(playlist_name) == 0
-        or playlist_name[0] == ''
-        or not playlist_name[0].lower()
-        or not playlist_name[0].isalpha()
-        ):
+    if is_name_parsable_for_numeric_indexing(playlist_name):
         return 999
 
     return string.ascii_lowercase.index(playlist_name[0].lower()) + 200
+
+
+def is_name_parsable_for_numeric_indexing(playlist_name):
+    return (not playlist_name
+            or len(playlist_name) == 0
+            or playlist_name[0] == ''
+            or not playlist_name[0].lower()
+            or not playlist_name[0].isalpha())
+
 
 def delete_playlist_transitions(request):
     print('DELETE playlist transitions....')

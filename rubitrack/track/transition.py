@@ -1,4 +1,3 @@
-
 from .models import Transition, TransitionType, Track
 
 
@@ -11,7 +10,7 @@ def create_transition(trackSourceId, trackDestinationId, comment):
     transition.save()
     return transition
 
+
 def delete_transition(transitionId):
     transition = Transition.objects.get(id=transitionId)
     transition.delete()
-

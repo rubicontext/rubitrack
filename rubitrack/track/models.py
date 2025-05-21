@@ -4,7 +4,6 @@ from django.db import models
 from django.utils import timezone
 from django.contrib.auth.models import User
 
-# Create your models here.
 Ranking_CHOICES = ((1, 'Poor'), (2, 'Average'), (3, 'Good'), (4, 'Very Good'), (5, 'Excellent'))
 
 
@@ -54,11 +53,12 @@ class Track(models.Model):
     )
     date_last_played = models.DateTimeField('date last played', blank=True, null=True)
 
+    def __repr__(self):
+        return f'Track({self.title}, {self.artist.name}, {self.genre.name}, {self.bpm}, {self.musical_key}, {self.ranking})'
+
     class Meta(object):
         ordering = ['position']
 
-    # related_tracks =
-    # tostring :)
     def __str__(self):
         return self.title + " - " + self.artist.name
 

@@ -1,4 +1,3 @@
-
 import datetime
 from xml.dom.minicompat import NodeList
 from xml.dom.minidom import Element
@@ -33,61 +32,33 @@ def handle_uploaded_file(file, user):
 
     cptNewTracks = 0
     cptExistingTracks = 0
-    for current_entry in entry_list :
-    # for current_entry in entry_list[0:10]:
-        title = current_entry.attributes['TITLE'].value
-
-        # audio ID
-        if 'AUDIO_ID' in current_entry.attributes:
-            audio_id = current_entry.attributes['AUDIO_ID'].value
-        else:
-            audio_id = None
-            print('WARNING no audio_id tag for entry : ', title)
-
-        if 'ARTIST' in current_entry.attributes:
-            artistName = current_entry.attributes['ARTIST'].value
-        else:
-            artistName = UNKNOWN_ARTIST_NAME
-
-        location = current_entry.getElementsByTagName('LOCATION')
-        file_name = location[0].attributes['FILE'].value
-        location_dir = location[0].attributes['VOLUME'].value + location[0].attributes['DIR'].value
-        file_path = location_dir + file_name
+    for current_entry in entry_list:
+        # for current_entry in entry_list[0:10]:
 
         # sample auto imported must be ignored
         info = current_entry.getElementsByTagName('INFO')
         if not info:
             continue
 
+        title = get_title_from_entry(current_entry)
+        audio_id = get_audio_id_from_entry(current_entry)
+        location = current_entry.getElementsByTagName('LOCATION')
+        file_name = location[0].attributes['FILE'].value
+        location_dir = location[0].attributes['VOLUME'].value + location[0].attributes['DIR'].value
+        file_path = location_dir + file_name
+
+
+        artist = get_artist_from_entry(current_entry)
         genreName = get_genre_from_info(info)
         comment = get_comment_from_info(info)
         comment2 = get_rating_from_info(info)
         playcount = get_playcount_from_info(info)
         lastPlayedDate = get_last_played_date_from_info(info)
-
-        # musicalKey
-        if 'KEY' in info[0].attributes:
-            musicalKey = info[0].attributes['KEY'].value
-            if len(musicalKey) > MAX_MUSICAL_KEY_LENGTH:
-                musicalKey = musicalKey[0:MAX_MUSICAL_KEY_LENGTH]
-        else:
-            musicalKey = 0
-
-        if 'BITRATE' in info[0].attributes:
-            bitrate = info[0].attributes['BITRATE'].value
-        else:
-            bitrate = 0
-
-        tempo = current_entry.getElementsByTagName('TEMPO')
-        if len(tempo) > 0 and ('BPM' in tempo[0].attributes):
-            bpm = tempo[0].attributes['BPM'].value
-        else:
-            bpm = None
-
+        musicalKey = get_musical_key_from_info(info)
+        bitrate = get_bit_rate_from_info(info)
+        bpm = get_bpm_from_info(current_entry)
         ranking = get_ranking_from_xml_info(info)
-        artist = get_artist_db_from_artist_name(artistName)
         genre = get_genre_db_from_genre_name(genreName)
-
 
         # Check if TRACK exists or insert it
         # trackDb = Track.objects.get(title=title, artist=artist)
@@ -134,6 +105,60 @@ def handle_uploaded_file(file, user):
 
     return cptNewTracks, cptExistingTracks
 
+
+def get_title_from_entry(current_entry):
+    return current_entry.attributes['TITLE'].value
+
+
+def get_audio_id_from_entry(current_entry):
+    if 'AUDIO_ID' in current_entry.attributes:
+        return current_entry.attributes['AUDIO_ID'].value
+    else:
+        print('WARNING no audio_id tag for entry : ', get_title_from_entry(current_entry))
+        return None
+
+
+def get_artist_from_entry(current_entry):
+    artistName = get_artist_name_from_entry(current_entry)
+    artist = get_artist_db_from_artist_name(artistName)
+    return artist
+
+
+def get_artist_name_from_entry(current_entry):
+    if 'ARTIST' in current_entry.attributes:
+        artistName = current_entry.attributes['ARTIST'].value
+    else:
+        artistName = UNKNOWN_ARTIST_NAME
+    return artistName
+
+
+def get_bpm_from_info(current_entry):
+    tempo = current_entry.getElementsByTagName('TEMPO')
+    if len(tempo) > 0 and ('BPM' in tempo[0].attributes):
+        bpm = tempo[0].attributes['BPM'].value
+    else:
+        bpm = None
+    return bpm
+
+
+def get_bit_rate_from_info(info):
+    if 'BITRATE' in info[0].attributes:
+        bitrate = info[0].attributes['BITRATE'].value
+    else:
+        bitrate = 0
+    return bitrate
+
+
+def get_musical_key_from_info(info):
+    if 'KEY' in info[0].attributes:
+        musicalKey = info[0].attributes['KEY'].value
+        if len(musicalKey) > MAX_MUSICAL_KEY_LENGTH:
+            musicalKey = musicalKey[0:MAX_MUSICAL_KEY_LENGTH]
+    else:
+        musicalKey = 0
+    return musicalKey
+
+
 def get_last_played_date_from_info(info):
     if 'LAST_PLAYED' in info[0].attributes:
         lastPlayedDateStr = info[0].attributes['LAST_PLAYED'].value
@@ -143,6 +168,7 @@ def get_last_played_date_from_info(info):
         lastPlayedDate = None
     return lastPlayedDate
 
+
 def get_playcount_from_info(info):
     if 'PLAYCOUNT' in info[0].attributes:
         playcount = info[0].attributes['PLAYCOUNT'].value
@@ -150,12 +176,14 @@ def get_playcount_from_info(info):
         playcount = 0
     return playcount
 
+
 def get_rating_from_info(info):
     if 'RATING' in info[0].attributes:
         comment2 = info[0].attributes['RATING'].value
     else:
         comment2 = ''
     return comment2
+
 
 def get_comment_from_info(info):
     if 'COMMENT' in info[0].attributes:
@@ -202,6 +230,7 @@ def get_genre_db_from_genre_name(genreName):
         genre = None
 
     return genre
+
 
 @login_required
 def upload_file(request):
@@ -290,7 +319,7 @@ def import_playlist_from_xml_doc(xmldoc):
         # PLAYLIST TRACKS
         playlist_entry_list = current_playlist.getElementsByTagName('ENTRY')
         track_ids = []
-        
+
         # option 1 we reset all tracks to avoid deletion undetected (could be improved?)
         # playlist.tracks.clear()
 
@@ -313,16 +342,16 @@ def import_playlist_from_xml_doc(xmldoc):
                 track = trackList[0]
                 track_found_count = track_found_count + 1
                 track_ids.append(track.id)
-                playlist.tracks.add(track)  
+                playlist.tracks.add(track)
 
         print('Playlist tracks ids: ', track_ids)
         playlist.track_ids = track_ids
         playlist.save()
 
 
-def get_or_create_single_playlist_from_name(existing_playlist_count: int,
-                                            new_playlist_count: int,
-                                            name: str) -> Playlist:
+def get_or_create_single_playlist_from_name(
+    existing_playlist_count: int, new_playlist_count: int, name: str
+) -> Playlist:
     print('PLAYLIST NAME: ', name)
     existing_playlists = Playlist.objects.filter(name=name)
     if len(existing_playlists) > 0:

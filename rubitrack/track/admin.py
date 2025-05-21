@@ -65,10 +65,12 @@ class TrackAdmin(admin.ModelAdmin):
     search_fields = ['title', 'artist__name']
     ordering = ['title']
 
-    @admin.display(description="Edit Transitions")
     def history_editing(self, obj):
         return format_html("<a href='/track/history_editing/{url}'>{label} (All Transitions)</a>", url=obj.id, label=obj.title)
 
+    history_editing.description = 'Edit Tansitions'
+
+admin.site.register(Track, TrackAdmin)
 
 class ArtistAdmin(admin.ModelAdmin):
     fieldsets = [
@@ -77,7 +79,7 @@ class ArtistAdmin(admin.ModelAdmin):
     inlines = [TrackInline]
 
 
-admin.site.register(Track, TrackAdmin)
+
 admin.site.register(Artist, ArtistAdmin)
 
 
@@ -115,10 +117,9 @@ class CustomPlaylistAdmin(admin.ModelAdmin):
     search_fields = ['name']
     ordering = ['rank']
 
-    @admin.display(description="See All Tranitions")
     def playlist_transitions(self, obj):
         return format_html("<a href='/track/playlist_transitions/{url}'>{label} (All Transitions)</a>", url=obj.id, label=obj.name)
-
+    playlist_transitions.description='plop'
 
 admin.site.register(Playlist, CustomPlaylistAdmin)
 # admin.site.register(Playlist)
