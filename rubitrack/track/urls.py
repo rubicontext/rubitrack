@@ -1,7 +1,7 @@
 from django.urls import path
 
 from . import views
-from . import import_collection, export_collection
+from . import import_collection
 from . import currently_playing
 from . import transition_view
 from .playlist import playlist_transitions
@@ -18,7 +18,6 @@ urlpatterns = [
     path('favicon.ico', RedirectView.as_view(url=staticfiles_storage.url('favicon.ico'))),
     path('static/favicon.ico', RedirectView.as_view(url=staticfiles_storage.url('favicon.ico'))),
     path('import_collection/', import_collection.upload_file, name='import_collection_view'),
-    path('export_collection/', export_collection.export_collection, name='export_collection_view'),
     path('currently_playing/', currently_playing.display_currently_playing, name='currently_playing_view'),
     path('history_editing/<int:trackId>', currently_playing.display_history_editing, name='history_editing_view'),
     # TRANSITIONS
