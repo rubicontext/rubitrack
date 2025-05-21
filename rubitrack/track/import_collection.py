@@ -195,7 +195,7 @@ def get_comment_from_info(info):
     return comment
 
 
-def get_genre_from_info(info: NodeList[Element]):
+def get_genre_from_info(info):
     if 'GENRE' in info[0].attributes:
         genreName = info[0].attributes['GENRE'].value
         if len(genreName) > MAX_GENRE_LENGTH:
