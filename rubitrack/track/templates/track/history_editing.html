@@ -40,81 +40,64 @@
 
 
   <div id="transitionsAllTableDiv">
-    <table id="transitionsAllTable" class="table table-striped table-condensed">
-      <tr>                    
-        <th>Title</th>
-        <th>Artist</th>
-        <th>Type</th>
-        <th>Comment</th>
-        <th>Actions</th>
-        <th>Genre/BPM</th>
-       </tr>
-
-   {% for currentTransition in transitionsAfter %}
-       <tr>                    
-         <td><a href="{% url 'admin:track_track_change' currentTransition.track_source.id %}">
-             {{ currentTransition.track_destination.title|slice:":20" }}
-         </a></td>
-        <td>{{ currentTransition.track_destination.artist.name }}</td>
-       <td><i class="fa fa-forward"></i></td>
-        <td>
-         
-         <input type="text" class="commentTransitionInput" size="50"
-         value="{{ currentTransition.comment }}" transitionId="{{currentTransition.id}}"><br><br>
-        </td>
-        <td>
-      
-       <ul class="list-inline m-0">
-          <li class="list-inline-item">
-             <button class="btn btn-success btn-sm rounded-0" type="button" data-toggle="tooltip" data-placement="top" title="Edit"><i class="fa fa-edit"></i></button>
-         </li>
-
-         <li class="list-inline-item">
-           <a class="remove-btn btn-small" href="#" onclick="return false;">
-             <button class="btn btn-danger btn-sm rounded-0 deleteTransition" 
-             type="button" title="Delete" transitionId="{{currentTransition.id}}"><i class="fa fa-trash"></i></button>
-           </a>
-         </li>
-     </ul>
-    </td>
-    <td>{{ currentTransition.track_destination.genre.name }}
-     {{ currentTransition.track_destination.bpm|floatformat}}
-     </td> 
-     </tr>
-       {% endfor %}
-
-       {% for currentTransition in transitionsBefore %}
-       <tr>                    
-        <td><a href="{% url 'admin:track_track_change' currentTransition.track_destination.id %}">{{ currentTransition.track_source.title }}</a></td>
-        <td>{{ currentTransition.track_source.artist.name }}</td>
-       <td><i class="fa fa-fast-backward"></i></td>
-        <td>
-         
-         <input type="text" class="commentTransitionInput" size="50"
-         value="{{ currentTransition.comment }}" transitionId="{{currentTransition.id}}"><br><br>
-        </td>
-        <td>
-      
-       <ul class="list-inline m-0">
-          <li class="list-inline-item">
-           <a href="{% url 'admin:track_customtracktransition_change' currentTrack.id %}" target="_blank">
-               <button class="btn btn-success btn-sm rounded-0" type="button" data-toggle="tooltip" data-placement="top" title="Edit"><i class="fa fa-edit"></i></button>
-         </a>  
-         <li class="list-inline-item">
-           <a class="remove-btn btn-small" href="#" onclick="return false;">
-             <button class="btn btn-danger btn-sm rounded-0 deleteTransition" 
-             type="button" title="Delete" transitionId="{{currentTransition.id}}", currentTrackId="{{currentTrack.id}}"><i class="fa fa-trash"></i></button>
-           </a>
-         </li>
-     </ul>
-    </td>
-    <td>{{ currentTransition.track_source.genre.name }}
-       {{ currentTransition.track_source.bpm|floatformat}}
-   </td> 
-       </tr>
-       {% endfor %}
-
-          </table>
+    <table id="transitionsAllTable" class="table table-striped table-condensed table-reduced-height">
+        <tr style="height:28px;">
+            <th style="padding:4px 8px;">Title</th>
+            <th style="padding:4px 8px;">Artist</th>
+            <th style="padding:4px 8px;">Type</th>
+            <th style="padding:4px 8px;">Comment</th>
+            <th style="padding:4px 8px;">Del</th>
+            <th style="padding:4px 8px;">Genre/BPM</th>
+        </tr>
+        {% for currentTransition in transitionsAfter %}
+        <tr style="height:28px;">
+            <td style="padding:2px 8px;"><a href="{% url 'admin:track_track_change' currentTransition.track_source.id %}">{{ currentTransition.track_destination.title|slice:":20" }}</a></td>
+            <td style="padding:2px 8px;">{{ currentTransition.track_destination.artist.name }}</td>
+            <td style="padding:2px 8px;"><i class="fa fa-forward"></i></td>
+            <td style="padding:2px 8px;">
+                <input type="text" class="commentTransitionInput" size="40" value="{{ currentTransition.comment }}" transitionId="{{currentTransition.id}}" style="height:22px; font-size:13px; margin:0;"/><br>
+            </td>
+            <td style="padding:2px 8px;">
+                <ul class="list-inline m-0" style="margin-bottom:0;">
+                    <!-- <li class="list-inline-item" style="margin-right:2px;">
+                        <button class="btn btn-success btn-sm rounded-0" type="button" data-toggle="tooltip" data-placement="top" title="Edit" style="padding:2px 6px;"><i class="fa fa-edit"></i></button>
+                    </li> -->
+                    <li class="list-inline-item" style="margin-right:2px;">
+                        <a class="remove-btn btn-small" href="#" onclick="return false;">
+                            <button class="btn btn-danger btn-sm rounded-0 deleteTransition" type="button" title="Delete" transitionId="{{currentTransition.id}}" style="padding:2px 6px;"><i class="fa fa-trash"></i></button>
+                        </a>
+                    </li>
+                </ul>
+            </td>
+            <td style="padding:2px 8px;">{{ currentTransition.track_destination.genre.name }} {{ currentTransition.track_destination.bpm|floatformat }}</td>
+        </tr>
+        {% endfor %}
+        {% for currentTransition in transitionsBefore %}
+        <tr style="height:28px;">
+            <td style="padding:2px 8px;"><a href="{% url 'admin:track_track_change' currentTransition.track_destination.id %}">{{ currentTransition.track_source.title }}</a></td>
+            <td style="padding:2px 8px;">{{ currentTransition.track_source.artist.name }}</td>
+            <td style="padding:2px 8px;"><i class="fa fa-fast-backward"></i></td>
+            <td style="padding:2px 8px;">
+                <input type="text" class="commentTransitionInput" size="40" value="{{ currentTransition.comment }}" transitionId="{{currentTransition.id}}" style="height:22px; font-size:13px; margin:0;"/><br>
+            </td>
+            <td style="padding:2px 8px;">
+                <ul class="list-inline m-0" style="margin-bottom:0;">
+                    <!-- <li class="list-inline-item" style="margin-right:2px;">
+                        <a href="{% url 'admin:track_customtracktransition_change' currentTrack.id %}" target="_blank">
+                            <button class="btn btn-success btn-sm rounded-0" type="button" data-toggle="tooltip" data-placement="top" title="Edit" style="padding:2px 6px;"><i class="fa fa-edit"></i></button>
+                        </a>
+                    </li> -->
+                    <li class="list-inline-item" style="margin-right:2px;">
+                        <a class="remove-btn btn-small" href="#" onclick="return false;">
+                            <button class="btn btn-danger btn-sm rounded-0 deleteTransition" type="button" title="Delete" transitionId="{{currentTransition.id}}" style="padding:2px 6px;"><i class="fa fa-trash"></i></button>
+                        </a>
+                    </li>
+                </ul>
+            </td>
+            <td style="padding:2px 8px;">{{ currentTransition.track_source.genre.name }} {{ currentTransition.track_source.bpm|floatformat }}</td>
+        </tr>
+        {% endfor %}
+    </table>
     </div>
 
     <div class="blue_subtitle_small">Tracklist History </div>
@@ -192,7 +175,49 @@
         </table>
       </div>
 
+      {% if playlistsWithTrack %}
+          <div class="blue_subtitle_small">Playlists featuring this track</div> 
+              <ul>
+              {% for playlist in playlistsWithTrack %}
+                  <li>
+                      <a href="{% url 'playlist_transitions_view' playlist.id %}">{{ playlist.name }}</a>
+                  </li>
+              {% endfor %}
+              </ul>
+          </div>
+      {% endif %}
 
+
+
+
+<style>
+    #transitionsAllTable {
+        font-size: 14px;
+    }
+    .table-reduced-height tr {
+        height: 28px;
+    }
+    .table-reduced-height th, .table-reduced-height td {
+        padding: 2px 8px !important;
+        vertical-align: middle;
+    }
+    .table-reduced-height input[type="text"] {
+        height: 22px;
+        font-size: 13px;
+        margin: 0;
+        padding: 2px 4px;
+    }
+    .table-reduced-height .btn {
+        padding: 2px 6px !important;
+        font-size: 13px;
+    }
+    .table-reduced-height ul.list-inline {
+        margin-bottom: 0;
+    }
+    .table-reduced-height .list-inline-item {
+        margin-right: 2px;
+    }
+</style>
 
 
 <script>
@@ -277,4 +302,3 @@
 
  {% endblock content %}
 
- 

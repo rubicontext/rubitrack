@@ -54,7 +54,7 @@ class Track(models.Model):
     date_last_played = models.DateTimeField('date last played', blank=True, null=True)
 
     def __repr__(self):
-        return f'Track({self.title}, {self.artist.name}, {self.genre.name}, {self.bpm}, {self.musical_key}, {self.ranking})'
+        return f'Track({self.title}, {self.artist.name}, {self.genre.name if self.genre else "N/A"}, {self.bpm if self.bpm else "N/A"}, {self.musical_key if self.musical_key else "N/A"}, {self.ranking if self.ranking else "N/A"})'
 
     class Meta(object):
         ordering = ['position']

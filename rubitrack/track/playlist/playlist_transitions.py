@@ -11,6 +11,7 @@ from track.transition import create_transition
 from ..models import Track, Transition, Playlist
 
 PLAYLIST_TRANSITION_AUTO_GENERATED = 'Generated from Playlist : '
+SEPARATOR_TRACK_ID = 14294
 
 @login_required
 def display_playlist_transitions(request, PlaylistId):
@@ -51,16 +52,16 @@ def get_transitions_from_playlist(current_playlist: Playlist):
     for index_track_id in range(len(track_ids)-1):
         track_source_id = track_ids[index_track_id]
         track_destination_id = track_ids[index_track_id+1]
-        current_transition: Transition = Transition.objects.filter(track_source_id=track_source_id,
+
+        current_transition_qs = Transition.objects.filter(track_source_id=track_source_id,
                                                        track_destination_id=track_destination_id)
-        if not current_transition:
-            current_transition: Transition = create_transition(track_source_id, 
-                                                   track_destination_id,
-                                                   PLAYLIST_TRANSITION_AUTO_GENERATED + current_playlist.name)
+        if not current_transition_qs:
+            current_transition = create_transition(track_source_id, 
+                                       track_destination_id,
+                                       PLAYLIST_TRANSITION_AUTO_GENERATED + current_playlist.name)
             print('Generated auto transition : ', current_transition)
         else:
-            #TODO attention si multiples transitions pour 2 tracks, pas géré
-            current_transition = current_transition[0]
+            current_transition = current_transition_qs[0]
         transitions.append(current_transition)
 
     return transitions
@@ -145,3 +146,7 @@ def delete_all_generated_transitions(request):
     all_genrated_transitions = Transition.objects.filter(comment__contains=PLAYLIST_TRANSITION_AUTO_GENERATED)
     all_genrated_transitions.delete()
     return None
+
+
+def get_playlists_by_track_id(track_id: int) -> list:
+    return Playlist.objects.filter(tracks__id=track_id).order_by('name')

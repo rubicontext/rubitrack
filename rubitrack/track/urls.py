@@ -5,6 +5,9 @@ from . import import_collection
 from . import currently_playing
 from . import transition_view
 from .playlist import playlist_transitions
+from .duplicate.display_duplicate import display_duplicates, merge_tracks
+from .manual_transition import manual_transition
+from .duplicate.manual_merge_duplicate import manual_merge_duplicate
 
 from django.views.generic.base import RedirectView
 from django.contrib.staticfiles.storage import staticfiles_storage
@@ -19,7 +22,7 @@ urlpatterns = [
     path('static/favicon.ico', RedirectView.as_view(url=staticfiles_storage.url('favicon.ico'))),
     path('import_collection/', import_collection.upload_file, name='import_collection_view'),
     path('currently_playing/', currently_playing.display_currently_playing, name='currently_playing_view'),
-    path('history_editing/<int:trackId>', currently_playing.display_history_editing, name='history_editing_view'),
+    path('history_editing/<int:track_id>', currently_playing.display_history_editing, name='history_editing_view'),
     # TRANSITIONS
     path('add_new_transition/', transition_view.add_new_transition, name='add_new_transition_view'),
     path('delete_transition/', transition_view.delete_transition, name='delete_transition_view'),
@@ -73,4 +76,8 @@ urlpatterns = [
         playlist_transitions.delete_all_generated_transitions,
         name='delete_all_generated_transitions_view',
     ),
+    path('display_duplicates/', display_duplicates, name='display_duplicates'),
+    path('merge_tracks/', merge_tracks, name='merge_tracks'),
+    path('manual_transition/', manual_transition, name='manual_transition'),
+    path('manual_merge_duplicate/', manual_merge_duplicate, name='manual_merge_duplicate'),
 ] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)

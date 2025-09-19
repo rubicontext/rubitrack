@@ -165,9 +165,9 @@
         <div class="blue_subtitle_small">Suggestions from our algorithm</div>
         <div id="tableSuggestionAuto">
           <table id="suggestionsAuto" class="table table-striped table-condensed">
-                
-          <tr>                    
-           <th>Title</td>
+
+          <tr>
+           <th>Title</th>
            <th>Artist</td>
            <th>Genre</td>
            <th>Bpm</td>
@@ -195,6 +195,17 @@
         </table>
       </div>
 
+{% if playlistsWithTrack %}
+    <div class="blue_subtitle_small">Playlists featuring this track</div> 
+        <ul>
+        {% for playlist in playlistsWithTrack %}
+            <li>
+                <a href="{% url 'playlist_transitions_view' playlist.id %}">{{ playlist.name }}</a>
+            </li>
+        {% endfor %}
+        </ul>
+    </div>
+{% endif %}
 
 
 
@@ -313,4 +324,4 @@
 
  {% endblock content %}
 
- 
+

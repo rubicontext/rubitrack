@@ -1,0 +1,30 @@
+{% extends 'admin/base_site.html' %}
+{% block content %}
+<h1>Tracks Duplicates</h1>
+<table>
+    <tr>
+        <th style="text-align:left;">Artist</th>
+        <th style="text-align:left;">Title A (long)</th>
+        <th style="text-align:left;">Title B (short)</th>
+        <th>Action</th>
+    </tr>
+    {% for track_a, track_b in duplicates %}
+    <tr>
+        <td style="text-align:left;">{{ track_a.artist.name }}</td>
+        <td style="text-align:left;">{{ track_a.title }}</td>
+        <td style="text-align:left;">{{ track_b.title }}</td>
+        <td>
+            <form method="post" action="{% url 'merge_tracks' %}">
+                {% csrf_token %}
+                <input type="hidden" name="track_a_id" value="{{ track_a.id }}" />
+                <input type="hidden" name="track_b_id" value="{{ track_b.id }}" />
+                <button type="submit" class="btn btn-primary" style="background-color:#283C4F; color:white; border:none;">Merge</button>
+            </form>
+        </td>
+    </tr>
+    {% endfor %}
+</table>
+<div style="margin-top:40px; text-align:center;">
+    <a href="{% url 'manual_merge_duplicate' %}" class="btn btn-danger">Fusion manuelle de deux tracks</a>
+</div>
+{% endblock %}

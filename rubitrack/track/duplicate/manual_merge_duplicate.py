@@ -1,0 +1,33 @@
+from django.shortcuts import render, redirect
+from django.views.decorators.csrf import csrf_exempt
+from ..models import Track, Transition, CurrentlyPlaying
+from django import forms
+
+class ManualMergeForm(forms.Form):
+    track_a = forms.ModelChoiceField(queryset=Track.objects.all().order_by('title'), label="Track à garder (A)")
+    track_b = forms.ModelChoiceField(queryset=Track.objects.all().order_by('title'), label="Track à supprimer (B)")
+
+def merge_duplicate_tracks(track_a_id: int, track_b_id: int):
+    track_a = Track.objects.get(id=track_a_id)
+    track_b = Track.objects.get(id=track_b_id)
+    # Copier toutes les transitions de B vers A
+    for t in Transition.objects.filter(track_source=track_b):
+        Transition.objects.get_or_create(track_source=track_a, track_destination=t.track_destination, defaults={"comment": t.comment})
+    for t in Transition.objects.filter(track_destination=track_b):
+        Transition.objects.get_or_create(track_source=t.track_source, track_destination=track_a, defaults={"comment": t.comment})
+    # Remplacer B par A dans CurrentlyPlaying
+    CurrentlyPlaying.objects.filter(track__title=track_b.title.strip(), track__artist=track_b.artist).update(track=track_a)
+    # Supprimer la track B
+    track_b.delete()
+
+@csrf_exempt
+def manual_merge_duplicate(request):
+    manual_merge_form = ManualMergeForm()
+    if request.method == "POST":
+        form = ManualMergeForm(request.POST)
+        if form.is_valid():
+            track_a = form.cleaned_data["track_a"]
+            track_b = form.cleaned_data["track_b"]
+            merge_duplicate_tracks(track_a.id, track_b.id)
+            return redirect("manual_merge_duplicate")
+    return render(request, 'track/manual_merge_duplicate.html', {'manual_merge_form': manual_merge_form})

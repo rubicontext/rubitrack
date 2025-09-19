@@ -1,0 +1,40 @@
+{% extends 'admin/base_site.html' %}
+{% block content %}
+<h1>Créer une transition manuelle</h1>
+{% if message %}
+    <div class="alert alert-success">{{ message }}</div>
+{% endif %}
+<form method="post">
+    {% csrf_token %}
+    <div class="form-group">
+        <label for="track1_id">Track 1 :</label>
+        <select name="track1_id" class="form-control" required>
+            <option value="">-- Choisir --</option>
+            {% for track in tracks %}
+                <option value="{{ track.id }}">{{ track.title }} ({{ track.artist.name }})</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="form-group">
+        <label for="track2_id">Track 2 :</label>
+        <select name="track2_id" class="form-control" required>
+            <option value="">-- Choisir --</option>
+            {% for track in tracks %}
+                <option value="{{ track.id }}">{{ track.title }} ({{ track.artist.name }})</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="form-group">
+        <label for="direction">Sens de la transition :</label>
+        <select name="direction" class="form-control" required>
+            <option value="right">Track 1 → Track 2</option>
+            <option value="left">Track 2 → Track 1</option>
+        </select>
+    </div>
+    <div class="form-group">
+        <label for="comment">Commentaire :</label>
+        <input type="text" name="comment" class="form-control" />
+    </div>
+    <button type="submit" class="btn btn-primary" style="background-color:#283C4F; color:white; border:none;">Enregistrer la transition</button>
+</form>
+{% endblock %}
