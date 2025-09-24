@@ -76,7 +76,7 @@
         {% endfor %}
         {% for currentTransition in transitionsBefore %}
         <tr style="height:28px;">
-            <td style="padding:2px 8px;"><a href="{% url 'admin:track_track_change' currentTransition.track_source.id %}">{{
+            <td style="padding:2px 8px;"><a href="{% url 'admin:track_track_change' currentTransition.track_source.id %}">{{ 
             currentTransition.track_source.title|slice:":20" }}{{ currentTransition.track_source.artist.name|slice:":20"}}</a></td>
             <!-- <td style="padding:2px 8px;">{{ currentTransition.track_source.artist.name }}</td> -->
             <td style="padding:2px 8px;"><i class="fa fa-fast-backward"></i></td>
