@@ -1,0 +1,20 @@
+{% extends 'admin/base_site.html' %}
+{% block title %}Manual Merge Artists{% endblock title %}
+{% block content %}
+<h1>Manual merge of two artists</h1>
+<form method="post">
+    {% csrf_token %}
+    {{ manual_merge_form.as_p }}
+    <button type="submit" name="manual_merge" class="btn btn-danger">Merge (delete B, keep A)</button>
+</form>
+
+<div style="margin-top: 30px; padding: 15px; background-color: #f8f9fa; border-radius: 5px;">
+    <h4>⚠️ Warning</h4>
+    <p><strong>This action is irreversible!</strong></p>
+    <ul>
+        <li>All tracks from artist B will be reassigned to artist A</li>
+        <li>Artist B will be permanently deleted</li>
+        <li>All transitions and history will be preserved</li>
+    </ul>
+</div>
+{% endblock %}

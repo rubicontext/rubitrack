@@ -58,3 +58,20 @@ def merge_tracks(request):
         merge_duplicate_tracks(id_a, id_b)
         return redirect("display_duplicates")
     return redirect("display_duplicates")
+
+
+def bulk_merge_tracks(request):
+    if request.method == "POST":
+        merge_pairs = request.POST.getlist("merge_pairs")
+        if merge_pairs:
+            merged_count = 0
+            for pair in merge_pairs:
+                try:
+                    track_a_id, track_b_id = pair.split(',')
+                    merge_duplicate_tracks(int(track_a_id), int(track_b_id))
+                    merged_count += 1
+                except Exception as e:
+                    print(f"Erreur lors du merge de la paire {pair}: {e}")
+            print(f"Merged {merged_count} paires de tracks")
+        return redirect("display_duplicates")
+    return redirect("display_duplicates")

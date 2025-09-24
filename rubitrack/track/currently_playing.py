@@ -117,10 +117,11 @@ def refresh_currently_playing_from_log():
     with open(path_to_playlist_log) as playlist_file:
         for current_line in playlist_file:
 
-            # get time of log 08/Jan/2023:20:57:58 and place after
-            index_sep = current_line.find(' ')
-            log_time_raw = current_line[0 : index_sep - 1]
-            log_time_object = datetime.strptime(log_time_raw, '%d/%b/%Y:%H:%M:%S')
+            #get time of log 08/Jan/2023:20:57:58
+            parts = get_log_parts_from_log_line(current_line)
+            if not parts:
+                continue
+            log_time_object = get_log_time_object_from_log_parts(parts)
 
             # manage timezone for comparison
             utc = pytz.UTC
@@ -141,15 +142,12 @@ def save_track_played_to_db_from_log_line(track_line_log):
     # Example log: 08/Dec/2021:14:59:43 +0000|/|0|LALLA - Narcos  (Extended Remix) - Bm - 5\n
     try:
         # Remove trailing newline and split on '|'
-        line = track_line_log.strip()
-        parts = line.split('|')
-        if len(parts) < 4:
-            print("Log line format error:", line)
+        parts = get_log_parts_from_log_line(track_line_log)
+        if not parts:
             return False
 
         # Get time
-        log_time_raw = parts[0].split(' ')[0]
-        log_time_object = datetime.strptime(log_time_raw, '%d/%b/%Y:%H:%M:%S')
+        log_time_object = get_log_time_object_from_log_parts(parts)
 
         # Get the track info part (after last '|')
         track_info = parts[-1].strip()
@@ -198,6 +196,19 @@ def save_track_played_to_db_from_log_line(track_line_log):
     except Exception as e:
         print("Error parsing log line:", track_line_log, e)
         return False
+
+def get_log_time_object_from_log_parts(parts):
+    log_time_raw = parts[0].split(' ')[0]
+    log_time_object = datetime.strptime(log_time_raw, '%d/%b/%Y:%H:%M:%S')
+    return log_time_object
+
+def get_log_parts_from_log_line(track_line_log):
+    line = track_line_log.strip()
+    parts = line.split('|')
+    if len(parts) < 4:
+        print("Log line format error:", line)
+        parts = None
+    return parts
 
 
 # get last played row only
@@ -278,7 +289,7 @@ def get_more_transition_block_history(request, current_track_id=None):
             transitions_after = get_transitions_after(current_track_db)
             return render(
                 request,
-                'track/get_more_transition_block.html',
+                'track/get_more_transition_block_history.html',
                 {
                     'transitionsBefore': transitions_before,
                     'transitionsAfter': transitions_after,
@@ -317,20 +328,41 @@ def get_playing_track_list_history(with_refresh=True, remove_last=True, current_
 
 
 def get_transitions_after(track):
-    transitions = Transition.objects.filter(track_source=track).exclude(track_destination_id=SEPARATOR_TRACK_ID)
+    transitions = Transition.objects.filter(track_source=track).exclude(track_source_id=SEPARATOR_TRACK_ID)
     return transitions
 
 
 def get_transitions_before(track):
-    transitions = Transition.objects.filter(track_destination=track).exclude(track_source_id=SEPARATOR_TRACK_ID)
+    transitions = Transition.objects.filter(track_destination=track).exclude(track_destination_id=SEPARATOR_TRACK_ID)
     return transitions
 
 
-# Les fonctions suivantes ont été déplacées dans track_db_service.py
-# are_track_related
-# get_track_related_text
-# get_track_db_from_title_artist
-# get_track_by_title_and_artist_name
-# save_track_played_to_db_from_log_line
-# get_currently_playing_track_from_db
-# get_currently_playing_track_time_from_db
+@login_required
+def get_all_currently_playing_data(request):
+    """
+    Récupère toutes les données pour la page currently_playing en un seul appel
+    pour éviter les multiples requêtes AJAX et optimiser le rafraîchissement
+    """
+    current_track = get_currently_playing_track(with_refresh=True)
+    if current_track is None:
+        return render(request, 'track/blank.html')
+    
+    playlist_history = get_playing_track_list_history(with_refresh=False)
+    transitions_after = get_transitions_after(current_track)
+    transitions_before = get_transitions_before(current_track)
+    list_track_suggestions = get_list_track_suggestions_auto(current_track)
+    playlists_with_track = get_playlists_by_track_id(current_track.id)
+    
+    return render(
+        request,
+        'track/get_all_currently_playing_data.html',
+        {
+            'currentTrack': current_track,
+            'playlistHistory': playlist_history,
+            'transitionsAfter': transitions_after,
+            'transitionsBefore': transitions_before,
+            'listTrackSuggestions': list_track_suggestions,
+            'playlistsWithTrack': playlists_with_track,
+        },
+    )
+

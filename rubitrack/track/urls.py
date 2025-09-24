@@ -5,9 +5,10 @@ from . import import_collection
 from . import currently_playing
 from . import transition_view
 from .playlist import playlist_transitions
-from .duplicate.display_duplicate import display_duplicates, merge_tracks
+from .duplicate.display_duplicate import display_duplicates, merge_tracks, bulk_merge_tracks
 from .manual_transition import manual_transition
 from .duplicate.manual_merge_duplicate import manual_merge_duplicate
+from .duplicate.manual_merge_artist import manual_merge_artist
 
 from django.views.generic.base import RedirectView
 from django.contrib.staticfiles.storage import staticfiles_storage
@@ -60,6 +61,11 @@ urlpatterns = [
         currently_playing.get_more_transition_block_history,
         name='get_more_transition_block_history',
     ),
+    path(
+        'get_all_currently_playing_data/',
+        currently_playing.get_all_currently_playing_data,
+        name='get_all_currently_playing_data',
+    ),
     # PLAYLISTS
     path(
         'playlist_transitions/<int:PlaylistId>',
@@ -78,6 +84,8 @@ urlpatterns = [
     ),
     path('display_duplicates/', display_duplicates, name='display_duplicates'),
     path('merge_tracks/', merge_tracks, name='merge_tracks'),
+    path('bulk_merge_tracks/', bulk_merge_tracks, name='bulk_merge_tracks'),
     path('manual_transition/', manual_transition, name='manual_transition'),
     path('manual_merge_duplicate/', manual_merge_duplicate, name='manual_merge_duplicate'),
+    path('manual_merge_artist/', manual_merge_artist, name='manual_merge_artist'),
 ] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)

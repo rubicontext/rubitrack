@@ -1,0 +1,21 @@
+{% load admin_urls %}
+
+<!-- Currently Playing Track Block -->
+<div class="section-update" data-target="currentlyPlayingTrackBlock">
+{% include 'track/get_more_currently_playing_track_block.html' %}
+</div>
+
+<!-- Playlist History Table -->
+<div class="section-update" data-target="tablePlaylistHistory">
+{% include 'track/get_more_playlist_history_table.html' %}
+</div>
+
+<!-- Transitions Table -->
+<div class="section-update" data-target="transitionsAllTableDiv">
+{% include 'track/get_more_transition_block.html' %}
+</div>
+
+<!-- Suggestions Table -->
+<div class="section-update" data-target="tableSuggestionAuto">
+{% include 'track/get_more_suggestion_auto_block.html' %}
+</div>

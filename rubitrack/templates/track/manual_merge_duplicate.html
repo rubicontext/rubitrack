@@ -1,9 +1,10 @@
 {% extends 'admin/base_site.html' %}
+{% block title %}Manual Merge Tracks{% endblock title %}
 {% block content %}
-<h1>Fusion manuelle de deux tracks</h1>
+<h1>Merge 2 tracks manually</h1>
 <form method="post">
     {% csrf_token %}
     {{ manual_merge_form.as_p }}
-    <button type="submit" name="manual_merge" class="btn btn-danger">Fusionner (supprimer B, garder A)</button>
+    <button type="submit" name="manual_merge" class="btn btn-danger">Merge (delete B, keep A)</button>
 </form>
 {% endblock %}

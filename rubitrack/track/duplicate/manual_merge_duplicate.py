@@ -3,9 +3,13 @@ from django.views.decorators.csrf import csrf_exempt
 from ..models import Track, Transition, CurrentlyPlaying
 from django import forms
 
+class TrackChoiceField(forms.ModelChoiceField):
+    def label_from_instance(self, obj):
+        return f"{obj.title} ({obj.id})"
+
 class ManualMergeForm(forms.Form):
-    track_a = forms.ModelChoiceField(queryset=Track.objects.all().order_by('title'), label="Track à garder (A)")
-    track_b = forms.ModelChoiceField(queryset=Track.objects.all().order_by('title'), label="Track à supprimer (B)")
+    track_a = TrackChoiceField(queryset=Track.objects.all().order_by('title'), label="Track to keep (A)")
+    track_b = TrackChoiceField(queryset=Track.objects.all().order_by('title'), label="Track to delete (B)")
 
 def merge_duplicate_tracks(track_a_id: int, track_b_id: int):
     track_a = Track.objects.get(id=track_a_id)
