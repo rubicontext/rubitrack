@@ -46,18 +46,18 @@
             <!-- <th style="padding:4px 8px; width:15%;">Artist</th> -->
             <th style="padding:4px 8px; width:5%;">></th>
             <th style="padding:4px 8px; width:35%;">Comment</th>
-            <th style="padding:4px 8px; width:15%;">Actions</th>
+            <!-- <th style="padding:4px 8px; width:15%;">Actions</th> -->
             <!-- <th style="padding:4px 8px; width:15%;">Genre/BPM</th> -->
         </tr>
         {% for currentTransition in transitionsAfter %}
         <tr style="height:28px;">
-            <td style="padding:2px 8px;"><a href="{% url 'admin:track_track_change' currentTransition.track_destination.id %}">{{ currentTransition.track_destination.title|slice:":20" }}{{ currentTransition.track_destination.artist.name|slice:":20"}}</a></td>
+            <td style="padding:2px 8px;"><a href="{% url 'admin:track_track_change' currentTransition.track_destination.id %}">{{ currentTransition.track_destination.title|slice:":20" }} - {{ currentTransition.track_destination.artist.name|slice:":20"}}</a></td>
             <!-- <td style="padding:2px 8px;">{{ currentTransition.track_destination.artist.name }}</td> -->
             <td style="padding:2px 8px;"><i class="fa fa-forward"></i></td>
             <td style="padding:2px 8px;">
                 <input type="text" class="commentTransitionInput" size="40" value="{{ currentTransition.comment }}" transitionId="{{currentTransition.id}}" style="height:26px; font-size:13px; margin:0;"/><br>
-            </td>
-            <td style="padding:2px 8px;">
+<!--             </td>
+            <td style="padding:2px 8px;"> -->
                 <ul class="list-inline m-0" style="margin-bottom:0;">
  <!--                    <li class="list-inline-item" style="margin-right:2px;">
                         <a href="{% url 'history_editing_view' currentTransition.track_destination.id %}" target="_blank">
@@ -76,13 +76,13 @@
         {% endfor %}
         {% for currentTransition in transitionsBefore %}
         <tr style="height:28px;">
-            <td style="padding:2px 8px;"><a href="{% url 'admin:track_track_change' currentTransition.track_source.id %}">{{ currentTransition.track_source.title|slice:":20" }}{{ currentTransition.track_source.artist.name|slice:":20"}}</a></td>
+            <td style="padding:2px 8px;"><a href="{% url 'admin:track_track_change' currentTransition.track_source.id %}">{{ currentTransition.track_source.title|slice:":20" }} - {{ currentTransition.track_source.artist.name|slice:":20"}}</a></td>
             <!-- <td style="padding:2px 8px;">{{ currentTransition.track_source.artist.name }}</td> -->
             <td style="padding:2px 8px;"><i class="fa fa-fast-backward"></i></td>
             <td style="padding:2px 8px;">
                 <input type="text" class="commentTransitionInput" size="40" value="{{ currentTransition.comment }}" transitionId="{{currentTransition.id}}" style="height:26px; font-size:13px; margin:0;"/><br>
-            </td>
-            <td style="padding:2px 8px;">
+<!--             </td>
+            <td style="padding:2px 8px;"> -->
                 <ul class="list-inline m-0" style="margin-bottom:0;">
 <!--                     <li class="list-inline-item" style="margin-right:2px;">
                         <a href="{% url 'history_editing_view' currentTransition.track_source.id %}" target="_blank">
