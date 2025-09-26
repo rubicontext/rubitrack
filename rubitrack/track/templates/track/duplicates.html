@@ -1,0 +1,70 @@
+{% extends 'admin/base_site.html' %}
+{% block title %}Track Duplicates Management{% endblock title %}
+{% block content %}
+<div style="text-align: center; margin-top: 50px;">
+    
+    <div style="display: flex; flex-direction: column; align-items: center; gap: 30px; max-width: 600px; margin: 0 auto;">
+        
+        <!-- Batch Merge Tracks -->
+        <div style="background: #f8f9fa; border-radius: 10px; padding: 30px; width: 100%; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+            <h3 style="color: #28a745; margin-bottom: 15px;">
+                <i class="fa fa-list" style="margin-right: 10px;"></i>
+                Batch Merge Tracks
+            </h3>
+            <p style="color: #666; margin-bottom: 20px;">
+                View all detected duplicate tracks and merge them in batch. 
+                You can select multiple pairs and merge them at once, or handle them individually.
+            </p>
+            <a href="{% url 'manual_merge_track_batch' %}" class="btn btn-success btn-lg" style="background-color: #28a745; color: white; border: none; padding: 12px 30px; font-size: 16px;">
+                <i class="fa fa-tasks" style="margin-right: 8px;"></i>
+                Open Batch Merge
+            </a>
+        </div>
+
+        <!-- Manual Merge 2 Tracks -->
+        <div style="background: #f8f9fa; border-radius: 10px; padding: 30px; width: 100%; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+            <h3 style="color: #dc3545; margin-bottom: 15px;">
+                <i class="fa fa-compress" style="margin-right: 10px;"></i>
+                Manual Merge 2 Tracks
+            </h3>
+            <p style="color: #666; margin-bottom: 20px;">
+                Manually select two specific tracks from dropdown lists to merge them.
+                Useful when you know exactly which tracks you want to combine.
+            </p>
+            <a href="{% url 'manual_merge_track' %}" class="btn btn-danger btn-lg" style="background-color: #dc3545; color: white; border: none; padding: 12px 30px; font-size: 16px;">
+                <i class="fa fa-hand-pointer-o" style="margin-right: 8px;"></i>
+                Manual Selection
+            </a>
+        </div>
+
+        <!-- Manual Merge Artists -->
+        <div style="background: #f8f9fa; border-radius: 10px; padding: 30px; width: 100%; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+            <h3 style="color: #ffc107; margin-bottom: 15px;">
+                <i class="fa fa-user" style="margin-right: 10px;"></i>
+                Manual Merge Artists
+            </h3>
+            <p style="color: #666; margin-bottom: 20px;">
+                Merge two artists into one. All tracks from artist B will be reassigned to artist A,
+                and artist B will be permanently deleted.
+            </p>
+            <a href="{% url 'manual_merge_artist' %}" class="btn btn-warning btn-lg" style="background-color: #ffc107; color: black; border: none; padding: 12px 30px; font-size: 16px;">
+                <i class="fa fa-users" style="margin-right: 8px;"></i>
+                Merge Artists
+            </a>
+        </div>
+
+    </div>
+
+    <div style="margin-top: 50px; padding: 20px; background: #e9ecef; border-radius: 5px; max-width: 600px; margin-left: auto; margin-right: auto;">
+        <h4 style="color: #495057; margin-bottom: 10px;">
+            <i class="fa fa-info-circle" style="margin-right: 8px;"></i>
+            Tips
+        </h4>
+        <ul style="text-align: left; color: #6c757d;">
+            <li><strong>Batch Merge:</strong> Best for cleaning up many duplicates quickly</li>
+            <li><strong>Manual Track Merge:</strong> Best for precise control over specific tracks</li>
+            <li><strong>Artist Merge:</strong> Best for consolidating artist variations (e.g., "DJ Name" + "Dj Name")</li>
+        </ul>
+    </div>
+</div>
+{% endblock %}

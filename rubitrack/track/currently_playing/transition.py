@@ -1,4 +1,4 @@
-from .models import Transition, TransitionType, Track
+from ..models import Transition, TransitionType, Track
 
 
 def create_transition(trackSourceId, trackDestinationId, comment):

@@ -1,6 +1,6 @@
 from django import forms
 from django.shortcuts import render, redirect
-from .models import Track, Transition
+from ..models import Track, Transition
 
 # Vue pour la page de création manuelle de transition
 
@@ -26,7 +26,7 @@ def manual_transition(request):
         else:
             Transition.objects.create(track_source=track2, track_destination=track1, comment=comment)
             message = f"Transition enregistrée : {track2.title} → {track1.title}"
-    return render(request, 'track/manual_transition.html', {
+    return render(request, 'track/currently_playing/manual_transition.html', {
         'tracks': tracks,
         'message': message,
     })

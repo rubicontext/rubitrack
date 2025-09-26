@@ -7,7 +7,7 @@ from django import forms
 from django.shortcuts import render
 
 from track.playlist.playlist_transitions import get_order_rank
-from .models import Playlist, Track, Artist, Genre, Collection
+from ..models import Playlist, Track, Artist, Genre, Collection
 
 from django.contrib.auth.decorators import login_required
 
@@ -241,7 +241,7 @@ def upload_file(request):
             cptNewTracks, cptExistingTracks = handle_uploaded_file(request.FILES['file'], current_user)
             return render(
                 request,
-                'track/import_collection.html',
+                'track/collection/import_collection.html',
                 {
                     'form': form,
                     'nb_new_tracks': cptNewTracks,
@@ -251,7 +251,7 @@ def upload_file(request):
             )
     else:
         form = UploadCollectionForm()
-    return render(request, 'track/import_collection.html', {'form': form})
+    return render(request, 'track/collection/import_collection.html', {'form': form})
 
 
 def get_default_collection_for_user(currentUser):

@@ -6,13 +6,14 @@ from django.shortcuts import render
 from datetime import datetime
 import pytz
 
-from track.suggestions import get_list_track_suggestions_auto
+from track.currently_playing.suggestions import get_list_track_suggestions_auto
 from track.playlist.playlist_transitions import get_playlists_by_track_id, SEPARATOR_TRACK_ID
+from ..constants import REFRESH_INTERVAL_CURRENTLY_PLAYING_MS
 
-from .models import Track, Transition, CurrentlyPlaying
-from .rubi_conf import (RUBI_ICECAST_PLAYLIST_FILE,
+from ..models import Track, Transition, CurrentlyPlaying
+from ..rubi_conf import (RUBI_ICECAST_PLAYLIST_FILE,
                         MAX_PLAYLIST_HISTORY_SIZE)
-from .track_db_service import (
+from ..track_db_service import (
     are_track_related,
     get_track_related_text,
     get_track_by_title_and_artist_name,
@@ -27,7 +28,7 @@ def display_currently_playing(request):
     if current_track is None:
         return render(
             request,
-            'track/currently_playing.html',
+            'track/currently_playing/currently_playing.html',
             {
                 'currentTrack': None,
                 'playlistHistory': None,
@@ -45,7 +46,7 @@ def display_currently_playing(request):
         playlists_with_track = get_playlists_by_track_id(current_track.id)
         return render(
             request,
-            'track/currently_playing.html',
+            'track/currently_playing/currently_playing.html',
             {
                 'currentTrack': current_track,
                 'playlistHistory': playlist_history,
@@ -53,6 +54,7 @@ def display_currently_playing(request):
                 'transitionsBefore': transitions_before,
                 'listTrackSuggestions': list_track_suggestions,
                 'playlistsWithTrack': playlists_with_track,
+                'refreshInterval': REFRESH_INTERVAL_CURRENTLY_PLAYING_MS,
             },
         )
 
@@ -63,7 +65,7 @@ def display_history_editing(request, track_id):
     if current_track is None:
         return render(
             request,
-            'track/history_editing.html',
+            'track/currently_playing/history_editing.html',
             {
                 'currentTrack': None,
                 'playlistHistory': None,
@@ -82,7 +84,7 @@ def display_history_editing(request, track_id):
         print("Edit history for track :", current_track)
         return render(
             request,
-            'track/history_editing.html',
+            'track/currently_playing/history_editing.html',
             {
                 'currentTrack': current_track,
                 'playlistHistory': playlist_history,
@@ -219,7 +221,7 @@ def get_more_played_history_row(request):
         return HttpResponse('')
     else:
         return render(
-            request, 'track/get_more_played_history_row.html', {'currentTrack': currently_playing_track.track}
+            request, 'track/currently_playing/get_more_played_history_row.html', {'currentTrack': currently_playing_track.track}
         )
 
 
@@ -229,7 +231,7 @@ def get_more_playlist_history_table(request):
     last_track_played = get_currently_playing_track(with_refresh=False)
     return render(
         request,
-        'track/get_more_playlist_history_table.html',
+        'track/playlists/get_more_playlist_history_table.html',
         {'playlistHistory': playlist_history_table, 'currentTrack': last_track_played},
     )
 
@@ -237,14 +239,14 @@ def get_more_playlist_history_table(request):
 def get_more_currently_playing_title_block(request):
     currently_playing_track = CurrentlyPlaying.objects.order_by('-date_played')[0]
     return render(
-        request, 'track/get_more_currently_playing_title_block.html', {'currentTrack': currently_playing_track.track}
+        request, 'track/currently_playing/get_more_currently_playing_title_block.html', {'currentTrack': currently_playing_track.track}
     )
 
 
 def get_more_currently_playing_track_block(request):
     currently_playing_track = CurrentlyPlaying.objects.order_by('-date_played')[0]
     return render(
-        request, 'track/get_more_currently_playing_track_block.html', {'currentTrack': currently_playing_track.track}
+        request, 'track/currently_playing/get_more_currently_playing_track_block.html', {'currentTrack': currently_playing_track.track}
     )
 
 
@@ -252,7 +254,7 @@ def get_more_suggestion_auto_block(request):
     currently_playing_track = CurrentlyPlaying.objects.order_by('-date_played')[0]
     current_track = currently_playing_track.track
     list_track_suggestions = get_list_track_suggestions_auto(current_track)
-    return render(request, 'track/get_more_suggestion_auto_block.html', {'listTrackSuggestions': list_track_suggestions})
+    return render(request, 'track/currently_playing/get_more_suggestion_auto_block.html', {'listTrackSuggestions': list_track_suggestions})
 
 
 def get_more_transition_block(request):
@@ -267,7 +269,7 @@ def get_more_transition_block(request):
     print("TRANSITIONS (playing) found before/after", transitions_before, '/', transitions_after)
     return render(
         request,
-        'track/get_more_transition_block.html',
+        'track/currently_playing/get_more_transition_block_currently_playing.html',
         {'transitionsBefore': transitions_before, 'transitionsAfter': transitions_after, 'currentTrack': current_track_db},
     )
 
@@ -289,7 +291,7 @@ def get_more_transition_block_history(request, current_track_id=None):
             transitions_after = get_transitions_after(current_track_db)
             return render(
                 request,
-                'track/get_more_transition_block_history.html',
+                'track/currently_playing/get_more_transition_block_history.html',
                 {
                     'transitionsBefore': transitions_before,
                     'transitionsAfter': transitions_after,
@@ -355,7 +357,7 @@ def get_all_currently_playing_data(request):
     
     return render(
         request,
-        'track/get_all_currently_playing_data.html',
+        'track/currently_playing/get_all_currently_playing_data.html',
         {
             'currentTrack': current_track,
             'playlistHistory': playlist_history,

@@ -1,7 +1,8 @@
 {% extends 'admin/base_site.html' %}
-{% block title %}Manual Merge Tracks{% endblock title %}
+{% block title %}Manual Merge 2 Tracks{% endblock title %}
 {% block content %}
-<h1>Merge 2 tracks manually</h1>
+<h1>Manual merge of 2 tracks</h1>
+<p>Select two tracks from the dropdown lists to merge them manually.</p>
 <form method="post">
     {% csrf_token %}
     {{ manual_merge_form.as_p }}

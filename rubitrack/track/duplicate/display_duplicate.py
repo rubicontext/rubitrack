@@ -47,8 +47,14 @@ def find_duplicate_tracks():
 
 
 def display_duplicates(request):
+    # Fonction pour le menu principal des duplicatas
+    return render(request, 'track/duplicates/duplicates.html')
+
+
+def manual_merge_track_batch(request):
+    # Fonction pour la page de batch merge avec la liste complète des duplicatas
     duplicates = find_duplicate_tracks()
-    return render(request, 'track/duplicates.html', {'duplicates': duplicates})
+    return render(request, 'track/duplicates/manual_merge_track_batch.html', {'duplicates': duplicates})
 
 
 def merge_tracks(request):
@@ -56,8 +62,8 @@ def merge_tracks(request):
         id_a = int(request.POST.get("track_a_id"))
         id_b = int(request.POST.get("track_b_id"))
         merge_duplicate_tracks(id_a, id_b)
-        return redirect("display_duplicates")
-    return redirect("display_duplicates")
+        return redirect("manual_merge_track_batch")
+    return redirect("manual_merge_track_batch")
 
 
 def bulk_merge_tracks(request):
@@ -73,5 +79,5 @@ def bulk_merge_tracks(request):
                 except Exception as e:
                     print(f"Erreur lors du merge de la paire {pair}: {e}")
             print(f"Merged {merged_count} paires de tracks")
-        return redirect("display_duplicates")
-    return redirect("display_duplicates")
+        return redirect("manual_merge_track_batch")
+    return redirect("manual_merge_track_batch")

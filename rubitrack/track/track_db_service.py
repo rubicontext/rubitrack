@@ -123,23 +123,44 @@ def get_track_db_from_title_artist(track_title: str, artist_db: Artist):
     return track_db
 
 
+def get_artist_db_from_artist_name(artist_name):
+    """
+    Get artist from database by name, with fallback strategies:
+    1. Exact match
+    2. Similar match with character differences
+    3. Contains match
+    4. Create new artist if none found
+    """
+    # Try to find exact artist match first
+    artist_list = Artist.objects.filter(name=artist_name)
+    if len(artist_list) >= 1:
+        return artist_list[0]
+    
+    # Try to find similar artist with character difference detection
+    all_artists = Artist.objects.all()
+    for artist in all_artists:
+        if is_similar_with_char_diff(artist_name, artist.name, max_diff=1):
+            print("FOUND similar artist with 1 char difference:", artist.name, "original:", artist_name)
+            return artist
+    
+    # Try to find artist with icontains
+    artist_list = Artist.objects.filter(name__icontains=artist_name)
+    if len(artist_list) > 0:
+        print("FOUND with icontains:", artist_list[0].name, " original:", artist_name)
+        return artist_list[0]
+
+    # No similar artist found, create new one
+    artist_db = Artist()
+    artist_db.name = artist_name
+    artist_db.save()
+    print("WARNING Created new artist:", artist_name)
+    
+    return artist_db
+
+
 def get_track_by_title_and_artist_name(track_title, artist_name):
     print("about to look for track:", track_title, "By artist :", artist_name)
-    artist_list = Artist.objects.filter(name=artist_name)
-    # create artist if needed
-    if len(artist_list) < 1:
-        # check for close matches by same artists
-        artist_list = Artist.objects.filter(name__icontains=artist_name)
-        if len(artist_list) > 0:
-            artist_db = artist_list[0]
-        else:
-            artist_db = Artist()
-            artist_db.name = artist_name
-            artist_db.save()
-            print("WARNING Created new artist:", artist_name)
-    else:
-        artist_db = artist_list[0]
-
+    artist_db = get_artist_db_from_artist_name(artist_name)
     return get_track_db_from_title_artist(track_title, artist_db)
 
 

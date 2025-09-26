@@ -1,4 +1,4 @@
-from .rubi_conf import MAX_SUGGESTIONS_AUTO_SIZE
+from ..rubi_conf import MAX_SUGGESTIONS_AUTO_SIZE
 from track.models import Track
 
 

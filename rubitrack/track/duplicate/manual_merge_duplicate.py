@@ -33,5 +33,5 @@ def manual_merge_duplicate(request):
             track_a = form.cleaned_data["track_a"]
             track_b = form.cleaned_data["track_b"]
             merge_duplicate_tracks(track_a.id, track_b.id)
-            return redirect("manual_merge_duplicate")
-    return render(request, 'track/manual_merge_duplicate.html', {'manual_merge_form': manual_merge_form})
+            return redirect("manual_merge_track")
+    return render(request, 'track/duplicates/manual_merge_track.html', {'manual_merge_form': manual_merge_form})

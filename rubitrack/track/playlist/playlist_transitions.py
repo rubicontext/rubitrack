@@ -6,7 +6,7 @@ from django.shortcuts import render
 
 from django.contrib.auth.decorators import login_required
 
-from track.transition import create_transition
+from track.currently_playing.transition import create_transition
 
 from ..models import Track, Transition, Playlist
 
@@ -19,7 +19,7 @@ def display_playlist_transitions(request, PlaylistId):
     if currentPlaylist is None:
         return render(
             request,
-            'track/playlist_transitions.html',
+            'track/playlists/playlist_transitions.html',
             {
                 'currentPlaylist': None,
                 'playlistTransitions': None,
@@ -33,7 +33,7 @@ def display_playlist_transitions(request, PlaylistId):
         print("All transitions for playlist : ", currentPlaylist)
         return render(
             request,
-            'track/playlist_transitions.html',
+            'track/playlists/playlist_transitions.html',
             {
                 'currentPlaylist': currentPlaylist,
                 'playlistTransitions': playlistTransitions,

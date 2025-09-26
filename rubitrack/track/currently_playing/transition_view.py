@@ -1,5 +1,5 @@
 from track.models import Transition
-from track.transition import create_transition
+from track.currently_playing.transition import create_transition
 
 from .currently_playing import get_more_transition_block, get_more_transition_block_history
 

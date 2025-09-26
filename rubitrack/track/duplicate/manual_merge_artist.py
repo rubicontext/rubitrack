@@ -48,9 +48,9 @@ def manual_merge_artist(request):
             # Safety check: prevent merging an artist with itself
             if artist_a.id == artist_b.id:
                 form.add_error(None, "Cannot merge an artist with itself")
-                return render(request, 'track/manual_merge_artist.html', {'manual_merge_form': form})
+                return render(request, 'track/duplicates/manual_merge_artist.html', {'manual_merge_form': form})
             
             merge_duplicate_artists(artist_a.id, artist_b.id)
             return redirect("manual_merge_artist")
     
-    return render(request, 'track/manual_merge_artist.html', {'manual_merge_form': manual_merge_form})
+    return render(request, 'track/duplicates/manual_merge_artist.html', {'manual_merge_form': manual_merge_form})
