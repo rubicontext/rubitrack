@@ -1,5 +1,4 @@
-from ..rubi_conf import MAX_SUGGESTIONS_AUTO_SIZE
-from track.models import Track
+from track.models import Track, Config
 
 
 def get_suggestions_same_artist(track):
@@ -20,7 +19,7 @@ def get_list_track_suggestions_auto(track):
     if track is None or track.bpm is None:
         return None
 
-    listTracks = (
+    list_tracks = (
         Track.objects.filter(
             comment__icontains=track.genre,
             musical_key=track.musical_key,
@@ -31,8 +30,12 @@ def get_list_track_suggestions_auto(track):
         .order_by('bpm')
     )
 
-    if len(listTracks) > MAX_SUGGESTIONS_AUTO_SIZE:
-        listTracks = listTracks[0: MAX_SUGGESTIONS_AUTO_SIZE - 1]
-    return listTracks
+    # Get max suggestions from config
+    config = Config.get_config()
+    max_suggestions = config.max_suggestions_auto_size
+    
+    if len(list_tracks) > max_suggestions:
+        list_tracks = list_tracks[0: max_suggestions - 1]
+    return list_tracks
 
 

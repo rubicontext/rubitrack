@@ -7,7 +7,7 @@
     {% for currentTransition in transitionsAfter %}
     <tr style="height:28px;">
         <td style="padding:2px 8px;"><a href="{% url 'history_editing_view' currentTransition.track_destination.id %}">{{ currentTransition.track_destination.title|slice:":20" }} - <span class="artist_green_flashy">{{ currentTransition.track_destination.artist.name|slice:":20" }}</span></a></td>
-        <td style="padding:2px 8px;"><i class="fa fa-forward"></i></td>
+        <td style="padding:2px 8px;"><i class="fa fa-forward transition-after" style="color:#28a745 !important;"></i></td>
         <td style="padding:2px 8px;">
             <input type="text" class="commentTransitionInput" size="60" value="{{ currentTransition.comment }}" transitionId="{{currentTransition.id}}" style="height:26px; font-size:13px; margin:0; width: calc(100% - 40px); display: inline-block;"/>
             <a class="remove-btn btn-small" href="#" onclick="return false;" style="display: inline-block; margin-left: 5px;">
@@ -19,7 +19,7 @@
     {% for currentTransition in transitionsBefore %}
     <tr style="height:28px;">
         <td style="padding:2px 8px;"><a href="{% url 'history_editing_view' currentTransition.track_source.id %}">{{ currentTransition.track_source.title }} - <span class="artist_green_flashy">{{ currentTransition.track_source.artist.name }}</span></a></td>
-        <td style="padding:2px 8px;"><i class="fa fa-fast-backward"></i></td>
+        <td style="padding:2px 8px;"><i class="fa fa-fast-backward transition-before" style="color:#dc3545 !important;"></i></td>
         <td style="padding:2px 8px;">
             <input type="text" class="commentTransitionInput" size="60" value="{{ currentTransition.comment }}" transitionId="{{currentTransition.id}}" style="height:26px; font-size:13px; margin:0; width: calc(100% - 40px); display: inline-block;"/>
             <a class="remove-btn btn-small" href="#" onclick="return false;" style="display: inline-block; margin-left: 5px;">
@@ -28,4 +28,31 @@
         </td>
     </tr>
     {% endfor %}
+    
+    <!-- Ligne des cue points intégrée dans la table des transitions -->
+    <tr style="height:10px;">
+        <td colspan="3" style="padding:0; margin:0;">
+            <table style="width:100%; margin:0; padding:0; font-size:8px; line-height:0.8; border:none;">
+                <tr style="height:10px;">
+                    {% for time in cue_points_times %}
+                        {% with idx=forloop.counter0 %}
+                            {% if idx < 4 %}
+                                {% if idx == 0 %}<td style="background:#e6fff5; text-align:center; min-width:40px; padding:0px 1px; height:10px; vertical-align:middle; border:none;">{% endif %}
+                                {% if idx == 1 %}<td style="background:#c6f7e2; text-align:center; min-width:40px; padding:0px 1px; height:10px; vertical-align:middle; border:none;">{% endif %}
+                                {% if idx == 2 %}<td style="background:#b3e5d6; text-align:center; min-width:40px; padding:0px 1px; height:10px; vertical-align:middle; border:none;">{% endif %}
+                                {% if idx == 3 %}<td style="background:#a2d9ce; color:#333; text-align:center; min-width:40px; padding:0px 1px; height:10px; vertical-align:middle; border:none;">{% endif %}
+                            {% else %}
+                                {% if idx == 4 %}<td style="background:#e6f0ff; text-align:center; min-width:40px; padding:0px 1px; height:10px; vertical-align:middle; border:none;">{% endif %}
+                                {% if idx == 5 %}<td style="background:#c6dbff; text-align:center; min-width:40px; padding:0px 1px; height:10px; vertical-align:middle; border:none;">{% endif %}
+                                {% if idx == 6 %}<td style="background:#b3cfff; text-align:center; min-width:40px; padding:0px 1px; height:10px; vertical-align:middle; border:none;">{% endif %}
+                                {% if idx == 7 %}<td style="background:#a2bfff; color:#333; text-align:center; min-width:40px; padding:0px 1px; height:10px; vertical-align:middle; border:none;">{% endif %}
+                            {% endif %}
+                            {{ time|default:"-"|safe }}
+                            </td>
+                        {% endwith %}
+                    {% endfor %}
+                </tr>
+            </table>
+        </td>
+    </tr>
 </table>

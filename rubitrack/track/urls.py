@@ -12,7 +12,8 @@ from .currently_playing.currently_playing import (
     get_more_suggestion_auto_block,
     get_more_transition_block,
     get_more_transition_block_history,
-    get_all_currently_playing_data
+    get_all_currently_playing_data,
+    ajax_cue_points
 )
 from .currently_playing.transition_view import (
     add_new_transition,
@@ -24,6 +25,10 @@ from .duplicate.display_duplicate import display_duplicates, manual_merge_track_
 from .currently_playing.manual_transition import manual_transition
 from .duplicate.manual_merge_duplicate import manual_merge_duplicate
 from .duplicate.manual_merge_artist import manual_merge_artist
+from .currently_playing.suggestions_block_view import ajax_suggestions, suggestions_block
+from .config_views import config_view, config_reset_view
+from .tools_views import tools_index, cleanup_musical_keys, cue_points_overview
+from .views_import_musical_keys import import_musical_keys_view
 
 from django.views.generic.base import RedirectView
 from django.contrib.staticfiles.storage import staticfiles_storage
@@ -81,6 +86,7 @@ urlpatterns = [
         get_all_currently_playing_data,
         name='get_all_currently_playing_data',
     ),
+    path('ajax_cue_points/', ajax_cue_points, name='ajax_cue_points'),
     # PLAYLISTS
     path(
         'playlist_transitions/<int:PlaylistId>',
@@ -97,6 +103,7 @@ urlpatterns = [
         playlist_transitions.delete_all_generated_transitions,
         name='delete_all_generated_transitions_view',
     ),
+    path('tools/', tools_index, name='tools'),
     path('duplicates/', display_duplicates, name='duplicates'),
     path('manual_merge_track_batch/', manual_merge_track_batch, name='manual_merge_track_batch'),
     path('merge_tracks/', merge_tracks, name='merge_tracks'),
@@ -104,4 +111,19 @@ urlpatterns = [
     path('manual_transition/', manual_transition, name='manual_transition'),
     path('manual_merge_track/', manual_merge_duplicate, name='manual_merge_track'),
     path('manual_merge_artist/', manual_merge_artist, name='manual_merge_artist'),
+    # SUGGESTIONS
+    path('ajax_suggestions/', ajax_suggestions, name='ajax_suggestions'),
+    path('suggestions_block/<int:track_id>/', suggestions_block, name='suggestions_block'),
+    path('test_suggestions/<int:track_id>/', suggestions_block, name='test_suggestions'),
+    # CONFIGURATION
+    path('config/', config_view, name='config'),
+    path('config/reset/', config_reset_view, name='config_reset'),
+    # TOOLS
+    path('tools/', tools_index, name='tools'),
+    path('tools/cleanup_musical_keys/', cleanup_musical_keys, name='cleanup_musical_keys'),
+    path('tools/cue_points/', cue_points_overview, name='cue_points_overview'),
 ] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
+
+urlpatterns += [
+    path('admin/import-musical-keys/', import_musical_keys_view, name='import_musical_keys'),
+]

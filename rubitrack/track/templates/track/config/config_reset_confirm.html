@@ -1,0 +1,122 @@
+{% extends "admin/base_site.html" %}
+
+{% block title %}Reset Configuration{% endblock %}
+
+{% block content %}
+<div class="reset-container">
+    <div class="reset-header">
+        <h1>Remettre la configuration à zéro</h1>
+        <p class="reset-warning">
+            ⚠️ Cette action va restaurer tous les paramètres à leurs valeurs par défaut.
+            Cette action ne peut pas être annulée.
+        </p>
+    </div>
+
+    <div class="reset-details">
+        <h3>Les valeurs suivantes seront restaurées :</h3>
+        <ul>
+            <li>Intervalles de rafraîchissement : 10000ms / 30000ms</li>
+            <li>Fichier playlist Icecast : /var/log/icecast2/playlist.log</li>
+            <li>Taille max historique : 10</li>
+            <li>Suggestions automatiques : 20</li>
+            <li>Longueurs max titre/artiste : 20 caractères</li>
+            <li>BPM par défaut : 120.0</li>
+            <li>Genre par défaut : "Unknown"</li>
+            <li>Max suggestions API : 10</li>
+            <li>Max historique playlist : 50</li>
+            <li>Taille max upload : 10 MB</li>
+            <li>Taille commentaire : 60 caractères</li>
+            <li>Durée animation : 300ms</li>
+        </ul>
+    </div>
+
+    <form method="post" class="reset-form">
+        {% csrf_token %}
+        <div class="reset-actions">
+            <button type="submit" class="btn btn-danger">
+                <i class="fas fa-exclamation-triangle"></i> 
+                Oui, remettre à zéro
+            </button>
+            <a href="{% url 'config_view' %}" class="btn btn-secondary">
+                <i class="fas fa-times"></i> 
+                Annuler
+            </a>
+        </div>
+    </form>
+</div>
+
+<style>
+.reset-container {
+    max-width: 600px;
+    margin: 50px auto;
+    padding: 30px;
+    text-align: center;
+}
+
+.reset-header {
+    margin-bottom: 30px;
+}
+
+.reset-warning {
+    background-color: #fff3cd;
+    border: 1px solid #ffeaa7;
+    color: #856404;
+    padding: 15px;
+    border-radius: 4px;
+    margin: 20px 0;
+}
+
+.reset-details {
+    background-color: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    padding: 20px;
+    margin: 20px 0;
+    text-align: left;
+}
+
+.reset-details h3 {
+    color: #495057;
+    margin-bottom: 15px;
+}
+
+.reset-details ul {
+    list-style-type: disc;
+    margin-left: 20px;
+}
+
+.reset-details li {
+    margin-bottom: 5px;
+    color: #6c757d;
+}
+
+.reset-actions {
+    margin-top: 30px;
+}
+
+.btn {
+    padding: 12px 25px;
+    margin: 0 10px;
+    border-radius: 4px;
+    text-decoration: none;
+    display: inline-block;
+    font-size: 16px;
+}
+
+.btn-danger {
+    background-color: #dc3545;
+    border-color: #dc3545;
+    color: white;
+}
+
+.btn-secondary {
+    background-color: #6c757d;
+    border-color: #6c757d;
+    color: white;
+}
+
+.btn:hover {
+    opacity: 0.9;
+}
+</style>
+{% endblock %}

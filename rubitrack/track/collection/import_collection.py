@@ -7,7 +7,8 @@ from django import forms
 from django.shortcuts import render
 
 from track.playlist.playlist_transitions import get_order_rank
-from ..models import Playlist, Track, Artist, Genre, Collection
+from ..models import Playlist, Track, Artist, Genre, Collection, CuePoint, TrackCuePoints
+from ..musical_key_utils import extract_musical_key_from_filename, get_conflicting_musical_keys, normalize_musical_key_notation
 
 from django.contrib.auth.decorators import login_required
 
@@ -90,7 +91,20 @@ def handle_uploaded_file(file, user):
         track.ranking = ranking
         track.playcount = playcount
         track.date_last_played = lastPlayedDate
-        track.musical_key = musicalKey
+        
+        # Utilisation de la méthode normalize pour déterminer la clé musicale
+        # Priorité : champ KEY -> nom de fichier
+        determined_key = normalize_musical_key_notation(musicalKey) if musicalKey else extract_musical_key_from_filename(file_name)
+        track.musical_key = determined_key
+        
+        # Log pour debug
+        if determined_key:
+            if determined_key != musicalKey:
+                print(f"🔄 Clé musicale pour '{title}': {musicalKey} → {determined_key}")
+        else:
+            if musicalKey:
+                print(f"⚠️  Impossible de normaliser la clé pour '{title}': {musicalKey}")
+            
         track.bitrate = bitrate
         track.bpm = bpm
         track.audio_id = audio_id
@@ -100,6 +114,9 @@ def handle_uploaded_file(file, user):
 
         track.save()
         add_track_to_user_collection(userCollection, track)
+        
+        # Extract and save cue points
+        extract_and_save_cue_points(current_entry, track)
 
     import_playlist_from_xml_doc(xmldoc)
 
@@ -277,21 +294,120 @@ def add_track_to_user_collection(collection: Collection, track: Track) -> bool:
 def get_ranking_from_xml_info(info) -> int:
     """convert ranking from traktor (0-255) to regular 1-5 star system"""
     if 'RANKING' not in info[0].attributes:
-        return None
+        return 0  # Retourner 0 au lieu de None
     rankingTraktor = info[0].attributes['RANKING'].value
-    if rankingTraktor == 255:
+    
+    # Convertir en entier pour comparaison
+    try:
+        ranking_int = int(rankingTraktor)
+    except (ValueError, TypeError):
+        return 0
+        
+    if ranking_int == 255:
         ranking = 5
-    elif rankingTraktor == 204:
+    elif ranking_int == 204:
         ranking = 4
-    elif rankingTraktor == 153:
+    elif ranking_int == 153:
         ranking = 3
-    elif rankingTraktor == 99:
+    elif ranking_int == 99:
         ranking = 2
-    elif rankingTraktor == 51:
+    elif ranking_int == 51:
         ranking = 1
     else:
         ranking = 0
     return ranking
+
+
+def extract_and_save_cue_points(current_entry, track):
+    """
+    Extract cue points from XML entry and save them to TrackCuePoints
+    """
+    cue_points_list = current_entry.getElementsByTagName('CUE_V2')
+    
+    if not cue_points_list or len(cue_points_list) == 0:
+        print(f"No cue points found for track: {track.title}")
+        return
+    
+    # Get or create TrackCuePoints for this track
+    track_cue_points, created = TrackCuePoints.objects.get_or_create(track=track)
+    
+    # Clear existing cue points if we're re-importing
+    for i in range(1, 9):
+        old_cue_point = getattr(track_cue_points, f'cue_point_{i}')
+        if old_cue_point:
+            old_cue_point.delete()
+        setattr(track_cue_points, f'cue_point_{i}', None)
+    
+    cue_point_count = 0
+    
+    for cue_point_xml in cue_points_list:
+        if cue_point_count >= 8:  # Maximum 8 cue points
+            break
+            
+        # Extract position/time from START attribute (in milliseconds)
+        if 'START' not in cue_point_xml.attributes:
+            continue
+            
+        start_ms = cue_point_xml.attributes['START'].value
+        
+        try:
+            # Convert milliseconds to MM:SS format
+            total_seconds = int(float(start_ms)) // 1000
+            minutes = total_seconds // 60
+            seconds = total_seconds % 60
+            time_formatted = f"{minutes}:{seconds:02d}"
+        except (ValueError, TypeError):
+            print(f"Invalid START time for cue point: {start_ms}")
+            continue
+        
+        # Extract type if available (NAME attribute)
+        cue_type = ""
+        if 'NAME' in cue_point_xml.attributes:
+            cue_type = cue_point_xml.attributes['NAME'].value
+            
+        # Extract additional info for comment (TYPE attribute and other details)
+        cue_comment = cue_type  # Use NAME as base comment
+        if 'TYPE' in cue_point_xml.attributes:
+            type_value = cue_point_xml.attributes['TYPE'].value
+            if cue_comment and type_value != cue_type:
+                cue_comment += f" (Type: {type_value})"
+            elif not cue_comment:
+                cue_comment = f"Type: {type_value}"
+                
+        # Add HOTCUE info if available
+        if 'HOTCUE' in cue_point_xml.attributes:
+            hotcue = cue_point_xml.attributes['HOTCUE'].value
+            if hotcue != "0":
+                cue_comment += f" [Hotcue {hotcue}]"
+            
+        # Create CuePoint
+        cue_point = CuePoint.objects.create(
+            time=time_formatted,
+            type=cue_type,
+            comment=cue_comment
+        )
+        
+        # Assign to TrackCuePoints
+        cue_point_count += 1
+        setattr(track_cue_points, f'cue_point_{cue_point_count}', cue_point)
+        
+        print(f"Created cue point {cue_point_count} for {track.title}: {time_formatted} ({cue_type})")
+    
+    track_cue_points.save()
+    print(f"Saved {cue_point_count} cue points for track: {track.title}")
+
+
+def convert_milliseconds_to_time_format(milliseconds_str):
+    """
+    Convert milliseconds string to MM:SS format
+    """
+    try:
+        total_seconds = int(float(milliseconds_str)) // 1000
+        minutes = total_seconds // 60
+        seconds = total_seconds % 60
+        return f"{minutes}:{seconds:02d}"
+    except (ValueError, TypeError):
+        return "0:00"
 
 
 def import_playlist_from_xml_doc(xmldoc):

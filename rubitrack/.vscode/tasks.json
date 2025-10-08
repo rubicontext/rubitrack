@@ -1,0 +1,17 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "Run Django Server",
+			"type": "shell",
+			"command": "/home/acar/.pyenv/versions/3.12.11/envs/py12/bin/python",
+			"args": [
+				"manage.py",
+				"runserver"
+			],
+			"group": "build",
+			"isBackground": true,
+			"problemMatcher": []
+		}
+	]
+}

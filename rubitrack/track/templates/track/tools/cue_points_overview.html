@@ -1,0 +1,250 @@
+{% extends "track/base.html" %}
+{% load static %}
+{% load musical_key_filters %}
+
+{% block title %}Cue Points Overview - RubiTrack{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <h1>🎯 Cue Points Overview</h1>
+            <p class="text-muted">Vue d'ensemble des points de repère (cue points) de votre collection</p>
+        </div>
+    </div>
+
+    <!-- Statistiques -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <h4>{{ total_tracks }}</h4>
+                    <p>Total Tracks</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-success text-white">
+                <div class="card-body">
+                    <h4>{{ tracks_with_cue_points }}</h4>
+                    <p>Tracks with Cue Points</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-info text-white">
+                <div class="card-body">
+                    <h4>{{ total_cue_points }}</h4>
+                    <p>Total Cue Points</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-warning text-white">
+                <div class="card-body">
+                    <h4>{{ tracks_with_cue_points|floatformat:0 }}%</h4>
+                    <p>Coverage</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Types de Cue Points -->
+    {% if cue_point_types %}
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5>📊 Types de Cue Points</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        {% for type_info in cue_point_types %}
+                        <div class="col-md-3 mb-2">
+                            <div class="cue-point-type-card">
+                                <strong>{{ type_info.type|default:"Sans type" }}</strong>
+                                <span class="badge badge-secondary">{{ type_info.count }}</span>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Liste des Tracks avec Cue Points -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5>🎵 Tracks avec Cue Points ({{ tracks_with_cue_points_details|length }} premiers)</h5>
+                </div>
+                <div class="card-body">
+                    {% if tracks_with_cue_points_details %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Track</th>
+                                    <th>Artist</th>
+                                    <th>Genre</th>
+                                    <th>Musical Key</th>
+                                    <th>Cue Points Count</th>
+                                    <th>Sample Cue Points</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for track_info in tracks_with_cue_points_details %}
+                                <tr>
+                                    <td>
+                                        <strong>{{ track_info.track.title|truncatewords:5 }}</strong>
+                                    </td>
+                                    <td>
+                                        <span class="artist_green_flashy">{{ track_info.track.artist.name|truncatewords:3 }}</span>
+                                    </td>
+                                    <td>
+                                        {% if track_info.track.genre %}
+                                            <span class="badge badge-light">{{ track_info.track.genre.name }}</span>
+                                        {% else %}
+                                            <span class="text-muted">--</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if track_info.track.musical_key %}
+                                            {% musical_key_badge track_info.track.musical_key %}
+                                        {% else %}
+                                            <span class="text-muted">--</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <span class="badge badge-primary">{{ track_info.cue_points_count }}/8</span>
+                                    </td>
+                                    <td>
+                                        <div class="cue-points-preview">
+                                            {% for cue_point in track_info.cue_points %}
+                                            <span class="cue-point-badge" title="{{ cue_point.comment }}">
+                                                <i class="fas fa-map-marker-alt"></i>
+                                                {{ cue_point.time|default:"-" }}
+                                                {% if cue_point.type %}
+                                                    <small>({{ cue_point.type }})</small>
+                                                {% endif %}
+                                            </span>
+                                            {% endfor %}
+                                            {% if track_info.cue_points_count > 3 %}
+                                            <span class="text-muted">... +{{ track_info.cue_points_count|add:"-3" }} more</span>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <a href="{% url 'history_editing_view' track_info.track.id %}" class="btn btn-sm btn-outline-primary">
+                                            <i class="fas fa-edit"></i> Edit
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="text-center text-muted py-5">
+                        <i class="fas fa-map-marker-alt fa-3x mb-3"></i>
+                        <h5>Aucun cue point trouvé</h5>
+                        <p>Importez un fichier collection.nml avec des cue points pour commencer.</p>
+                        <a href="{% url 'import_collection_view' %}" class="btn btn-primary">
+                            <i class="fas fa-upload"></i> Importer Collection
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Actions -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5>🔧 Actions</h5>
+                </div>
+                <div class="card-body">
+                    <div class="btn-group" role="group">
+                        <a href="{% url 'import_collection_view' %}" class="btn btn-primary">
+                            <i class="fas fa-upload"></i> Importer Collection
+                        </a>
+                        <a href="{% url 'tools' %}" class="btn btn-secondary">
+                            <i class="fas fa-arrow-left"></i> Retour aux Tools
+                        </a>
+                        <a href="/admin/track/cuepoint/" class="btn btn-outline-primary">
+                            <i class="fas fa-cog"></i> Admin Cue Points
+                        </a>
+                        <a href="/admin/track/trackcuepoints/" class="btn btn-outline-primary">
+                            <i class="fas fa-cog"></i> Admin Track Cue Points
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.cue-point-type-card {
+    background: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    padding: 10px;
+    text-align: center;
+}
+
+.cue-points-preview {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+}
+
+.cue-point-badge {
+    background: #e9ecef;
+    border: 1px solid #ced4da;
+    border-radius: 4px;
+    padding: 2px 6px;
+    font-size: 0.75em;
+    white-space: nowrap;
+}
+
+.cue-point-badge i {
+    color: #52d3aa;
+    margin-right: 2px;
+}
+
+.artist_green_flashy {
+    color: #52d3aa;
+    font-weight: 500;
+}
+
+.card {
+    border: none;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    margin-bottom: 20px;
+}
+
+.card-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-bottom: none;
+}
+
+.btn-outline-primary {
+    border-color: #52d3aa;
+    color: #52d3aa;
+}
+
+.btn-outline-primary:hover {
+    background-color: #52d3aa;
+    border-color: #52d3aa;
+}
+</style>
+{% endblock %}

@@ -1,0 +1,193 @@
+{% extends "admin/base_site.html" %}
+
+{% block title %}RubiTrack - Cleanup Musical Keys{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <h1 class="mb-4">🎵 Cleanup Musical Keys</h1>
+            
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'tools' %}">Tools</a></li>
+                    <li class="breadcrumb-item active">Cleanup Musical Keys</li>
+                </ol>
+            </nav>
+
+            {% if messages %}
+                {% for message in messages %}
+                <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="close" data-dismiss="alert">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                {% endfor %}
+            {% endif %}
+
+            <div class="card mb-4">
+                <div class="card-header bg-info text-white">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-info-circle"></i> Fonctionnement
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <p>Cette fonction va :</p>
+                    <ol>
+                        <li><strong>Scanner toutes les tracks</strong> de votre collection</li>
+                        <li><strong>Analyser les titres</strong> à la recherche de clés musicales au format <code>"Titre - Clé - Ranking"</code></li>
+                        <li><strong>Extraire et normaliser</strong> les clés trouvées vers la notation traditionnelle (A#m, F, etc.)</li>
+                        <li><strong>Mettre à jour le champ musical_key</strong> sans modifier le titre de la track</li>
+                    </ol>
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <strong>Note :</strong> Cette opération ne modifie que le champ <code>musical_key</code>. 
+                        Les titres des tracks restent inchangés.
+                    </div>
+                </div>
+            </div>
+
+            <form method="post" id="cleanup-form">
+                {% csrf_token %}
+                
+                <div class="card mb-4">
+                    <div class="card-header bg-secondary text-white">
+                        <h5 class="card-title mb-0">
+                            <i class="fas fa-filter"></i> Options de nettoyage
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="form-check mb-3">
+                            <input class="form-check-input" type="checkbox" name="overwrite_existing" id="overwrite_existing" {% if overwrite_existing %}checked{% endif %}>
+                            <label class="form-check-label" for="overwrite_existing">
+                                <strong>Écraser les clés existantes</strong>
+                            </label>
+                            <small class="form-text text-muted">
+                                Si coché, remplace les clés musicales déjà renseignées. 
+                                Sinon, ne traite que les tracks sans clé musicale.
+                            </small>
+                        </div>
+                        
+                        <div class="form-check mb-3">
+                            <input class="form-check-input" type="checkbox" name="dry_run" id="dry_run" {% if dry_run %}checked{% endif %}>
+                            <label class="form-check-label" for="dry_run">
+                                <strong>Mode test (dry run)</strong>
+                            </label>
+                            <small class="form-text text-muted">
+                                Analyse et affiche les changements sans les appliquer réellement.
+                            </small>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="text-center mb-4">
+                    <button type="submit" class="btn btn-success btn-lg" id="start-cleanup">
+                        <i class="fas fa-play"></i> Démarrer le nettoyage
+                    </button>
+                    <a href="{% url 'tools' %}" class="btn btn-outline-secondary btn-lg ml-3">
+                        <i class="fas fa-arrow-left"></i> Retour
+                    </a>
+                </div>
+            </form>
+
+            {% if results %}
+            <div class="card">
+                <div class="card-header bg-success text-white">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-check-circle"></i> Résultats du nettoyage
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center mb-4">
+                        <div class="col-md-3">
+                            <h4 class="text-primary">{{ results.total_tracks }}</h4>
+                            <p class="text-muted">Tracks analysées</p>
+                        </div>
+                        <div class="col-md-3">
+                            <h4 class="text-success">{{ results.updated_tracks }}</h4>
+                            <p class="text-muted">Tracks mises à jour</p>
+                        </div>
+                        <div class="col-md-3">
+                            <h4 class="text-info">{{ results.extracted_keys }}</h4>
+                            <p class="text-muted">Clés extraites</p>
+                        </div>
+                        <div class="col-md-3">
+                            <h4 class="text-warning">{{ results.skipped_tracks }}</h4>
+                            <p class="text-muted">Tracks ignorées</p>
+                        </div>
+                    </div>
+
+                    {% if results.examples %}
+                    <h6><i class="fas fa-list"></i> Exemples de transformations :</h6>
+                    <div class="table-responsive">
+                        <table class="table table-sm table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Titre</th>
+                                    <th>Clé extraite</th>
+                                    <th>Ancienne clé</th>
+                                    <th>Nouvelle clé</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for example in results.examples %}
+                                <tr>
+                                    <td><small>{{ example.title|truncatechars:40 }}</small></td>
+                                    <td><span class="badge badge-info">{{ example.extracted_key }}</span></td>
+                                    <td>
+                                        {% if example.old_key %}
+                                            <span class="badge badge-secondary">{{ example.old_key }}</span>
+                                        {% else %}
+                                            <span class="text-muted">-</span>
+                                        {% endif %}
+                                    </td>
+                                    <td><span class="badge badge-success">{{ example.new_key }}</span></td>
+                                    <td>
+                                        {% if example.action == 'updated' %}
+                                            <i class="fas fa-check text-success"></i> Mis à jour
+                                        {% elif example.action == 'would_update' %}
+                                            <i class="fas fa-clock text-warning"></i> Serait mis à jour
+                                        {% else %}
+                                            <i class="fas fa-minus text-muted"></i> Ignoré
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% endif %}
+
+                    {% if results.processing_time %}
+                    <div class="alert alert-info mt-3">
+                        <i class="fas fa-clock"></i>
+                        <strong>Temps de traitement :</strong> {{ results.processing_time|floatformat:2 }}s
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<script>
+document.getElementById('cleanup-form').addEventListener('submit', function(e) {
+    const startButton = document.getElementById('start-cleanup');
+    const dryRun = document.getElementById('dry_run').checked;
+    
+    if (!dryRun) {
+        const confirmed = confirm('Êtes-vous sûr de vouloir nettoyer les clés musicales ? Cette action va modifier la base de données.');
+        if (!confirmed) {
+            e.preventDefault();
+            return;
+        }
+    }
+    
+    startButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Traitement en cours...';
+    startButton.disabled = true;
+});
+</script>
+{% endblock %}

@@ -1,0 +1,235 @@
+{% extends "admin/base_site.html" %}
+
+{% block title %}RubiTrack - Tools{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <h1 class="mb-4">🛠️ RubiTrack Tools</h1>
+            
+            <div class="row">
+                <!-- Card Duplicates -->
+                <div class="col-md-4 mb-4">
+                    <div class="card h-100">
+                        <div class="card-header bg-warning text-dark">
+                            <h5 class="card-title mb-0">
+                                <i class="fas fa-copy"></i> Duplicates
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <p class="card-text">
+                                Détecter et gérer les tracks dupliquées dans votre collection.
+                            </p>
+                            <ul class="list-unstyled">
+                                <li>• Analyse par titre et artiste</li>
+                                <li>• Détection des doublons</li>
+                                <li>• Gestion des conflits</li>
+                            </ul>
+                        </div>
+                        <div class="card-footer">
+                                                        <a href="{% url 'duplicates' %}" class="btn btn-warning btn-block">
+                                <i class="fas fa-copy mr-2"></i>
+                                Manage Duplicates
+                            </a>
+                        </div>
+                        <div class="card-body">
+                            <p class="card-text">
+                                Find and merge duplicate tracks and artists in your music library.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Configuration Card -->
+                <div class="col-md-4 mb-4">
+                    <div class="card h-100 shadow-sm">
+                        <div class="card-header bg-info text-white">
+                            <h5 class="card-title mb-0">
+                                <i class="fas fa-cog mr-2"></i>
+                                Configuration
+                            </h5>
+                        </div>
+                        <div class="card-body d-flex flex-column">
+                            <p class="card-text flex-grow-1">
+                                Manage system settings, preferences, and configuration options.
+                            </p>
+                            <a href="{% url 'config' %}" class="btn btn-info btn-block">
+                                <i class="fas fa-cog mr-2"></i>
+                                System Config
+                            </a>
+                        </div>
+                        <div class="card-body">
+                            <p class="card-text">
+                                Configure system-wide settings and preferences.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Cleanup Musical Keys Card -->
+                <div class="col-md-4 mb-4">
+                    <div class="card h-100 shadow-sm">
+                        <div class="card-header bg-success text-white">
+                            <h5 class="card-title mb-0">
+                                <i class="fas fa-music mr-2"></i>
+                                Cleanup Musical Keys
+                            </h5>
+                        </div>
+                        <div class="card-body d-flex flex-column">
+                            <p class="card-text flex-grow-1">
+                                Clean up and standardize musical key information across your library.
+                            </p>
+                            <a href="{% url 'cleanup_musical_keys' %}" class="btn btn-success btn-block">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Card Config -->
+                <div class="col-md-4 mb-4">
+                    <div class="card h-100">
+                        <div class="card-header bg-info text-white">
+                            <h5 class="card-title mb-0">
+                                <i class="fas fa-cog"></i> Configuration
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <p class="card-text">
+                                Configurer les paramètres globaux de RubiTrack.
+                            </p>
+                            <ul class="list-unstyled">
+                                <li>• Plage BPM par défaut</li>
+                                <li>• Paramètres suggestions</li>
+                                <li>• Préférences utilisateur</li>
+                            </ul>
+                        </div>
+                        <div class="card-footer">
+                            <a href="{% url 'config' %}" class="btn btn-info btn-block">
+                                <i class="fas fa-wrench"></i> Accéder à la config
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Card Cleanup Musical Keys -->
+                <div class="col-md-4 mb-4">
+                    <div class="card h-100">
+                        <div class="card-header bg-success text-white">
+                            <h5 class="card-title mb-0">
+                                <i class="fas fa-music"></i> Cleanup Musical Keys
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <p class="card-text">
+                                Normaliser automatiquement toutes les clés musicales.
+                            </p>
+                            <ul class="list-unstyled">
+                                <li>• Extraction depuis titres</li>
+                                <li>• Conversion notation A#m</li>
+                                <li>• Mise à jour automatique</li>
+                            </ul>
+                        </div>
+                        <div class="card-footer">
+                            <a href="{% url 'cleanup_musical_keys' %}" class="btn btn-success btn-block">
+                                <i class="fas fa-broom"></i> Nettoyer les clés
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Card Cue Points -->
+                <div class="col-md-4 mb-4">
+                    <div class="card h-100">
+                        <div class="card-header bg-primary text-white">
+                            <h5 class="card-title mb-0">
+                                <i class="fas fa-map-marker-alt"></i> Cue Points
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <p class="card-text">
+                                Vue d'ensemble et gestion des points de repère (cue points).
+                            </p>
+                            <ul class="list-unstyled">
+                                <li>• Import depuis collection.nml</li>
+                                <li>• 8 cue points par track</li>
+                                <li>• Types et commentaires</li>
+                            </ul>
+                        </div>
+                        <div class="card-footer">
+                            <a href="{% url 'cue_points_overview' %}" class="btn btn-primary btn-block">
+                                <i class="fas fa-eye"></i> Voir les cue points
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Seconde ligne pour d'autres cartes si nécessaire -->
+            <div class="row">
+                <!-- Placeholder pour futures fonctionnalités -->
+            </div>
+
+            <!-- Statistiques -->
+            <div class="row mt-5">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header bg-secondary text-white">
+                            <h5 class="card-title mb-0">
+                                <i class="fas fa-chart-bar"></i> Statistiques Collection
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row text-center">
+                                <div class="col-md-3">
+                                    <h4 class="text-primary">{{ total_tracks }}</h4>
+                                    <p class="text-muted">Tracks totales</p>
+                                </div>
+                                <div class="col-md-3">
+                                    <h4 class="text-success">{{ tracks_with_keys }}</h4>
+                                    <p class="text-muted">Avec clé musicale</p>
+                                </div>
+                                <div class="col-md-3">
+                                    <h4 class="text-warning">{{ tracks_without_keys }}</h4>
+                                    <p class="text-muted">Sans clé musicale</p>
+                                </div>
+                                <div class="col-md-3">
+                                    <h4 class="text-info">{{ potential_keys_in_titles }}</h4>
+                                    <p class="text-muted">Clés dans titres</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Navigation -->
+            <div class="row mt-4">
+                <div class="col-12 text-center">
+                    <a href="{% url 'index' %}" class="btn btn-outline-primary">
+                        <i class="fas fa-arrow-left"></i> Retour à l'accueil
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.card {
+    transition: transform 0.2s ease-in-out;
+}
+
+.card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+}
+
+.btn-block {
+    width: 100%;
+}
+
+.list-unstyled li {
+    padding: 2px 0;
+}
+</style>
+{% endblock %}

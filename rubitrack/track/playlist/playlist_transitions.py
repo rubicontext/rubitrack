@@ -59,10 +59,14 @@ def get_transitions_from_playlist(current_playlist: Playlist):
             current_transition = create_transition(track_source_id, 
                                        track_destination_id,
                                        PLAYLIST_TRANSITION_AUTO_GENERATED + current_playlist.name)
-            print('Generated auto transition : ', current_transition)
+            if current_transition:  # Seulement ajouter si la transition a été créée avec succès
+                print('Generated auto transition : ', current_transition)
+                transitions.append(current_transition)
+            else:
+                print(f'Impossible de créer la transition: track {track_source_id} -> {track_destination_id}')
         else:
             current_transition = current_transition_qs[0]
-        transitions.append(current_transition)
+            transitions.append(current_transition)
 
     return transitions
 
@@ -83,7 +87,19 @@ def get_ordered_tracks_from_playlist(current_playlist: Playlist):
 def get_track_ids_from_playlist(current_playlist: Playlist):
     if not current_playlist or not current_playlist.track_ids:
         return []
-    return ast.literal_eval(current_playlist.track_ids)
+    
+    # Parser les IDs depuis la chaîne stockée
+    all_track_ids = ast.literal_eval(current_playlist.track_ids)
+    
+    # Filtrer pour ne garder que les tracks qui existent encore
+    existing_track_ids = []
+    for track_id in all_track_ids:
+        if Track.objects.filter(id=track_id).exists():
+            existing_track_ids.append(track_id)
+        else:
+            print(f"Track avec ID {track_id} n'existe plus, ignoré dans la playlist {current_playlist.name}")
+    
+    return existing_track_ids
 
 
 def get_order_rank(playlist_name:str) -> int:

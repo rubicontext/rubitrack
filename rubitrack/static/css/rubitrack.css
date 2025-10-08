@@ -1,0 +1,43 @@
+/* Common Rubitrack styles extracted from templates */
+
+#transitionsAllTable { font-size:14px; }
+.table-reduced-height tr { height:28px; }
+.table-reduced-height th, .table-reduced-height td { padding:2px 8px !important; vertical-align:middle; }
+.table-reduced-height input[type="text"] { height:26px; font-size:13px; margin:0; padding:3px 6px; }
+.table-reduced-height .btn { padding:2px 6px !important; font-size:13px; }
+.table-reduced-height ul.list-inline { margin-bottom:0; }
+.table-reduced-height .list-inline-item { margin-right:2px; }
+.fa-forward, i.fa-forward.transition-after { color:#28a745 !important; }
+.fa-fast-backward, i.fa-fast-backward.transition-before { color:#dc3545 !important; }
+
+/* Cue points compact display */
+.cue-points-compact-text { color:#666; font-size:12px; margin-top:10px; font-style:italic; }
+.cue-points-compact { color:#666; font-size:11px; font-style:italic; }
+
+/* Cue points section/table */
+.cue-points-section { margin-top:20px; margin-bottom:20px; }
+.cue-points-table { max-width:600px; margin:10px 0; }
+.cue-point-header { text-align:center; background-color:#f8f9fa; font-weight:bold; padding:8px 12px; border:1px solid #dee2e6; min-width:50px; }
+.cue-point-time { text-align:center; padding:8px 12px; border:1px solid #dee2e6; font-family:monospace; background-color:#fff; }
+
+/* Responsive adjustments */
+@media screen and (max-width:768px) {
+  #transitionsAllTableDiv { overflow-x:auto; -webkit-overflow-scrolling:touch; }
+  .table-reduced-height { font-size:12px; min-width:100%; table-layout:fixed; }
+  .table-reduced-height th, .table-reduced-height td { padding:2px 4px !important; font-size:12px; }
+  .table-reduced-height th:nth-child(1), .table-reduced-height td:nth-child(1) { width:30% !important; max-width:120px; }
+  .table-reduced-height th:nth-child(2), .table-reduced-height td:nth-child(2) { width:5% !important; text-align:center; }
+  .table-reduced-height th:nth-child(3), .table-reduced-height td:nth-child(3) { width:45% !important; }
+  .table-reduced-height th:nth-child(4), .table-reduced-height td:nth-child(4) { width:20% !important; }
+  .table-reduced-height td:nth-child(1) a { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; display:block; }
+  .table-reduced-height input[type="text"] { width:100%; max-width:none; height:24px; font-size:11px; padding:2px 4px; box-sizing:border-box; }
+  .table-reduced-height .btn { padding:1px 4px !important; font-size:11px; }
+  .cue-point-header, .cue-point-time { padding:4px 6px; font-size:11px; min-width:35px; }
+  .cue-points-compact-text { font-size:10px; }
+}
+
+@media screen and (max-width:480px) {
+  .table-reduced-height th:nth-child(1), .table-reduced-height td:nth-child(1) { width:25% !important; }
+  .table-reduced-height th:nth-child(3), .table-reduced-height td:nth-child(3) { width:50% !important; }
+  .table-reduced-height th:nth-child(4), .table-reduced-height td:nth-child(4) { width:20% !important; }
+}

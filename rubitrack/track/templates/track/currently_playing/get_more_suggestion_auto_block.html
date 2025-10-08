@@ -1,12 +1,13 @@
+{% load musical_key_filters %}
 <table id="suggestionsAuto" class="table table-striped table-condensed">
                 
           <tr>                    
-           <th>Title</td>
-           <th>Artist</td>
-           <th>Genre</td>
-           <th>Bpm</td>
-           <th>Key</td>
-            <th>Comment</td>
+           <th>Title</th>
+           <th>Artist</th>
+           <th>Genre</th>
+           <th>Bpm</th>
+           <th>Key</th>
+            <th>Comment</th>
            <th>Suggestion Rating?</th>
            
           </tr>
@@ -18,7 +19,7 @@
            <td>{{ currentTrackSuggestion.artist.name }}</td>
            <td>{{ currentTrackSuggestion.genre }}</td>
            <td>{{ currentTrackSuggestion.bpm |floatformat}}</td>
-           <td>{{ currentTrackSuggestion.musical_key }}</td>
+           <td>{% if currentTrackSuggestion.musical_key %}{% musical_key_badge currentTrackSuggestion.musical_key %}{% else %}--{% endif %}</td>
            <td>{{ currentTrackSuggestion.comment }}</td>
            <td><i class="fa fa-thumbs-o-up  good_transition""></i> &nbsp;
             <i class="fa fa-thumbs-o-down bad_transition"></i>
