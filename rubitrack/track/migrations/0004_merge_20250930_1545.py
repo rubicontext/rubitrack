@@ -6,7 +6,7 @@ from django.db import migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("track", "0002_remove_playlist_description_playlist_rank_and_more"),
+        # ("track", "0002_remove_playlist_description_playlist_rank_and_more"),
         ("track", "0003_add_config_model"),
     ]
 
