@@ -2,8 +2,8 @@ from django.shortcuts import render
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.db.models import Q
-from .models import Track, Artist, Genre, Config
-from .currently_playing.suggestions import get_list_track_suggestions_auto
+from ..models import Track, Artist, Genre, Config
+from ..currently_playing.suggestions import get_list_track_suggestions_auto
 import json
 
 
@@ -39,7 +39,7 @@ def get_suggestions_for_track(track_id, bpm_range_percent=10, sort_by='playcount
     
     # Filtrer par clé musicale (distance Camelot)
     if track.musical_key and musical_key_distance < 12:
-        from track.musical_key_utils import get_compatible_keys, normalize_musical_key_notation
+        from track.musical_key.utils import get_compatible_keys, normalize_musical_key_notation
         compatible_keys = get_compatible_keys(track.musical_key, musical_key_distance)
         # Nettoyer les clés compatibles
         compatible_keys_clean = [normalize_musical_key_notation(k) for k in compatible_keys if k]
@@ -204,7 +204,7 @@ def ajax_suggestions(request):
             })
         # DEBUG : log des clés compatibles et suggestions avant filtrage
         if current_track and current_track.musical_key and musical_key_distance < 12:
-            from track.musical_key_utils import get_compatible_keys
+            from track.musical_key.utils import get_compatible_keys
             compatible_keys = get_compatible_keys(current_track.musical_key, musical_key_distance)
             print(f"Clés compatibles pour {current_track.musical_key} (distance {musical_key_distance}) : {compatible_keys}")
             print(f"Suggestions avant filtrage : {[t.musical_key for t in Track.objects.exclude(id=current_track.id)]}")

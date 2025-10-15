@@ -12,6 +12,7 @@
 <link rel="shortcut icon" href="{% static 'favicon.png' %}'/"/>
 <link href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet"/>
 <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.0/css/bootstrap.min.css">
+<link rel="stylesheet" href="{% static 'css/rubitrack.css' %}">
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.0/js/bootstrap.min.js"></script>
 
@@ -24,178 +25,36 @@
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
     
     <style>
-        a, a:link, a:visited {
-            color:#283C4F;
-        }
-
-        div.inline { 
-            float:left; 
-        }
-
-        .clearBoth { 
-            clear:both; 
-        }
-
-        div.breadcrumbs {
-        	background-color:gray;
-        }   
-
-        #header {
-        	background-color:#283C4F;
-            align-items:stretch;
-        }
-
-        #branding h1 a:visited {
-        	color:white;
-        }
-
-		.module caption {
-        	background-color:#283C4F;
-        }
-
-        div.now_playing_track {
-            font-size: 42px;
-            color:green;
-            background-color:#283C4F;
-            display: inline;
-        }
-
-        div.red_alert {
-            font-size: 40px;
-            color:red;
-            display: inline;
-        }
-
-        div.green_flashy {
-            color:#52d3aa;
-            display: inline;
-        }
-
-        div.track_big_blue {
-            font-size: 42px;
-            color:#283C4F;
-            display: inline;
-        }
-
-        div.artist_green_flashy {
-            font-size: 30px;
-            color:#52d3aa;
-            display: inline;
-            font-weight: normal;
-        }
-
-        span.artist_green_flashy {
-            font-size: inherit;
-            color:#52d3aa;
-            display: inline;
-            font-weight: normal;
-        }
-
-        
-        div.on_air {
-            font-size: 24px;
-            color:#52d3aa;
-            display: inline;
-        }
-
-        div.history_title {
-            font-size: 24px;
-            color:#283C4F;
-            display: inline;
-        }
-
-        div.track_medium_blue {
-            font-size: 30px;
-            color:#283C4F;
-            display: inline;
-        }
-
-        div.grey_subtitle {
-            font-size: 18px;
-            font-weight: bold;
-            color:gray;
-            vertical-align: bottom;
-        }
-
-        div.grey_subtitle_small {
-            font-size: 12px;
-            font-weight: bold;
-            color:gray;
-            vertical-align: bottom;
-        }
-
-         div.blue_subtitle_small {
-            font-size: 20px;
-            font-weight: bold;
-            color:#283C4F;
-            display: inline;
-        }
-
-        div.blue_subtitle_small {
-            font-size: 14px;
-            font-weight: bold;
-            color:#283C4F;
-            display: inline;
-        }
-
-        .good_transition {
-            color:green;
-        }
-
-        .bad_transition {
-            text-align: center;
-            color:red;
-        }
-
-        td.button_add {
-            text-align: center;
-            color:red;
-            border-width: 1;
-            border-color: blue;
-        }
-
-        .module h2 {
-            background-color: gray;
-        }
-
-        .button, input[type=submit], input[type=button], .submit-row input, a.button {
-            background:#283C4F;
-        }
-
-        .icon-success {
-            color: #5CB85C;
-        }
-
-        /*custom current track EDITING*/
-        tr.current_track_editing_highlight{
-            font-size: 20px;
-            font-weight: bold;
-            color:#283C4F;
-        }
-        /*custom current track PLAYING*/
-        tr.current_track_playing_highlight a:not(.saveTransitionAjax){
-            font-size: 20px;
-            font-weight: bold;
-            color:#52d3aa;
-            #background-color: #283C4F;
-        }
-        td.current_track_playing_highlight{
-            font-size: 20px;
-            font-weight: bold;
-            color:#52d3aa;
-            background-color: #283C4F;
-        }
-
-        .highlightedTransition{
-            font-weight: bold;
-            background-color: #52d3aa;
-        }
-
-        .table-striped>tbody>tr:nth-of-type(odd).highlightedTransition{
-            font-weight: bold;                                                                              
-            background-color: #52d3aa;                             
-}     
-
-
+        /* TODO: Move remaining admin inline styles to rubitrack.css (branding, colors, layout) */
+        a, a:link, a:visited { color:#283C4F; }
+        div.inline { float:left; }
+        .clearBoth { clear:both; }
+        div.breadcrumbs { background-color:gray; }
+        #header { background-color:#283C4F; align-items:stretch; }
+        #branding h1 a:visited { color:white; }
+        .module caption { background-color:#283C4F; }
+        div.now_playing_track { font-size:42px; color:green; background-color:#283C4F; display:inline; }
+        div.red_alert { font-size:40px; color:red; display:inline; }
+        div.green_flashy { color:#52d3aa; display:inline; }
+        div.track_big_blue { font-size:42px; color:#283C4F; display:inline; }
+        div.artist_green_flashy { font-size:30px; color:#52d3aa; display:inline; font-weight:normal; }
+        span.artist_green_flashy { font-size:inherit; color:#52d3aa; display:inline; font-weight:normal; }
+        div.on_air { font-size:24px; color:#52d3aa; display:inline; }
+        div.history_title { font-size:24px; color:#283C4F; display:inline; }
+        div.track_medium_blue { font-size:30px; color:#283C4F; display:inline; }
+        div.grey_subtitle { font-size:18px; font-weight:bold; color:gray; vertical-align:bottom; }
+        div.grey_subtitle_small { font-size:12px; font-weight:bold; color:gray; vertical-align:bottom; }
+        div.blue_subtitle_small { font-size:14px; font-weight:bold; color:#283C4F; display:inline; }
+        .good_transition { color:green; }
+        .bad_transition { text-align:center; color:red; }
+        td.button_add { text-align:center; color:red; border-width:1; border-color:blue; }
+        .module h2 { background-color:gray; }
+        .button, input[type=submit], input[type=button], .submit-row input, a.button { background:#283C4F; }
+        .icon-success { color:#5CB85C; }
+        tr.current_track_editing_highlight{ font-size:20px; font-weight:bold; color:#283C4F; }
+        tr.current_track_playing_highlight a:not(.saveTransitionAjax){ font-size:20px; font-weight:bold; color:#52d3aa; }
+        td.current_track_playing_highlight{ font-size:20px; font-weight:bold; color:#52d3aa; background-color:#283C4F; }
+        .highlightedTransition{ font-weight:bold; background-color:#52d3aa; }
+        .table-striped>tbody>tr:nth-of-type(odd).highlightedTransition{ font-weight:bold; background-color:#52d3aa; }
     </style>
 {% endblock %}

@@ -6,7 +6,7 @@ from django.shortcuts import render
 
 from django.contrib.auth.decorators import login_required
 
-from track.currently_playing.transition import create_transition
+from track.transitions.transitions_core import create_transition
 
 from ..models import Track, Transition, Playlist
 

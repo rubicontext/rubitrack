@@ -13,7 +13,6 @@ from track.playlist.playlist_transitions import get_playlists_by_track_id, SEPAR
 from ..constants import REFRESH_INTERVAL_CURRENTLY_PLAYING_MS
 
 from ..models import Track, Transition, CurrentlyPlaying, Config
-from ..constants import REFRESH_INTERVAL_CURRENTLY_PLAYING_MS
 from ..track_db_service import (
     are_track_related,
     get_track_related_text,

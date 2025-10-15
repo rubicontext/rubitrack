@@ -20,6 +20,16 @@
 .cue-point-header { text-align:center; background-color:#f8f9fa; font-weight:bold; padding:8px 12px; border:1px solid #dee2e6; min-width:50px; }
 .cue-point-time { text-align:center; padding:8px 12px; border:1px solid #dee2e6; font-family:monospace; background-color:#fff; }
 
+/* Config reset page styles */
+.reset-container { max-width:600px; margin:50px auto; padding:30px; text-align:center; }
+.reset-header { margin-bottom:30px; }
+.reset-warning { background-color:#fff3cd; border:1px solid #ffeaa7; color:#856404; padding:15px; border-radius:4px; margin:20px 0; }
+.reset-details { background-color:#f8f9fa; border:1px solid #dee2e6; border-radius:8px; padding:20px; margin:20px 0; text-align:left; }
+.reset-details h3 { color:#495057; margin-bottom:15px; }
+.reset-details ul { list-style-type:disc; margin-left:20px; }
+.reset-details li { margin-bottom:5px; color:#6c757d; }
+.reset-actions { margin-top:30px; }
+
 /* Responsive adjustments */
 @media screen and (max-width:768px) {
   #transitionsAllTableDiv { overflow-x:auto; -webkit-overflow-scrolling:touch; }

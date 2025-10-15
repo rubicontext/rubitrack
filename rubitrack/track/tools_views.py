@@ -10,7 +10,7 @@ from django.db import transaction
 from django.db.models import Q, Count
 
 from .models import Track, CuePoint, TrackCuePoints
-from .musical_key_utils import extract_musical_key_from_title
+from .musical_key.utils import extract_musical_key_from_title
 
 
 @login_required

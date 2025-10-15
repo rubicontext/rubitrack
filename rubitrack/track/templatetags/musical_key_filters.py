@@ -3,7 +3,7 @@ Filtres de template pour les clés musicales et couleurs Traktor
 """
 
 from django import template
-from ..musical_key_utils import (
+from ..musical_key.utils import (
     get_traktor_color_from_musical_key,
     get_musical_key_info
 )

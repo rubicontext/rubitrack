@@ -1,7 +1,7 @@
 from django.urls import path
 
 from . import views
-from .collection import import_collection
+from .collection import importer
 from .currently_playing.currently_playing import (
     display_currently_playing,
     display_history_editing,
@@ -15,7 +15,7 @@ from .currently_playing.currently_playing import (
     get_all_currently_playing_data,
     ajax_cue_points
 )
-from .currently_playing.transition_view import (
+from .transitions.views import (
     add_new_transition,
     delete_transition,
     update_transition_comment
@@ -25,14 +25,13 @@ from .duplicate.display_duplicate import display_duplicates, manual_merge_track_
 from .currently_playing.manual_transition import manual_transition
 from .duplicate.manual_merge_duplicate import manual_merge_duplicate
 from .duplicate.manual_merge_artist import manual_merge_artist
-from .currently_playing.suggestions_block_view import ajax_suggestions, suggestions_block
-from .config_views import config_view, config_reset_view
+from .config.views import config_view, config_reset_view
+from .suggestions.suggestions_view import ajax_suggestions, suggestions_block
 from .tools_views import tools_index, cleanup_musical_keys, cue_points_overview
 from .views_import_musical_keys import import_musical_keys_view
 
 from django.views.generic.base import RedirectView
 from django.contrib.staticfiles.storage import staticfiles_storage
-from django.views.generic.base import RedirectView
 from django.conf import settings
 from django.conf.urls.static import static
 
@@ -41,7 +40,7 @@ urlpatterns = [
     path('', views.index, name='index'),
     path('favicon.ico', RedirectView.as_view(url=staticfiles_storage.url('favicon.ico'))),
     path('static/favicon.ico', RedirectView.as_view(url=staticfiles_storage.url('favicon.ico'))),
-    path('import_collection/', import_collection.upload_file, name='import_collection_view'),
+    path('import_collection/', importer.upload_file, name='import_collection_view'),
     path('currently_playing/', display_currently_playing, name='currently_playing_view'),
     path('history_editing/<int:track_id>', display_history_editing, name='history_editing_view'),
     # TRANSITIONS
@@ -119,7 +118,6 @@ urlpatterns = [
     path('config/', config_view, name='config'),
     path('config/reset/', config_reset_view, name='config_reset'),
     # TOOLS
-    path('tools/', tools_index, name='tools'),
     path('tools/cleanup_musical_keys/', cleanup_musical_keys, name='cleanup_musical_keys'),
     path('tools/cue_points/', cue_points_overview, name='cue_points_overview'),
 ] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
