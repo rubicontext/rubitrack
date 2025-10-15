@@ -209,7 +209,7 @@
 
         <!-- Suggestions Defaults -->
         <div class="config-section">
-            <h3>Paramètres par défaut des suggestions</h3>
+            <h3>Paramètres par défaut des suggestions (History Editing)</h3>
             <div class="form-row">
                 <div class="form-group col-md-4">
                     <label for="{{ form.default_bpm_range_suggestions.id_for_label }}">Plage BPM par défaut (%)</label>
@@ -230,6 +230,34 @@
                     {{ form.default_ranking_min }}
                     {% if form.default_ranking_min.help_text %}
                         <small class="form-text text-muted">{{ form.default_ranking_min.help_text }}</small>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Currently Playing Suggestions Defaults -->
+        <div class="config-section">
+            <h3>Paramètres suggestions Currently Playing</h3>
+            <div class="form-row">
+                <div class="form-group col-md-4">
+                    <label for="{{ form.currently_bpm_range_suggestions.id_for_label }}">Plage BPM (%)</label>
+                    {{ form.currently_bpm_range_suggestions }}
+                    {% if form.currently_bpm_range_suggestions.help_text %}
+                        <small class="form-text text-muted">{{ form.currently_bpm_range_suggestions.help_text }}</small>
+                    {% endif %}
+                </div>
+                <div class="form-group col-md-4">
+                    <label for="{{ form.currently_musical_key_distance.id_for_label }}">Distance clé musicale</label>
+                    {{ form.currently_musical_key_distance }}
+                    {% if form.currently_musical_key_distance.help_text %}
+                        <small class="form-text text-muted">{{ form.currently_musical_key_distance.help_text }}</small>
+                    {% endif %}
+                </div>
+                <div class="form-group col-md-4">
+                    <label for="{{ form.currently_ranking_min.id_for_label }}">Ranking minimum</label>
+                    {{ form.currently_ranking_min }}
+                    {% if form.currently_ranking_min.help_text %}
+                        <small class="form-text text-muted">{{ form.currently_ranking_min.help_text }}</small>
                     {% endif %}
                 </div>
             </div>
@@ -257,7 +285,7 @@
 
 <style>
 .config-container {
-    max-width: 1000px;
+    max-width: 1100px;
     margin: 20px auto;
     padding: 20px;
 }
@@ -274,92 +302,133 @@
 }
 
 .config-section {
-    background: #f8f9fa;
-    border: 1px solid #dee2e6;
-    border-radius: 8px;
-    padding: 20px;
-    margin-bottom: 20px;
+    background: linear-gradient(135deg,#f9fafb 0%,#f2f5f7 100%);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+    position: relative;
+    border-left: 4px solid transparent;
 }
 
 .config-section h3 {
+    font-size: 18px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
     color: #495057;
     border-bottom: 2px solid #52d3aa;
     padding-bottom: 8px;
     margin-bottom: 15px;
 }
 
-.form-group {
-    margin-bottom: 15px;
-}
-
-.form-group label {
-    font-weight: bold;
-    color: #495057;
-}
-
-.form-control {
-    border-radius: 4px;
-    border: 1px solid #ced4da;
-    padding: 8px 12px;
-}
-
-.form-control:focus {
-    border-color: #52d3aa;
-    box-shadow: 0 0 0 0.2rem rgba(82, 211, 170, 0.25);
-}
-
-.config-actions {
-    text-align: center;
-    margin: 30px 0;
-}
-
-.btn {
-    padding: 10px 20px;
-    margin: 0 10px;
-    border-radius: 4px;
-    text-decoration: none;
+.config-section h3:before {
+    content: "";
+    width: 6px;
+    height: 20px;
+    background: #52d3aa;
+    border-radius: 3px;
     display: inline-block;
 }
 
-.btn-primary {
-    background-color: #52d3aa;
-    border-color: #52d3aa;
-    color: white;
+.form-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 18px 20px;
 }
 
-.btn-warning {
-    background-color: #ffc107;
-    border-color: #ffc107;
-    color: #212529;
+.form-group {
+    flex: 1 1 260px;
+    min-width: 220px;
+    background: #ffffff;
+    padding: 10px 12px 8px;
+    border: 1px solid #e5e7eb;
+    border-radius: 6px;
+    position: relative;
+    transition: box-shadow .15s, border-color .15s;
 }
 
-.btn:hover {
-    opacity: 0.9;
+.form-group:hover {
+    box-shadow: 0 2px 6px rgba(0,0,0,0.07);
+    border-color: #d0d7dd;
 }
 
-.config-info {
-    text-align: center;
-    margin-top: 20px;
-    padding-top: 20px;
-    border-top: 1px solid #dee2e6;
+.form-group label {
+    margin-bottom: 4px;
+    font-size: 13px;
+    letter-spacing: .2px;
+    display: block;
 }
 
+.form-group small {
+    font-size: 11px;
+    line-height: 1.3;
+    display: block;
+    margin-top: 4px;
+    color: #6b7280;
+}
+
+.form-control {
+    width: 100%;
+    font-size: 13px;
+    padding: 6px 10px;
+}
+
+.config-actions {
+    display: flex;
+    justify-content: center;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+
+.config-actions .btn {
+    min-width: 210px;
+    font-weight: 600;
+    letter-spacing: .3px;
+}
+
+/* Badge-like heading separation */
+.config-section + .config-section {
+    margin-top: 28px;
+}
+
+/* Make number inputs narrower when appropriate */
+input[type=number] {
+    max-width: 140px;
+}
+
+/* Responsive */
+@media (max-width: 900px) {
+  .form-group {
+    flex: 1 1 45%;
+  }
+  input[type=number] {
+    max-width: 100%;
+  }
+}
+@media (max-width: 600px) {
+  .form-group {
+    flex: 1 1 100%;
+  }
+  .config-container {
+    padding: 10px;
+  }
+}
+
+/* Distinguish critical groups */
+.config-section:nth-child(odd) {
+    border-left: 4px solid #52d3aa;
+}
+.config-section:nth-child(even) {
+    border-left: 4px solid #2fbf91;
+}
+
+/* Messages */
 .alert {
-    padding: 10px 15px;
-    margin-bottom: 20px;
-    border-radius: 4px;
+    border: 1px solid transparent;
 }
-
 .alert-success {
-    background-color: #d4edda;
-    border-color: #c3e6cb;
-    color: #155724;
+    border-color: #b7e4ce;
 }
-
-.alert-error {
-    background-color: #f8d7da;
-    border-color: #f5c6cb;
-    color: #721c24;
+.alert-danger {
+    border-color: #f5c2c7;
 }
 </style>
 {% endblock %}

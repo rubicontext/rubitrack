@@ -11,7 +11,7 @@ class ManualTransitionForm(forms.Form):
     comment = forms.CharField(required=False, label="Commentaire")
 
 def manual_transition(request):
-    tracks = Track.objects.all().order_by('title')
+    tracks = Track.objects.all().order_by('title','artist__name')
     message = None
     if request.method == "POST":
         track1_id = int(request.POST.get("track1_id"))

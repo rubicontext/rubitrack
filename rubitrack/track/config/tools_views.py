@@ -9,8 +9,8 @@ from django.contrib import messages
 from django.db import transaction
 from django.db.models import Q, Count
 
-from .models import Track, CuePoint, TrackCuePoints
-from .musical_key.utils import extract_musical_key_from_title
+from ..models import Track, CuePoint, TrackCuePoints
+from ..musical_key.musical_key_utils import extract_musical_key_from_title
 
 
 @login_required
@@ -225,3 +225,14 @@ def cue_points_overview(request):
     }
     
     return render(request, 'track/tools/cue_points_overview.html', context)
+
+
+@login_required
+def delete_all_cue_points(request):
+    """Delete all cue points and TrackCuePoints associations."""
+    if request.method == 'POST':
+        CuePoint.objects.all().delete()
+        TrackCuePoints.objects.all().delete()
+        messages.success(request, "All cue points deleted.")
+        return redirect('tools')
+    return render(request, 'track/tools/confirm_delete_all_cue_points.html')

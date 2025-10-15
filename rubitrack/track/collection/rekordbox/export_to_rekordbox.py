@@ -13,7 +13,7 @@ os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'rubitrack.settings')
 import django
 django.setup()
 
-from track.collection.rekordbox.export_service import add_cue_points_to_rekordbox_collection
+from track.collection.rekordbox.collection_export_service import add_cue_points_to_rekordbox_collection
 
 
 def export_cue_points_example():

@@ -1,41 +1,35 @@
 {% extends "admin/base_site.html" %}
 {% load admin_urls %}
+{% load musical_key_filters %}
+<!-- Removed static/select2 additions -->
 <link rel="stylesheet" href="http://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.min.css">
 <link rel="stylesheet" href="/static/css/rubitrack.css">
- 
+
 {% block title %}History Editing - {{ currentTrack.title }}{% endblock title %}
   
   {% block content %}
 
 
 <div class='now_playing_track' id='currentlyPlayingTrackBlock'>
-
-
   <input type="hidden" id="currentTrackId" name="currentTrackId" value="{{ currentTrack.id }}" />
-
   <div class="row">
-
-    <div class="on_air">
-      Played: 
-     </div>
-
+    <div class="on_air">Played: </div>
     <div class="track_medium_blue" >
        {{ currentTrack.title }}  
     </div>
-
-     <div class="artist_green_flashy"> - {{ currentTrack.artist.name }}</div>
-
-     <div class="grey_subtitle_small">
-      Genre: {{ currentTrack.genre.name }}  - {{ currentTrack.bpm|floatformat}} bpm - 
+    <!-- Artist line without key badge -->
+    <div class="artist_green_flashy"> - {{ currentTrack.artist.name }}</div>
+    <!-- Grey subtitle now includes key badge -->
+    <div class="grey_subtitle_small">
+      Genre: {{ currentTrack.genre.name }}  - {{ currentTrack.bpm|floatformat}} bpm{% if currentTrack.musical_key %} - <span class="key-badge-inline">{% musical_key_badge currentTrack.musical_key %}</span>{% endif %} - 
       <a href="{% url 'admin:track_track_change' currentTrack.id %}"><i class="fa fa-edit"></i> Edit track info  </a>
-      {% if currentTrack.get_track_cue_points_text %}
-        <br><span class="cue-points-compact">Cue Points: {{ currentTrack.get_track_cue_points_text }}</span>
-      {% endif %}
-      </div>
-
-
+    </div>
   </div>
 </div>
+
+<style>
+.key-badge-inline .musical-key-badge{margin-left:4px;}
+</style>
 
   <div class="blue_subtitle_small">Transitions - What to play along this track?</div>
   <a href="{% url 'admin:track_customtracktransition_change' currentTrack.id %}" target="_blank">
@@ -65,8 +59,10 @@
               <tr>
            {% endif %}                   
   
-           <td><a href="{% url 'admin:track_track_change' currentPlay.track.id %}">{{ currentPlay.track.title }}</a>
-            <a href="{% url 'history_editing_view' currentPlay.track.id%}"><i class="fa fa-backward  good_transition"></i></a></td></td>
+           <td>
+             <a href="{% url 'history_editing_view' currentPlay.track.id %}">{{ currentPlay.track.title }}</a>
+             <a href="{% url 'admin:track_track_change' currentPlay.track.id %}" title="Admin" target="_blank"><i class="fa fa-forward good_transition"></i></a>
+           </td>
            <td>{{ currentPlay.track.artist.name }}</td>
            <td>
                   <div id="{{ currentPlay.track.id }}">
@@ -94,21 +90,6 @@
     <!-- Section des tracks suivantes dans les playlists -->
     {% include 'track/playlist_context/next_tracks_section.html' %}
 
-      {% if playlistsWithTrack %}
-          <div class="blue_subtitle_small">Playlists featuring this track</div> 
-              <ul>
-              {% for playlist in playlistsWithTrack %}
-                  <li>
-                      <a href="{% url 'playlist_transitions_view' playlist.id %}">{{ playlist.name }}</a>
-                  </li>
-              {% endfor %}
-              </ul>
-          </div>
-      {% endif %}
-
-
-
-
 <script>
     var append_increment = 0;
     
@@ -118,14 +99,14 @@
         const trackId = $('#currentTrackId').val();
         if (!trackId) return;
         
-        // Note: Cue points are now loaded directly in the template
-        // This function can be used for dynamic updates if needed
-        console.log('Cue points already loaded from template for track:', trackId);
+        // Note: Cue points list removed from top block per request
+        console.log('Cue points display suppressed for track:', trackId);
     }
 
     // Load cue points on page load
     $(document).ready(function() {
         loadCuePoints();
+        // Removed select2 initialization
     });
 
     //ajax call to save transition with no refresh
@@ -136,8 +117,6 @@
           success: function(data) {
             $('#transitionsAllTableDiv').html(data); 
             $('#'+$(this).attr('trackSourceId')).html('Transition saved!');
-            //$('#2423').html('saved!');    
-            //alert('#'+$(this).attr('trackSourceId'));                 
           }
         });
       
@@ -169,24 +148,8 @@
         });
       
     })
-
-    //a priori inutile!!!
     
-    /*$.ajax({
-      //console.log('ANTOINE!'+$('#currentTrackId').val())
-      url: '../get_more_transition_block_history?currentTrackId='+$('#currentTrackId').val(),
-      success: function(data) {
-        if(data !='<div></div>') {
-          $('#transitionsAllTableDiv').html(data);        
-        }
-          
-      },
-    });*/
-    
- 
-
 </script>
-
 
 
 <script>

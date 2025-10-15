@@ -1,7 +1,7 @@
 from django.contrib.admin.views.decorators import staff_member_required
-from django.shortcuts import render, redirect
-from track.models_musicalkey import MusicalKey
-from track.musical_key.utils import CAMELOT_TO_MUSICAL, OPEN_KEY_TO_MUSICAL, CAMELOT_COLORS, TRAKTOR_KEY_ORDER
+from django.shortcuts import render
+from .musical_key_models import MusicalKey
+from .musical_key_utils import CAMELOT_TO_MUSICAL, OPEN_KEY_TO_MUSICAL, CAMELOT_COLORS, TRAKTOR_KEY_ORDER
 
 def import_musical_keys():
     musical_to_camelot = {v: k for k, v in CAMELOT_TO_MUSICAL.items()}

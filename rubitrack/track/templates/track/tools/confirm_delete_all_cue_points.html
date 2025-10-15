@@ -1,0 +1,10 @@
+{% extends "admin/base_site.html" %}
+{% block title %}Confirm Delete All Cue Points{% endblock %}
+{% block content %}
+<h1>Delete All Cue Points</h1>
+<p>This will permanently delete all cue points for all tracks (TrackCuePoints and CuePoint records).</p>
+<form method="post">{% csrf_token %}
+  <button type="submit" class="btn btn-danger" onclick="return confirm('Are you sure? This cannot be undone.');">Confirm Delete All Cue Points</button>
+  <a href="{% url 'tools' %}" class="btn btn-secondary">Cancel</a>
+</form>
+{% endblock %}

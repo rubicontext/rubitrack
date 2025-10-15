@@ -1,5 +1,6 @@
 {% load musical_key_filters %}
 <div id="suggestions-block-static" class="suggestions-container">
+  <h3>Suggestions</h3>
   <div class="table-container">
     <table class="suggestions-table">
       <thead>
@@ -22,7 +23,8 @@
             <td><span class="artist_green_flashy"><a href="{% url 'history_editing_view' s.id %}">{% if s.artist %}{{ s.artist.name }}{% elif s.artist_name %}{{ s.artist_name }}{% else %}--{% endif %}</a></span></td>
             <td><span class="genre-badge">{% if s.genre and s.genre.name %}{{ s.genre.name }}{% elif s.genre %}{{ s.genre }}{% else %}--{% endif %}</span></td>
             <td>{% if s.bpm %}{{ s.bpm|floatformat:1 }}{% else %}--{% endif %}</td>
-            <td>{% if s.musical_key %}{% musical_key_badge s.musical_key %}{% else %}--{% endif %}
+            <td>
+              {% if s.musical_key %}{% musical_key_badge s.musical_key %}{% else %}--{% endif %}
               {% if s.musical_key_distance %}<span style="color:#888;font-size:10px;margin-left:4px;">{{ s.musical_key_distance }}{% if s.musical_key_order %} ({{ s.musical_key_order }}){% endif %}</span>{% elif s.musical_key_order %}<span style="color:#888;font-size:10px;margin-left:4px;">({{ s.musical_key_order }})</span>{% endif %}
             </td>
             <td>{{ s.comment|default:"--" }}</td>
@@ -44,10 +46,11 @@
 </div>
 
 <style>
+/* Reuse styles (light subset) */
 #suggestions-block-static .suggestions-table { width:100%; border-collapse:collapse; background:#fff; }
-#suggestions-block-static th, #suggestions-block-static td { padding:6px 6px; border-bottom:1px solid #eee; font-size:12px; }
+#suggestions-block-static th, #suggestions-block-static td { padding:8px 6px; border-bottom:1px solid #eee; font-size:13px; }
 #suggestions-block-static th { background:#f8f9fa; font-weight:bold; }
-#suggestions-block-static .genre-badge, #suggestions-block-static .musical-key-badge { display:inline-block; padding:2px 5px; border-radius:4px; font-size:10px; font-weight:bold; background:#6c757d; color:#fff; }
+#suggestions-block-static .genre-badge, #suggestions-block-static .musical-key-badge { display:inline-block; padding:2px 6px; border-radius:4px; font-size:11px; font-weight:bold; background:#6c757d; color:#fff; }
 #suggestions-block-static .musical-key-badge { background:#17a2b8; }
-#suggestions-block-static .ranking-stars { color:#ffc107; font-size:12px; }
+#suggestions-block-static .ranking-stars { color:#ffc107; font-size:13px; }
 </style>

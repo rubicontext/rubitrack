@@ -38,4 +38,31 @@
     </div>
     <button type="submit" class="btn btn-primary" style="background-color:#283C4F; color:white; border:none;">Enregistrer la transition</button>
 </form>
+
+<hr style="margin:40px 0;"/>
+<div style="margin-top:10px; padding:15px; background:#f8f9fa; border:1px solid #e0e4e7; border-radius:6px; max-width:520px;">
+    <h3 style="margin-top:0; font-size:20px;">Go to a track history</h3>
+    <form id="jump-history-form" method="get" action="" onsubmit="return jumpToHistory();">
+        <p style="margin-bottom:12px;">
+            <label for="jumpTrackSelect" style="font-weight:600;">Track A:</label><br/>
+            <select id="jumpTrackSelect" class="form-control" required style="max-width:100%;">
+                <option value="">-- Choisir --</option>
+                {% for track in tracks %}
+                  <option value="{{ track.id }}">{{ track.title }} ({{ track.artist.name }})</option>
+                {% endfor %}
+            </select>
+        </p>
+        <p style="margin:0;">
+            <button type="submit" class="btn btn-success" style="background:#52d3aa; border:none;">View history</button>
+        </p>
+    </form>
+</div>
+<script>
+function jumpToHistory(){
+  var sel = document.getElementById('jumpTrackSelect');
+  if(!sel.value){return false;}
+  window.location.href = '/track/history_editing/' + sel.value;
+  return false;
+}
+</script>
 {% endblock %}

@@ -126,42 +126,70 @@ def get_track_db_from_title_artist(track_title: str, artist_db: Artist):
 def get_artist_db_from_artist_name(artist_name):
     """
     Get artist from database by name, with fallback strategies:
-    1. Exact match
-    2. Similar match with character differences
-    3. Contains match
-    4. Create new artist if none found
+    1. Exact match (after trimming spaces)
+    2. Exact match original (legacy)
+    3. Case-insensitive match on trimmed
+    4. Similar match with character differences
+    5. icontains match
+    6. Create new artist
     """
-    # Try to find exact artist match first
+    if artist_name is None:
+        return None
+    original_name = artist_name
+    artist_name = artist_name.strip()
+    if not artist_name:
+        artist_name = original_name  # fallback to original if becomes empty
+
+    # Exact match on trimmed name
     artist_list = Artist.objects.filter(name=artist_name)
-    if len(artist_list) >= 1:
-        return artist_list[0]
-    
-    # Try to find similar artist with character difference detection
-    all_artists = Artist.objects.all()
-    for artist in all_artists:
-        if is_similar_with_char_diff(artist_name, artist.name, max_diff=1):
-            print("FOUND similar artist with 1 char difference:", artist.name, "original:", artist_name)
-            return artist
-    
-    # Try to find artist with icontains
-    artist_list = Artist.objects.filter(name__icontains=artist_name)
-    if len(artist_list) > 0:
-        print("FOUND with icontains:", artist_list[0].name, " original:", artist_name)
+    if artist_list:
         return artist_list[0]
 
-    # No similar artist found, create new one
+    # Exact match on original (just in case existing stored with trailing space)
+    if original_name != artist_name:
+        artist_list = Artist.objects.filter(name=original_name)
+        if artist_list:
+            return artist_list[0]
+
+    # Case-insensitive exact match (handles different cases / accidental spaces)
+    artist_list = Artist.objects.filter(name__iexact=artist_name)
+    if artist_list:
+        return artist_list[0]
+
+    # Similar artist with small diff
+    all_artists = Artist.objects.all()
+    for artist in all_artists:
+        if is_similar_with_char_diff(artist_name, artist.name.strip(), max_diff=1):
+            print("FOUND similar artist with 1 char difference:", artist.name, "original:", original_name)
+            return artist
+
+    # icontains on trimmed
+    artist_list = Artist.objects.filter(name__icontains=artist_name)
+    if artist_list:
+        print("FOUND with icontains:", artist_list[0].name, " original:", original_name)
+        return artist_list[0]
+
+    # icontains on original (rare case)
+    if original_name != artist_name:
+        artist_list = Artist.objects.filter(name__icontains=original_name)
+        if artist_list:
+            print("FOUND with icontains original:", artist_list[0].name, " original:", original_name)
+            return artist_list[0]
+
+    # Create new artist with trimmed canonical name
     artist_db = Artist()
     artist_db.name = artist_name
     artist_db.save()
-    print("WARNING Created new artist:", artist_name)
-    
+    print("WARNING Created new artist (normalized from '{}'): {}".format(original_name, artist_name))
     return artist_db
 
 
 def get_track_by_title_and_artist_name(track_title, artist_name):
-    print("about to look for track:", track_title, "By artist :", artist_name)
+    # Normalize whitespace on track title too
+    normalized_title = track_title.strip() if track_title else track_title
+    print("about to look for track:", normalized_title, "By artist :", artist_name)
     artist_db = get_artist_db_from_artist_name(artist_name)
-    return get_track_db_from_title_artist(track_title, artist_db)
+    return get_track_db_from_title_artist(normalized_title, artist_db)
 
 
 def get_currently_playing_track_from_db():

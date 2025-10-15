@@ -1,6 +1,5 @@
 """
 Service pour l'export et la manipulation des collections Rekordbox
-(anciennement collection_export_service.py)
 """
 
 import xml.etree.ElementTree as ET
@@ -233,7 +232,7 @@ def export_cue_points_to_rekordbox(collection_path, output_path=None):
     Export les cue points de Rubitrack vers une collection Rekordbox
     
     Usage:
-        from track.collection.rekordbox.export_service import export_cue_points_to_rekordbox
+        from track.collection_export_service import export_cue_points_to_rekordbox
         
         stats = export_cue_points_to_rekordbox(
             '/path/to/rekordbox/collection.xml',

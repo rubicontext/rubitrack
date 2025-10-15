@@ -118,7 +118,7 @@ class Track(models.Model):
         """
         Retourne l'objet MusicalKey correspondant à la clé musicale du track
         """
-        from .models_musicalkey import MusicalKey
+        from .musical_key.musical_key_models import MusicalKey
         if not self.musical_key:
             return None
         try:
@@ -196,10 +196,15 @@ class Config(models.Model):
     max_playlist_history_size = models.IntegerField(default=10, help_text="Maximum number of tracks in playlist history")
     max_suggestions_auto_size = models.IntegerField(default=20, help_text="Maximum number of automatic suggestions")
     
-    # Suggestions settings
+    # Suggestions settings (History Editing defaults)
     default_bpm_range_suggestions = models.IntegerField(default=3, help_text="Default BPM range for suggestions slider (%)")
     default_musical_key_distance = models.IntegerField(default=3, help_text="Default musical key distance for suggestions slider")
     default_ranking_min = models.IntegerField(default=3, help_text="Default minimum ranking for suggestions slider")
+    
+    # Currently Playing specific suggestion params
+    currently_bpm_range_suggestions = models.IntegerField(default=3, help_text="BPM range (%) for currently playing suggestions")
+    currently_musical_key_distance = models.IntegerField(default=4, help_text="Musical key max distance for currently playing suggestions")
+    currently_ranking_min = models.IntegerField(default=1, help_text="Minimum ranking for currently playing suggestions")
     
     # UI Configuration
     max_title_length = models.IntegerField(default=20, help_text="Maximum title length for display")

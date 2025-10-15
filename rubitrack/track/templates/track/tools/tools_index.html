@@ -3,233 +3,152 @@
 {% block title %}RubiTrack - Tools{% endblock %}
 
 {% block content %}
-<div class="container-fluid">
-    <div class="row">
-        <div class="col-12">
-            <h1 class="mb-4">🛠️ RubiTrack Tools</h1>
-            
-            <div class="row">
-                <!-- Card Duplicates -->
-                <div class="col-md-4 mb-4">
-                    <div class="card h-100">
-                        <div class="card-header bg-warning text-dark">
-                            <h5 class="card-title mb-0">
-                                <i class="fas fa-copy"></i> Duplicates
-                            </h5>
-                        </div>
-                        <div class="card-body">
-                            <p class="card-text">
-                                Détecter et gérer les tracks dupliquées dans votre collection.
-                            </p>
-                            <ul class="list-unstyled">
-                                <li>• Analyse par titre et artiste</li>
-                                <li>• Détection des doublons</li>
-                                <li>• Gestion des conflits</li>
-                            </ul>
-                        </div>
-                        <div class="card-footer">
-                                                        <a href="{% url 'duplicates' %}" class="btn btn-warning btn-block">
-                                <i class="fas fa-copy mr-2"></i>
-                                Manage Duplicates
-                            </a>
-                        </div>
-                        <div class="card-body">
-                            <p class="card-text">
-                                Find and merge duplicate tracks and artists in your music library.
-                            </p>
-                        </div>
-                    </div>
-                </div>
+<div class="rt-tools-wrapper">
+    <h1 class="rt-page-title">🛠️ RubiTrack Tools</h1>
 
-                <!-- Configuration Card -->
-                <div class="col-md-4 mb-4">
-                    <div class="card h-100 shadow-sm">
-                        <div class="card-header bg-info text-white">
-                            <h5 class="card-title mb-0">
-                                <i class="fas fa-cog mr-2"></i>
-                                Configuration
-                            </h5>
-                        </div>
-                        <div class="card-body d-flex flex-column">
-                            <p class="card-text flex-grow-1">
-                                Manage system settings, preferences, and configuration options.
-                            </p>
-                            <a href="{% url 'config' %}" class="btn btn-info btn-block">
-                                <i class="fas fa-cog mr-2"></i>
-                                System Config
-                            </a>
-                        </div>
-                        <div class="card-body">
-                            <p class="card-text">
-                                Configure system-wide settings and preferences.
-                            </p>
-                        </div>
-                    </div>
-                </div>
+    <!-- Quick Stats KPI -->
+    <div class="rt-kpi-grid">
+        <div class="rt-kpi"><div class="kpi-label">Total Tracks</div><div class="kpi-value">{{ total_tracks }}</div></div>
+        <div class="rt-kpi kpi-green"><div class="kpi-label">With Key</div><div class="kpi-value">{{ tracks_with_keys }}</div></div>
+        <div class="rt-kpi kpi-orange"><div class="kpi-label">No Key</div><div class="kpi-value">{{ tracks_without_keys }}</div></div>
+        <div class="rt-kpi kpi-blue"><div class="kpi-label">Keys in Titles (est.)</div><div class="kpi-value">{{ potential_keys_in_titles }}</div></div>
+    </div>
 
-                <!-- Cleanup Musical Keys Card -->
-                <div class="col-md-4 mb-4">
-                    <div class="card h-100 shadow-sm">
-                        <div class="card-header bg-success text-white">
-                            <h5 class="card-title mb-0">
-                                <i class="fas fa-music mr-2"></i>
-                                Cleanup Musical Keys
-                            </h5>
-                        </div>
-                        <div class="card-body d-flex flex-column">
-                            <p class="card-text flex-grow-1">
-                                Clean up and standardize musical key information across your library.
-                            </p>
-                            <a href="{% url 'cleanup_musical_keys' %}" class="btn btn-success btn-block">
-                        </div>
-                    </div>
-                </div>
+    <!-- Tools Cards -->
+    <div class="rt-grid">
+        <!-- Duplicates -->
+        <div class="rt-card">
+            <div class="rt-card-icon bg-yellow"><i class="fas fa-copy"></i></div>
+            <h3 class="rt-card-title">Duplicates</h3>
+            <p class="rt-card-desc">Detect & merge duplicate tracks / artists to keep your library clean.</p>
+            <ul class="rt-bullets">
+                <li>Title + Artist detection</li>
+                <li>Conflict resolution</li>
+                <li>Batch merge</li>
+            </ul>
+            <a href="{% url 'duplicates' %}" class="rt-btn rt-btn-warning"><i class="fas fa-copy"></i> Manage Duplicates</a>
+        </div>
 
-                <!-- Card Config -->
-                <div class="col-md-4 mb-4">
-                    <div class="card h-100">
-                        <div class="card-header bg-info text-white">
-                            <h5 class="card-title mb-0">
-                                <i class="fas fa-cog"></i> Configuration
-                            </h5>
-                        </div>
-                        <div class="card-body">
-                            <p class="card-text">
-                                Configurer les paramètres globaux de RubiTrack.
-                            </p>
-                            <ul class="list-unstyled">
-                                <li>• Plage BPM par défaut</li>
-                                <li>• Paramètres suggestions</li>
-                                <li>• Préférences utilisateur</li>
-                            </ul>
-                        </div>
-                        <div class="card-footer">
-                            <a href="{% url 'config' %}" class="btn btn-info btn-block">
-                                <i class="fas fa-wrench"></i> Accéder à la config
-                            </a>
-                        </div>
-                    </div>
-                </div>
+        <!-- Configuration (system) -->
+        <div class="rt-card">
+            <div class="rt-card-icon bg-cyan"><i class="fas fa-cog"></i></div>
+            <h3 class="rt-card-title">System Configuration</h3>
+            <p class="rt-card-desc">Adjust global behavior: BPM ranges, key distance, ranking filters, UI limits.</p>
+            <ul class="rt-bullets">
+                <li>Suggestion defaults</li>
+                <li>History sizes</li>
+                <li>Performance tuning</li>
+            </ul>
+            <a href="{% url 'config' %}" class="rt-btn rt-btn-cyan"><i class="fas fa-wrench"></i> Open Config</a>
+        </div>
 
-                <!-- Card Cleanup Musical Keys -->
-                <div class="col-md-4 mb-4">
-                    <div class="card h-100">
-                        <div class="card-header bg-success text-white">
-                            <h5 class="card-title mb-0">
-                                <i class="fas fa-music"></i> Cleanup Musical Keys
-                            </h5>
-                        </div>
-                        <div class="card-body">
-                            <p class="card-text">
-                                Normaliser automatiquement toutes les clés musicales.
-                            </p>
-                            <ul class="list-unstyled">
-                                <li>• Extraction depuis titres</li>
-                                <li>• Conversion notation A#m</li>
-                                <li>• Mise à jour automatique</li>
-                            </ul>
-                        </div>
-                        <div class="card-footer">
-                            <a href="{% url 'cleanup_musical_keys' %}" class="btn btn-success btn-block">
-                                <i class="fas fa-broom"></i> Nettoyer les clés
-                            </a>
-                        </div>
-                    </div>
-                </div>
+        <!-- Cleanup Keys (quick) -->
+        <div class="rt-card">
+            <div class="rt-card-icon bg-green"><i class="fas fa-music"></i></div>
+            <h3 class="rt-card-title">Cleanup Musical Keys</h3>
+            <p class="rt-card-desc">Extract & normalize keys from titles. Fix inconsistent notations fast.</p>
+            <ul class="rt-bullets">
+                <li>Title parsing</li>
+                <li>Normalization</li>
+                <li>Dry-run option</li>
+            </ul>
+            <a href="{% url 'cleanup_musical_keys' %}" class="rt-btn rt-btn-green"><i class="fas fa-broom"></i> Run Cleanup</a>
+        </div>
 
-                <!-- Card Cue Points -->
-                <div class="col-md-4 mb-4">
-                    <div class="card h-100">
-                        <div class="card-header bg-primary text-white">
-                            <h5 class="card-title mb-0">
-                                <i class="fas fa-map-marker-alt"></i> Cue Points
-                            </h5>
-                        </div>
-                        <div class="card-body">
-                            <p class="card-text">
-                                Vue d'ensemble et gestion des points de repère (cue points).
-                            </p>
-                            <ul class="list-unstyled">
-                                <li>• Import depuis collection.nml</li>
-                                <li>• 8 cue points par track</li>
-                                <li>• Types et commentaires</li>
-                            </ul>
-                        </div>
-                        <div class="card-footer">
-                            <a href="{% url 'cue_points_overview' %}" class="btn btn-primary btn-block">
-                                <i class="fas fa-eye"></i> Voir les cue points
-                            </a>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Seconde ligne pour d'autres cartes si nécessaire -->
-            <div class="row">
-                <!-- Placeholder pour futures fonctionnalités -->
-            </div>
-
-            <!-- Statistiques -->
-            <div class="row mt-5">
-                <div class="col-12">
-                    <div class="card">
-                        <div class="card-header bg-secondary text-white">
-                            <h5 class="card-title mb-0">
-                                <i class="fas fa-chart-bar"></i> Statistiques Collection
-                            </h5>
-                        </div>
-                        <div class="card-body">
-                            <div class="row text-center">
-                                <div class="col-md-3">
-                                    <h4 class="text-primary">{{ total_tracks }}</h4>
-                                    <p class="text-muted">Tracks totales</p>
-                                </div>
-                                <div class="col-md-3">
-                                    <h4 class="text-success">{{ tracks_with_keys }}</h4>
-                                    <p class="text-muted">Avec clé musicale</p>
-                                </div>
-                                <div class="col-md-3">
-                                    <h4 class="text-warning">{{ tracks_without_keys }}</h4>
-                                    <p class="text-muted">Sans clé musicale</p>
-                                </div>
-                                <div class="col-md-3">
-                                    <h4 class="text-info">{{ potential_keys_in_titles }}</h4>
-                                    <p class="text-muted">Clés dans titres</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Navigation -->
-            <div class="row mt-4">
-                <div class="col-12 text-center">
-                    <a href="{% url 'index' %}" class="btn btn-outline-primary">
-                        <i class="fas fa-arrow-left"></i> Retour à l'accueil
-                    </a>
-                </div>
+        <!-- Cue Points -->
+        <div class="rt-card">
+            <div class="rt-card-icon bg-indigo"><i class="fas fa-map-marker-alt"></i></div>
+            <h3 class="rt-card-title">Cue Points</h3>
+            <p class="rt-card-desc">Overview & mass operations on imported Traktor cue points (1–8 slots).</p>
+            <ul class="rt-bullets">
+                <li>Import overview</li>
+                <li>Type statistics</li>
+                <li>Global wipe</li>
+            </ul>
+            <div class="rt-card-actions">
+                <a href="{% url 'cue_points_overview' %}" class="rt-btn rt-btn-indigo"><i class="fas fa-eye"></i> View Cue Points</a>
+                <a href="{% url 'delete_all_cue_points' %}" class="rt-btn rt-btn-danger" onclick="return confirm('Delete ALL cue points?');"><i class="fas fa-trash"></i> Delete All</a>
             </div>
         </div>
+
+        <!-- Secondary Config (kept for functionality parity) -->
+        <div class="rt-card rt-card-minor">
+            <div class="rt-card-icon bg-cyan-light"><i class="fas fa-sliders-h"></i></div>
+            <h3 class="rt-card-title">Advanced Config</h3>
+            <p class="rt-card-desc">Fine‑tune secondary system parameters & defaults.</p>
+            <a href="{% url 'config' %}" class="rt-btn rt-btn-outline"><i class="fas fa-cog"></i> Configure</a>
+        </div>
+
+        <!-- Key Cleanup (alt entry kept) -->
+        <div class="rt-card rt-card-minor">
+            <div class="rt-card-icon bg-green-light"><i class="fas fa-equals"></i></div>
+            <h3 class="rt-card-title">Normalize Keys</h3>
+            <p class="rt-card-desc">Alternate access to key normalization workflow.</p>
+            <a href="{% url 'cleanup_musical_keys' %}" class="rt-btn rt-btn-outline"><i class="fas fa-sync"></i> Normalize</a>
+        </div>
+    </div>
+
+    <!-- Footer navigation -->
+    <div class="rt-footer-nav">
+        <a href="{% url 'currently_playing_view' %}" class="rt-btn rt-btn-outline"><i class="fas fa-arrow-left"></i> Back to Now Playing</a>
     </div>
 </div>
 
 <style>
-.card {
-    transition: transform 0.2s ease-in-out;
-}
+.rt-tools-wrapper {max-width:1400px;margin:0 auto;padding:10px 20px;}
+.rt-page-title {font-size:28px;font-weight:600;margin:10px 0 25px;color:#1f2833;letter-spacing:.5px;}
 
-.card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-}
+/* KPI */
+.rt-kpi-grid {display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;margin-bottom:26px;}
+.rt-kpi {background:#fff;border:1px solid #e3e7ec;border-radius:10px;padding:14px 16px;box-shadow:0 1px 2px rgba(0,0,0,.04);position:relative;overflow:hidden;}
+.rt-kpi:before {content:"";position:absolute;left:0;top:0;height:100%;width:4px;background:#7a7a7a;opacity:.4;}
+.rt-kpi .kpi-label {font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:#66717e;font-weight:600;}
+.rt-kpi .kpi-value {font-size:22px;font-weight:700;line-height:1.2;margin-top:4px;color:#202a33;}
+.kpi-green:before {background:#28a745;}.kpi-orange:before {background:#ff9800;}.kpi-blue:before {background:#0d6efd;}
 
-.btn-block {
-    width: 100%;
-}
+/* Grid */
+.rt-grid {display:grid;grid-template-columns:repeat(auto-fit,minmax(270px,1fr));gap:24px;margin-bottom:40px;}
 
-.list-unstyled li {
-    padding: 2px 0;
+/* Cards */
+.rt-card {background:#ffffff;position:relative;border:1px solid #e2e6ea;border-radius:16px;padding:18px 18px 74px;display:flex;flex-direction:column;box-shadow:0 3px 8px rgba(0,0,0,.05);transition:.25s cubic-bezier(.4,.0,.2,1);overflow:hidden;}
+.rt-card:before {content:"";position:absolute;inset:0;pointer-events:none;border-radius:inherit;box-shadow:0 0 0 0 rgba(0,123,255,0);transition:.4s;}
+.rt-card:hover {transform:translateY(-6px);box-shadow:0 8px 20px -4px rgba(0,0,0,.12);} 
+.rt-card:hover:before {box-shadow:0 0 0 1px rgba(0,123,255,.18);}
+.rt-card-icon {width:48px;height:48px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:20px;color:#fff;font-weight:600;margin-bottom:14px;box-shadow:0 4px 10px -2px rgba(0,0,0,.15);}
+.bg-yellow {background:linear-gradient(135deg,#ffb347,#ff9800);} 
+.bg-cyan {background:linear-gradient(135deg,#06b6d4,#0284c7);} 
+.bg-green {background:linear-gradient(135deg,#22c55e,#16a34a);} 
+.bg-indigo {background:linear-gradient(135deg,#6366f1,#4f46e5);} 
+.bg-cyan-light {background:linear-gradient(135deg,#5dd8ff,#3fb3e6);} 
+.bg-green-light {background:linear-gradient(135deg,#6ee7b7,#34d399);} 
+.rt-card-title {font-size:18px;font-weight:600;margin:0 0 6px;color:#1f2933;}
+.rt-card-desc {font-size:13px;line-height:1.4;color:#5a636e;margin:0 0 10px;font-weight:500;}
+.rt-bullets {list-style:none;margin:0 0 14px;padding:0;font-size:12.5px;color:#47525d;}
+.rt-bullets li {position:relative;padding-left:16px;margin:3px 0;}
+.rt-bullets li:before {content:"•";position:absolute;left:2px;top:0;color:#888;font-weight:700;}
+.rt-card-actions {margin-top:auto;display:flex;flex-wrap:wrap;gap:8px;}
+.rt-card-minor {padding-bottom:26px;}
+
+/* Buttons */
+.rt-btn {display:inline-flex;align-items:center;gap:6px;border:none;border-radius:10px;padding:10px 14px;font-size:13px;font-weight:600;letter-spacing:.4px;text-decoration:none;cursor:pointer;transition:.25s;line-height:1.1;}
+.rt-btn i {font-size:14px;}
+.rt-btn-warning {background:#ff9800;color:#fff;}
+.rt-btn-cyan {background:#0284c7;color:#fff;}
+.rt-btn-green {background:#16a34a;color:#fff;}
+.rt-btn-indigo {background:#4f46e5;color:#fff;}
+.rt-btn-danger {background:#dc3545;color:#fff;}
+.rt-btn-outline {background:transparent;border:1px solid #c5ced6;color:#2c3a44;}
+.rt-btn-warning:hover {background:#fb8c00;} .rt-btn-cyan:hover {background:#0271a9;} .rt-btn-green:hover {background:#158037;} .rt-btn-indigo:hover {background:#4338ca;} .rt-btn-danger:hover {background:#c82333;} .rt-btn-outline:hover {background:#f1f5f9;}
+
+/* Footer */
+.rt-footer-nav {text-align:center;margin-top:10px;margin-bottom:40px;}
+.rt-footer-nav .rt-btn-outline {padding:11px 20px;font-size:14px;}
+
+/* Responsive tweaks */
+@media (max-width: 640px){
+  .rt-card {padding:16px 16px 70px;}
+  .rt-page-title {font-size:24px;}
+  .rt-kpi-grid {grid-template-columns:repeat(2,minmax(0,1fr));}
 }
 </style>
 {% endblock %}

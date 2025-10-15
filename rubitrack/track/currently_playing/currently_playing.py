@@ -8,11 +8,12 @@ import pytz
 
 from .suggestions import get_list_track_suggestions_auto
 from .suggestions_block_view import get_suggestions_for_track
-from ..playlist_context import get_next_tracks_in_playlists
+from ..playlist.playlist_context import get_next_tracks_in_playlists
 from track.playlist.playlist_transitions import get_playlists_by_track_id, SEPARATOR_TRACK_ID
 from ..constants import REFRESH_INTERVAL_CURRENTLY_PLAYING_MS
 
 from ..models import Track, Transition, CurrentlyPlaying, Config
+from ..constants import REFRESH_INTERVAL_CURRENTLY_PLAYING_MS
 from ..track_db_service import (
     are_track_related,
     get_track_related_text,
@@ -25,31 +26,38 @@ BLANK_TEMPLATE = 'track/blank.html'
 
 
 def get_cue_points_times_for_track(track, slots: int = 8):
-    """Return a list of cue point times (length 'slots'), '-' when missing/None.
-    Centralized helper to avoid duplicated logic in views.
+    """Return a list of cue point times indexed by slot number (1..slots).
+    Each position i reflects cue_point_i (1-based). Missing or empty -> '-'.
     """
     result = ['-'] * slots
     if not track:
         return result
     try:
         if hasattr(track, 'cue_points') and track.cue_points:
-            cue_list = track.cue_points.get_cue_points()
-            for i in range(min(slots, len(cue_list))):
-                cp = cue_list[i]
-                time_val = None
-                if cp is not None:
-                    if hasattr(cp, 'time'):
-                        time_val = cp.time
-                    elif isinstance(cp, dict) and 'time' in cp:
-                        time_val = cp['time']
-                    else:
-                        time_val = str(cp)
-                result[i] = time_val if time_val not in (None, '', 'None') else '-'
+            # Access each numbered attribute directly to keep alignment
+            for i in range(1, slots + 1):
+                cp = getattr(track.cue_points, f'cue_point_{i}', None)
+                if cp:
+                    time_val = getattr(cp, 'time', None)
+                    result[i - 1] = time_val if time_val else '-'
     except Exception:
-        # Silencieux: retourne simplement les '-'
         pass
     return result
 
+# New structured helper
+def get_cue_points_slots_for_track(track, slots: int = 8):
+    """Return list of dicts [{'slot':i,'time':..., 'exists':bool}] for slots 1..n"""
+    slots_list = []
+    if not track or not hasattr(track, 'cue_points') or not track.cue_points:
+        return [{'slot': i, 'time': '-', 'exists': False} for i in range(1, slots + 1)]
+    for i in range(1, slots + 1):
+        cp = getattr(track.cue_points, f'cue_point_{i}', None)
+        if cp:
+            time_val = getattr(cp, 'time', None) or '-'
+            slots_list.append({'slot': i, 'time': time_val, 'exists': True})
+        else:
+            slots_list.append({'slot': i, 'time': '-', 'exists': False})
+    return slots_list
 
 @login_required
 def display_currently_playing(request):
@@ -76,7 +84,7 @@ def display_currently_playing(request):
         
         # Prépare une liste de 8 time cue points (centralisé)
         cue_points_times = get_cue_points_times_for_track(current_track)
-        
+        cue_points_slots = get_cue_points_slots_for_track(current_track)
         return render(
             request,
             'track/currently_playing/currently_playing.html',
@@ -89,6 +97,7 @@ def display_currently_playing(request):
                 'playlistsWithTrack': playlists_with_track,
                 'refreshInterval': REFRESH_INTERVAL_CURRENTLY_PLAYING_MS,
                 'cue_points_times': cue_points_times,
+                'cue_points_slots': cue_points_slots,
             },
         )
 
@@ -113,7 +122,7 @@ def display_history_editing(request, track_id):
         transitions_after = get_transitions_after(current_track)
         transitions_before = get_transitions_before(current_track)
         list_track_suggestions = get_list_track_suggestions_auto(current_track)
-        # Nouvelles suggestions interactives (tri par playcount décroissant par défaut)
+        # Nouvelles suggestions interactives (tri par playcount décroissante par défaut)
         suggestions = get_suggestions_for_track(current_track.id, sort_by='playcount', sort_order='desc')
         # Ajout : playlists contenant la track
         playlists_with_track = get_playlists_by_track_id(current_track.id)
@@ -121,6 +130,8 @@ def display_history_editing(request, track_id):
         next_tracks_in_playlists = get_next_tracks_in_playlists(current_track.id)
         # Prépare une liste de 8 time cue points (centralisé)
         cue_points_times = get_cue_points_times_for_track(current_track)
+        cue_points_slots = get_cue_points_slots_for_track(current_track)
+        config = Config.get_config()
         print("Edit history for track :", current_track)
         return render(
             request,
@@ -135,6 +146,9 @@ def display_history_editing(request, track_id):
                 'playlistsWithTrack': playlists_with_track,
                 'nextTracksInPlaylists': next_tracks_in_playlists,
                 'cue_points_times': cue_points_times,
+                'cue_points_slots': cue_points_slots,
+                'all_tracks': Track.objects.order_by('title','artist__name').only('id','title','artist__name'),
+                'default_ranking_min': config.default_ranking_min,
             },
         )
 
@@ -310,11 +324,7 @@ def get_more_transition_block(request):
     transitions_before = get_transitions_before(current_track_db)
     transitions_after = get_transitions_after(current_track_db)
     cue_points_times = get_cue_points_times_for_track(current_track_db)
-
-    # Prépare une liste de 8 cue points ( '-' si absent ) pour l'affichage dans le block transitions
-    cue_points_times = get_cue_points_times_for_track(current_track_db)
-
-    print("TRANSITIONS (playing) found before/after", transitions_before, '/', transitions_after)
+    cue_points_slots = get_cue_points_slots_for_track(current_track_db)
     return render(
         request,
         'track/currently_playing/get_more_transition_block_history.html',
@@ -323,6 +333,7 @@ def get_more_transition_block(request):
             'transitionsAfter': transitions_after,
             'currentTrack': current_track_db,
             'cue_points_times': cue_points_times,
+            'cue_points_slots': cue_points_slots,
         },
     )
 
@@ -343,6 +354,7 @@ def get_more_transition_block_history(request, current_track_id=None):
             transitions_before = get_transitions_before(current_track_db)
             transitions_after = get_transitions_after(current_track_db)
             cue_points_times = get_cue_points_times_for_track(current_track_db)
+            cue_points_slots = get_cue_points_slots_for_track(current_track_db)
 
             return render(
                 request,
@@ -352,6 +364,7 @@ def get_more_transition_block_history(request, current_track_id=None):
                     'transitionsAfter': transitions_after,
                     'currentTrack': current_track_db,
                     'cue_points_times': cue_points_times,
+                    'cue_points_slots': cue_points_slots,
                 },
             )
     print('ERROR TRACK NOT FOUND')
@@ -417,7 +430,7 @@ def get_all_currently_playing_data(request):
     
     # Prépare une liste de 8 time cue points (centralisé)
     cue_points_times = get_cue_points_times_for_track(current_track)
-    
+    cue_points_slots = get_cue_points_slots_for_track(current_track)
     return render(
         request,
         'track/currently_playing/get_all_currently_playing_data.html',
@@ -429,6 +442,7 @@ def get_all_currently_playing_data(request):
             'listTrackSuggestions': list_track_suggestions,
             'playlistsWithTrack': playlists_with_track,
             'cue_points_times': cue_points_times,
+            'cue_points_slots': cue_points_slots,
         },
     )
 

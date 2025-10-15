@@ -2,7 +2,7 @@
 
 ## Vue d'ensemble
 
-Le service `export_service.py` (anciennement `collection_export_service.py`) permet d'exporter les cue points stockés dans Rubitrack vers une collection Rekordbox XML. Il recherche les tracks ayant exactement le même nom d'artiste et titre, puis ajoute les cue points correspondants.
+Le service `collection_export_service.py` permet d'exporter les cue points stockés dans Rubitrack vers une collection Rekordbox XML. Il recherche les tracks ayant exactement le même nom d'artiste et titre, puis ajoute les cue points correspondants.
 
 ## Architecture
 
@@ -25,7 +25,7 @@ Service principal pour manipuler les collections Rekordbox.
 
 ### 1. Import du service
 ```python
-from track.collection.rekordbox.export_service import add_cue_points_to_rekordbox_collection
+from track.collection_export_service import add_cue_points_to_rekordbox_collection
 ```
 
 ### 2. Export basique
@@ -108,7 +108,7 @@ cp collection.xml collection.xml.backup
 
 ### 2. Export
 ```python
-from track.collection.rekordbox.export_service import add_cue_points_to_rekordbox_collection
+from track.collection_export_service import add_cue_points_to_rekordbox_collection
 
 stats = add_cue_points_to_rekordbox_collection(
     collection_file_path="collection.xml",
@@ -205,7 +205,7 @@ except PermissionError:
 ### Export avec filtres
 ```python
 from track.models import Track
-from track.collection.rekordbox.export_service import RekordboxCollectionExportService
+from track.collection_export_service import RekordboxCollectionExportService
 
 # Service personnalisé
 service = RekordboxCollectionExportService()

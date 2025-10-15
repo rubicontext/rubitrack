@@ -1,18 +1,17 @@
+{% load musical_key_filters %}
 <input type="hidden" id="currentTrackId" name="currentTrackId" value="{{ currentTrack.pk }}" />
 
 <div class="row">
-  <div class="on_air">
-    ON AIR: 
-   </div>
-  <div class="track_medium_blue" >
-     {{ currentTrack.title }}  
+  <div class="on_air">ON AIR: </div>
+  <div class="track_medium_blue">{{ currentTrack.title }}</div>
+  <div class="artist_green_flashy"> - {{ currentTrack.artist.name }}</div>
+  <div class="grey_subtitle_small">
+    Genre: {{ currentTrack.genre.name }}  - {{ currentTrack.bpm|floatformat}} bpm{% if currentTrack.musical_key %} - <span class="key-badge-inline">{% musical_key_badge currentTrack.musical_key %}</span>{% endif %} - 
+     <a href="{% url 'history_editing_view' currentTrack.id %}"><i class="fa fa-edit"></i> View On History</a>
   </div>
-
-   <div class="artist_green_flashy"> - {{ currentTrack.artist.name }}</div>
-
-   <div class="grey_subtitle_small">
-    Genre: {{ currentTrack.genre.name }}  - {{ currentTrack.bpm|floatformat}} bpm - 
-    <a href="{% url 'admin:track_track_change' currentTrack.id %}"><i class="fa fa-edit"></i> Edit track info  </a>
-    </div>
 </div>
 </div>
+
+<style>
+.key-badge-inline .musical-key-badge{margin-left:4px;}
+</style>

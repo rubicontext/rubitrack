@@ -1,4 +1,4 @@
-from track.models_musicalkey import MusicalKey
+from rubitrack.track.musical_key.models_musicalkey import MusicalKey
 
 # Mapping officiel Traktor : (notation musicale, notation Camelot, ordre)
 TRAKTOR_CAMELOT_ORDER = [

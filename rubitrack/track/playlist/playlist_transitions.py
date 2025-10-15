@@ -6,7 +6,7 @@ from django.shortcuts import render
 
 from django.contrib.auth.decorators import login_required
 
-from track.transitions.transitions_core import create_transition
+from track.currently_playing.transition import create_transition
 
 from ..models import Track, Transition, Playlist
 
@@ -165,4 +165,7 @@ def delete_all_generated_transitions(request):
 
 
 def get_playlists_by_track_id(track_id: int) -> list:
-    return Playlist.objects.filter(tracks__id=track_id).order_by('name')
+    playlists = Playlist.objects.filter(tracks__id=track_id).distinct()
+    # Order in Python using existing get_order_rank to avoid duplicated ranking logic
+    ordered = sorted(playlists, key=lambda p: (get_order_rank(p.name), p.name.lower() if p.name else ''))
+    return ordered

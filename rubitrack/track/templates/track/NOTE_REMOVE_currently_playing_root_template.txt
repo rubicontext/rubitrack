@@ -1,0 +1,1 @@
+Empty duplicate template file currently_playing.html was present at track/templates/track/currently_playing.html. It has been backed up as currently_playing.html.bak (empty) and can be safely deleted after confirming no references rely on that path. Active template is in subfolder track/templates/track/currently_playing/currently_playing.html

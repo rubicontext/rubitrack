@@ -8,14 +8,14 @@
     <h3>Suggestions pour : 
         {% if current_track %}
             <span class="artist_green_flashy">{{ current_track.artist.name }}</span> - {{ current_track.title }}
+            {% if current_track.musical_key %}
+                <span class="inline-key-badge">{% musical_key_badge current_track.musical_key %}</span>
+            {% else %}
+                <span class="inline-key-badge no-key">--</span>
+            {% endif %}
             <br><small class="track-info">
                 {{ current_track.genre.name|default:"--" }} - 
-                {{ current_track.bpm|floatformat:1|default:"--" }} BPM - 
-                {% if current_track.musical_key %}
-                    {% musical_key_badge current_track.musical_key %}
-                {% else %}
-                    <span class="no-key">--</span>
-                {% endif %}
+                {{ current_track.bpm|floatformat:1|default:"--" }} BPM
             </small>
         {% endif %}
     </h3>
@@ -24,7 +24,7 @@
     <div class="suggestions-controls">
         <div class="control-group">
             <label for="bpm-range-slider">BPM Range (±<span id="bpm-range-value">{{ bpm_range|default:3 }}</span>%)</label>
-            <input type="range" id="bpm-range-slider" min="0" max="20" value="{{ bpm_range|default:3 }}" class="slider">
+            <input type="range" id="bpm-range-slider" min="1" max="20" value="{{ bpm_range|default:3 }}" class="slider">
         </div>
         
         <div class="control-group">
@@ -55,12 +55,11 @@
             <table id="suggestions-table" class="suggestions-table">
                 <thead>
                     <tr>
-                        <th class="sortable" data-field="artist__name">Artist</th>
                         <th class="sortable" data-field="title">Title</th>
+                        <th class="sortable" data-field="artist__name">Artist</th>
                         <th class="sortable" data-field="genre__name">Genre</th>
                         <th class="sortable" data-field="bpm">BPM</th>
                         <th class="sortable" data-field="musical_key">Musical Key</th>
-                        <th class="sortable" data-field="traktor_order">Traktor Order</th>
                         <th class="sortable" data-field="comment">Comment</th>
                         <th class="sortable" data-field="ranking">Ranking</th>
                         <th class="sortable" data-field="playcount">Playcount</th>
@@ -203,6 +202,8 @@
     color: #666;
     font-style: italic;
 }
+
+.inline-key-badge { margin-left:10px; }
 </style>
 
 <script>
@@ -279,34 +280,27 @@ document.addEventListener('DOMContentLoaded', function() {
     function updateSuggestionsTable(suggestions) {
         const tbody = suggestionsTable.querySelector('tbody');
         tbody.innerHTML = '';
-        
         suggestions.forEach(track => {
             const row = document.createElement('tr');
             row.className = 'track-row';
-            
             let rankingStars = '';
             for (let i = 1; i <= 5; i++) {
                 rankingStars += i <= track.ranking ? '★' : '☆';
             }
-            
             let musicalKeyOrder = (typeof track.musical_key_order !== 'undefined' && track.musical_key_order !== null) ? ` (${track.musical_key_order})` : '';
             let musicalKeyBadge = track.musical_key ? 
                 `<span class="musical-key-badge" style="background-color: ${track.musical_key_color}; color: white; font-weight: bold; padding: 2px 6px; border-radius: 3px; font-size: 11px;">${track.musical_key}</span>` : '--';
             let keyDistance = (typeof track.musical_key_distance !== 'undefined' && track.musical_key_distance !== null) ? 
                 `<span style='color:#888;font-size:10px;margin-left:4px;'>${track.musical_key_distance}${musicalKeyOrder}</span>` : musicalKeyOrder;
-            
             row.innerHTML = `
-                <td>${track.artist_name}</td>
-                <td>${track.title}</td>
+                <td><a href="/track/history_editing/${track.id}">${track.title}</a></td>
+                <td><span class="artist_green_flashy">${track.artist_name}</span></td>
                 <td><span class="genre-badge">${track.genre_name || '--'}</span></td>
                 <td>${track.bpm ? parseFloat(track.bpm).toFixed(1) : '--'}</td>
                 <td>${musicalKeyBadge}${keyDistance}</td>
-                <td>${track.musical_key_order !== undefined && track.musical_key_order !== null ? track.musical_key_order : '--'}</td>
                 <td>${track.comment || '--'}</td>
                 <td><span class="ranking-stars">${rankingStars}</span></td>
-                <td>${track.playcount || 0}</td>
-            `;
-            
+                <td>${track.playcount || 0}</td>`;
             tbody.appendChild(row);
         });
     }

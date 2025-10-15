@@ -7,19 +7,15 @@
             <table class="next-tracks-table">
                 <thead>
                     <tr>
+                        <th>Playlist</th>
                         <th>Track suivante</th>
                         <th>Artiste</th>
-                        <th>Playlist</th>
                         <th>Commentaire de transition</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for next_track_info in nextTracksInPlaylists %}
                         <tr class="next-track-row">
-                            <td class="track-title">{{ next_track_info.next_track.title }}</td>
-                            <td class="track-artist">
-                                <span class="artist_green_flashy">{{ next_track_info.next_track.artist.name }}</span>
-                            </td>
                             <td class="playlist-name">
                                 {% if next_track_info.playlist_id %}
                                     <a href="{% url 'playlist_transitions_view' next_track_info.playlist_id %}">
@@ -28,6 +24,10 @@
                                 {% else %}
                                     {{ next_track_info.playlist_name }}
                                 {% endif %}
+                            </td>
+                            <td class="track-title">{{ next_track_info.next_track.title }}</td>
+                            <td class="track-artist">
+                                <span class="artist_green_flashy">{{ next_track_info.next_track.artist.name }}</span>
                             </td>
                             <td class="transition-comment">
                                 {% if next_track_info.transition_comment %}
@@ -109,12 +109,13 @@
 }
 
 .playlist-name {
-    font-style: italic;
+    font-weight: 600;
     color: #6c757d;
     max-width: 200px;
 }
 
 .playlist-name a {
+    font-weight: 600;
     color: #6c757d;
     text-decoration: none;
 }
