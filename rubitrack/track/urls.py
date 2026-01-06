@@ -29,6 +29,11 @@ from .currently_playing.suggestions_block_view import ajax_suggestions, suggesti
 from .config.config_views import config_view, config_reset_view
 from .config.tools_views import tools_index, cleanup_musical_keys, cue_points_overview, delete_all_cue_points
 from .musical_key.views_import_musical_keys import import_musical_keys_view
+from .collection.rekordbox.views import (
+    rekordbox_sync_view,
+    synchronize_rekordbox_collection_api,
+    cue_points_stats_api
+)
 
 from django.views.generic.base import RedirectView
 from django.contrib.staticfiles.storage import staticfiles_storage
@@ -122,6 +127,10 @@ urlpatterns = [
     path('tools/cleanup_musical_keys/', cleanup_musical_keys, name='cleanup_musical_keys'),
     path('tools/cue_points/', cue_points_overview, name='cue_points_overview'),
     path('tools/delete_all_cue_points/', delete_all_cue_points, name='delete_all_cue_points'),
+    # REKORDBOX SYNCHRONIZATION
+    path('rekordbox/', rekordbox_sync_view, name='rekordbox_sync'),
+    path('rekordbox/api/synchronize/', synchronize_rekordbox_collection_api, name='rekordbox_api_synchronize'),
+    path('rekordbox/api/stats/', cue_points_stats_api, name='rekordbox_api_stats'),
 ] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
 
 urlpatterns += [

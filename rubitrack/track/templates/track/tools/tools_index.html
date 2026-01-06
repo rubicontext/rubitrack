@@ -71,6 +71,19 @@
             </div>
         </div>
 
+        <!-- Rekordbox Synchronization -->
+        <div class="rt-card">
+            <div class="rt-card-icon bg-purple"><i class="fas fa-sync-alt"></i></div>
+            <h3 class="rt-card-title">Rekordbox Sync</h3>
+            <p class="rt-card-desc">Synchronize cue points from Rubitrack to your Rekordbox collection XML file.</p>
+            <ul class="rt-bullets">
+                <li>Upload Rekordbox XML</li>
+                <li>Auto-match tracks</li>
+                <li>Download updated file</li>
+            </ul>
+            <a href="{% url 'rekordbox_sync' %}" class="rt-btn rt-btn-purple"><i class="fas fa-upload"></i> Sync Collection</a>
+        </div>
+
         <!-- Secondary Config (kept for functionality parity) -->
         <div class="rt-card rt-card-minor">
             <div class="rt-card-icon bg-cyan-light"><i class="fas fa-sliders-h"></i></div>
@@ -119,6 +132,7 @@
 .bg-cyan {background:linear-gradient(135deg,#06b6d4,#0284c7);} 
 .bg-green {background:linear-gradient(135deg,#22c55e,#16a34a);} 
 .bg-indigo {background:linear-gradient(135deg,#6366f1,#4f46e5);} 
+.bg-purple {background:linear-gradient(135deg,#a855f7,#9333ea);} 
 .bg-cyan-light {background:linear-gradient(135deg,#5dd8ff,#3fb3e6);} 
 .bg-green-light {background:linear-gradient(135deg,#6ee7b7,#34d399);} 
 .rt-card-title {font-size:18px;font-weight:600;margin:0 0 6px;color:#1f2933;}
@@ -136,9 +150,10 @@
 .rt-btn-cyan {background:#0284c7;color:#fff;}
 .rt-btn-green {background:#16a34a;color:#fff;}
 .rt-btn-indigo {background:#4f46e5;color:#fff;}
+.rt-btn-purple {background:#9333ea;color:#fff;}
 .rt-btn-danger {background:#dc3545;color:#fff;}
 .rt-btn-outline {background:transparent;border:1px solid #c5ced6;color:#2c3a44;}
-.rt-btn-warning:hover {background:#fb8c00;} .rt-btn-cyan:hover {background:#0271a9;} .rt-btn-green:hover {background:#158037;} .rt-btn-indigo:hover {background:#4338ca;} .rt-btn-danger:hover {background:#c82333;} .rt-btn-outline:hover {background:#f1f5f9;}
+.rt-btn-warning:hover {background:#fb8c00;} .rt-btn-cyan:hover {background:#0271a9;} .rt-btn-green:hover {background:#158037;} .rt-btn-indigo:hover {background:#4338ca;} .rt-btn-purple:hover {background:#7c3aed;} .rt-btn-danger:hover {background:#c82333;} .rt-btn-outline:hover {background:#f1f5f9;}
 
 /* Footer */
 .rt-footer-nav {text-align:center;margin-top:10px;margin-bottom:40px;}

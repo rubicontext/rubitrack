@@ -62,19 +62,6 @@ class Track(models.Model):
     def __str__(self):
         return self.title + " - " + self.artist.name
 
-    # custom method
-    def was_added_recently(self):
-        if self.date_collection_created:
-            return self.date_collection_created >= timezone.now() - datetime.timedelta(days=120)
-        else:
-            return False
-
-    def is_techno(self):
-        if self.genre:
-            return self.genre.name.startswith('T')
-        else:
-            return False
-
     def get_track_cue_points_text(self):
         """
         Retourne une chaîne de texte compact avec les cue points de la track
@@ -132,15 +119,21 @@ class Playlist(models.Model):
     track_ids = models.CharField(max_length=20000, blank=True, null=True)
     tracks = models.ManyToManyField(Track)
     rank = models.IntegerField(blank=True, null=True)
+    collection = models.ForeignKey('Collection', on_delete=models.CASCADE)
 
     def __str__(self):
         return self.name
 
 
 class Collection(models.Model):
-    name = models.CharField(max_length=200)
+    name = models.CharField(max_length=200, blank=True)
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     tracks = models.ManyToManyField(Track)
+
+    def save(self, *args, **kwargs):
+        if not self.name:
+            self.name = self.user.username
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return self.name
@@ -248,10 +241,18 @@ class CuePoint(models.Model):
     """
     Model to store individual cue points with their position, type and comment
     """
-    time = models.CharField(max_length=10, help_text="Position in track (e.g., '3:28')")
+    time = models.CharField(max_length=20, null=True, blank=True)
+    # Precise Traktor milliseconds with up to 6 fractional digits
+    time_ms = models.DecimalField(max_digits=16, decimal_places=6, null=True, blank=True)
+    len_ms = models.DecimalField(max_digits=16, decimal_places=6, null=True, blank=True)
     type = models.CharField(max_length=50, blank=True, null=True, help_text="Type of cue point")
     comment = models.TextField(max_length=200, blank=True, null=True, help_text="Comment for this cue point")
     
+    # Nouveaux champs pour supporter les loops et types Traktor
+    end_time = models.CharField(max_length=20, null=True, blank=True)
+    duration = models.FloatField(null=True, blank=True)
+    traktor_type = models.CharField(max_length=10, null=True, blank=True)
+
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     
@@ -261,7 +262,7 @@ class CuePoint(models.Model):
         ordering = ['time']
     
     def __str__(self):
-        return f"CuePoint at {self.time}" + (f" ({self.type})" if self.type else "")
+        return f"CuePoint({self.time})"
 
 
 class TrackCuePoints(models.Model):
@@ -320,3 +321,15 @@ class TrackCuePoints(models.Model):
             setattr(self, f'cue_point_{number}', cue_point)
             return True
         return False
+    
+    def get_cue_points_for_export(self):
+        """
+        Retourne les cue points sous forme de liste de tuples pour l'export
+        Format: [(num, time_seconds), ...]
+        """
+        cue_points_export = []
+        for i in range(1, 9):
+            cue_point = getattr(self, f'cue_point_{i}')
+            if cue_point:
+                cue_points_export.append((i, cue_point.time))
+        return cue_points_export

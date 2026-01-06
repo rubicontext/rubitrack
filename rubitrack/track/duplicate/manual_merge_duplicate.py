@@ -16,6 +16,12 @@ def merge_duplicate_tracks(track_a_id: int, track_b_id: int):
     track_a = Track.objects.get(id=track_a_id)
     track_b = Track.objects.get(id=track_b_id)
     
+    # Si A n'a pas de commentaire mais B en a un, copier le commentaire de B vers A
+    if track_b.comment and track_b.comment.strip() and (not track_a.comment or not track_a.comment.strip()):
+        track_a.comment = track_b.comment
+        track_a.save()
+        print(f"📝 Commentaire copié de B vers A: '{track_a.comment}'")
+    
     # Copier toutes les transitions de B vers A
     for t in Transition.objects.filter(track_source=track_b):
         Transition.objects.get_or_create(track_source=track_a, track_destination=t.track_destination, defaults={"comment": t.comment})

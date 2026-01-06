@@ -2,6 +2,9 @@ import datetime
 from xml.dom.minicompat import NodeList
 from xml.dom.minidom import Element
 import pytz
+import re
+import unicodedata
+from decimal import Decimal, InvalidOperation
 
 from django import forms
 from django.shortcuts import render
@@ -33,6 +36,8 @@ def handle_uploaded_file(file, user):
 
     cptNewTracks = 0
     cptExistingTracks = 0
+    # Evite les doublons d'ENTRY pour le même morceau (first-wins)
+    processed_keys: set[str] = set()
     for current_entry in entry_list:
         # for current_entry in entry_list[0:10]:
 
@@ -48,6 +53,19 @@ def handle_uploaded_file(file, user):
         location_dir = location[0].attributes['VOLUME'].value + location[0].attributes['DIR'].value
         file_path = location_dir + file_name
 
+        # Clé de dédoublonnage: priorité à AudioId, sinon chemin, sinon couple artist+title
+        artist_name_key = get_artist_name_from_entry(current_entry)
+        if audio_id:
+            dedup_key = f"audio:{audio_id}"
+        elif file_path:
+            dedup_key = f"path:{file_path.lower()}"
+        else:
+            dedup_key = f"tt:{artist_name_key.lower()}|{title.lower()}"
+        if dedup_key in processed_keys:
+            # Duplicate ENTRY for same track → skip to preserve first values
+            continue
+        processed_keys.add(dedup_key)
+
 
         artist = get_artist_from_entry(current_entry)
         genreName = get_genre_from_info(info)
@@ -62,7 +80,6 @@ def handle_uploaded_file(file, user):
         genre = get_genre_db_from_genre_name(genreName)
 
         # Check if TRACK exists or insert it
-        # trackDb = Track.objects.get(title=title, artist=artist)
         # 1 find by artist and title
         trackList = Track.objects.filter(title=title, artist=artist)
         if len(trackList) > 0:
@@ -96,14 +113,6 @@ def handle_uploaded_file(file, user):
         # Priorité : champ KEY -> nom de fichier
         determined_key = normalize_musical_key_notation(musicalKey) if musicalKey else extract_musical_key_from_filename(file_name)
         track.musical_key = determined_key
-        
-        # Log pour debug
-        if determined_key:
-            if determined_key != musicalKey:
-                print(f"🔄 Clé musicale pour '{title}': {musicalKey} → {determined_key}")
-        else:
-            if musicalKey:
-                print(f"⚠️  Impossible de normaliser la clé pour '{title}': {musicalKey}")
             
         track.bitrate = bitrate
         track.bpm = bpm
@@ -320,110 +329,117 @@ def get_ranking_from_xml_info(info) -> int:
 
 def extract_and_save_cue_points(current_entry, track):
     """
-    Extract cue points from XML entry and save them to TrackCuePoints
+    Extract cue points from XML entry and save them to TrackCuePoints.
+    - Map Traktor HOTCUE 0..7 → cue_point_1..8 (RCue1 = HOTCUE=0)
+    - START et LEN sont TOUJOURS en millisecondes (Decimal), sans détection d’unité
+    - Inclure TYPE=4 (grid) pour remplir RCue1 quand HOTCUE=0 est un grid
+    - En cas de doublons sur le même HOTCUE, on garde le premier rencontré (first-wins)
     """
     cue_points_list = current_entry.getElementsByTagName('CUE_V2')
-    
-    if not cue_points_list or len(cue_points_list) == 0:
-        print(f"No cue points found for track: {track.title}")
+    if not cue_points_list:
         return
-    
-    # Get or create TrackCuePoints for this track
-    track_cue_points, created = TrackCuePoints.objects.get_or_create(track=track)
-    
-    # Clear existing cue points if we're re-importing
-    for i in range(1, 9):
-        old_cue_point = getattr(track_cue_points, f'cue_point_{i}')
-        if old_cue_point:
-            old_cue_point.delete()
-        setattr(track_cue_points, f'cue_point_{i}', None)
-    
-    cue_point_count = 0
-    
-    for cue_point_xml in cue_points_list:
-        # Extract HOTCUE number early for slot mapping
-        hotcue_number = None
-        if 'HOTCUE' in cue_point_xml.attributes:
-            try:
-                val = cue_point_xml.attributes['HOTCUE'].value
-                hotcue_number = int(val) if val.isdigit() else None
-                if hotcue_number == 0:
-                    hotcue_number = None  # ignore grid markers (0)
-            except ValueError:
-                hotcue_number = None
-        # Limit to 8 hotcues (1..8)
-        # Extract position/time from START attribute (in milliseconds)
-        if 'START' not in cue_point_xml.attributes:
-            continue
-            
-        start_ms = cue_point_xml.attributes['START'].value
         
+    track_cue_points, _ = TrackCuePoints.objects.get_or_create(track=track)
+    
+    # Reset existing 8 slots
+    for idx in range(1, 9):
+        cp = getattr(track_cue_points, f'cue_point_{idx}')
+        if cp:
+            cp.delete()
+        setattr(track_cue_points, f'cue_point_{idx}', None)
+    
+    seen_slots: set[int] = set()
+    
+    for cue_xml in cue_points_list:
+        if not cue_xml.hasAttribute('HOTCUE'):
+            continue
+        hotcue_val = cue_xml.getAttribute('HOTCUE')
+        if not hotcue_val.isdigit():
+            continue
+        hotcue_index = int(hotcue_val)
+        if hotcue_index < 0 or hotcue_index > 7:
+            continue
+        slot = hotcue_index + 1
+        # Skip duplicate entries for the same slot; keep the first one found
+        if slot in seen_slots:
+            continue
+        seen_slots.add(slot)
+
+        traktor_type = cue_xml.getAttribute('TYPE') if cue_xml.hasAttribute('TYPE') else ''
+        
+        # START (toujours millisecondes)
+        if not cue_xml.hasAttribute('START'):
+            continue
+        start_raw = cue_xml.getAttribute('START')
         try:
-            # Convert milliseconds to MM:SS format
-            total_seconds = int(float(start_ms)) // 1000
-            minutes = total_seconds // 60
-            seconds = total_seconds % 60
-            time_formatted = f"{minutes}:{seconds:02d}"
-        except (ValueError, TypeError):
-            print(f"Invalid START time for cue point: {start_ms}")
+            start_ms_dec = Decimal(start_raw)
+            seconds_float = float(start_ms_dec / Decimal('1000'))
+            minutes = int(seconds_float // 60)
+            seconds_part = seconds_float - (minutes * 60)
+            time_formatted = f"{minutes}:{seconds_part:06.3f}"
+        except (InvalidOperation, ValueError):
             continue
         
-        # Extract type if available (NAME attribute)
-        cue_type = ""
-        if 'NAME' in cue_point_xml.attributes:
-            cue_type = cue_point_xml.attributes['NAME'].value
-            
-        # Extract additional info for comment (TYPE attribute and other details)
-        cue_comment = cue_type  # Use NAME as base comment
-        if 'TYPE' in cue_point_xml.attributes:
-            type_value = cue_point_xml.attributes['TYPE'].value
-            if cue_comment and type_value != cue_type:
-                cue_comment += f" (Type: {type_value})"
-            elif not cue_comment:
-                cue_comment = f"Type: {type_value}"
-                
-        # Add HOTCUE info if available
-        if 'HOTCUE' in cue_point_xml.attributes:
-            hotcue = cue_point_xml.attributes['HOTCUE'].value
-            if hotcue != "0":
-                cue_comment += f" [Hotcue {hotcue}]"
-            
-        # Create CuePoint
+        # NAME
+        name = cue_xml.getAttribute('NAME') if cue_xml.hasAttribute('NAME') else ''
+        
+        # LEN (toujours millisecondes)
+        duration_seconds = None
+        end_time_formatted = None
+        len_ms_dec: Decimal | None = None
+        if cue_xml.hasAttribute('LEN'):
+            try:
+                len_raw = cue_xml.getAttribute('LEN')
+                len_ms_dec = Decimal(len_raw)
+                len_seconds = float(len_ms_dec / Decimal('1000'))
+                if len_seconds > 0:
+                    duration_seconds = len_seconds
+                    end_seconds_float = seconds_float + len_seconds
+                    end_minutes = int(end_seconds_float // 60)
+                    end_seconds_part = end_seconds_float - (end_minutes * 60)
+                    end_time_formatted = f"{end_minutes}:{end_seconds_part:06.3f}"
+            except (InvalidOperation, ValueError):
+                len_ms_dec = None
+        
+        comment = name
+        if traktor_type and traktor_type != name:
+            comment = f"{comment} (Type: {traktor_type})" if comment else f"Type: {traktor_type}"
+        
         cue_point = CuePoint.objects.create(
             time=time_formatted,
-            type=cue_type,
-            comment=cue_comment
+            type=name,
+            comment=comment,
+            traktor_type=traktor_type,
+            end_time=end_time_formatted,
+            duration=duration_seconds,
+            time_ms=start_ms_dec,
+            len_ms=len_ms_dec
         )
         
-        # Determine slot index: prefer hotcue_number else next sequential
-        if hotcue_number and 1 <= hotcue_number <= 8:
-            slot_index = hotcue_number
-        else:
-            cue_point_count += 1
-            slot_index = cue_point_count
-        if slot_index > 8:
-            continue
-        setattr(track_cue_points, f'cue_point_{slot_index}', cue_point)
-        print(f"Created cue point slot {slot_index} for {track.title}: {time_formatted} ({cue_type})")
+        setattr(track_cue_points, f'cue_point_{slot}', cue_point)
     
     track_cue_points.save()
-    print(f"Saved cue points for track: {track.title}")
 
 
-def convert_milliseconds_to_time_format(milliseconds_str):
+def convert_milliseconds_to_time_format(milliseconds_str: str) -> str:
     """
-    Convert milliseconds string to MM:SS format
+    Convert milliseconds string to MM:SS.mmm format using Decimal (ROUND_HALF_UP)
+    Preserves millisecond precision (3 decimals).
     """
     try:
-        total_seconds = int(float(milliseconds_str)) // 1000
-        minutes = total_seconds // 60
-        seconds = total_seconds % 60
-        return f"{minutes}:{seconds:02d}"
-    except (ValueError, TypeError):
-        return "0:00"
+        ms = Decimal(str(milliseconds_str))
+        if ms < 0:
+            ms = Decimal('0')
+        seconds = ms / Decimal('1000')
+        minutes = int(seconds // Decimal('60'))
+        seconds_part = seconds - Decimal(minutes) * Decimal('60')
+        # Format with 3 decimals, zero-padded seconds to 6 width including decimal part
+        return f"{minutes}:{seconds_part.quantize(Decimal('0.000')):06}"
+    except (InvalidOperation, ValueError, TypeError):
+        return "0:00.000"
 
 
-def import_playlist_from_xml_doc(xmldoc):
+def import_playlist_from_xml_doc(xmldoc: Element) -> None:
 
     playlists = xmldoc.getElementsByTagName('PLAYLISTS')
     playlist_list = playlists[0].getElementsByTagName('NODE')
@@ -473,7 +489,6 @@ def import_playlist_from_xml_doc(xmldoc):
                 track_ids.append(track.id)
                 playlist.tracks.add(track)
 
-        print('Playlist tracks ids: ', track_ids)
         playlist.track_ids = track_ids
         playlist.save()
 
@@ -481,7 +496,6 @@ def import_playlist_from_xml_doc(xmldoc):
 def get_or_create_single_playlist_from_name(
     existing_playlist_count: int, new_playlist_count: int, name: str
 ) -> Playlist:
-    print('PLAYLIST NAME: ', name)
     existing_playlists = Playlist.objects.filter(name=name)
     if len(existing_playlists) > 0:
         playlist = existing_playlists[0]
@@ -494,3 +508,60 @@ def get_or_create_single_playlist_from_name(
         new_playlist_count = new_playlist_count + 1
         playlist.save()
     return playlist
+
+
+class TraktorImporter:
+    def extract_and_save_cue_points(self, entry_elem, track_obj) -> None:
+        """Parse CUE_V2 from Traktor ENTRY and populate Track.cue_points (cue_point_1..8).
+        - Map Traktor HOTCUE 0..7 to RCue 1..8 (index = HOTCUE + 1)
+        - TYPE 0 (hot cue) → store start, set traktor_type=0
+        - TYPE 5 (loop) → store start & len_ms, traktor_type=5
+        - TYPE 4 (grid) → ignore for DB cue points
+        Preserve millisecond precision in time_ms/len_ms (Decimal up to 6 places).
+        """
+        from decimal import Decimal
+        cue_points = getattr(track_obj, 'cue_points', None)
+        if not cue_points:
+            return
+        # Reset a working dict for 1..8
+        slots: dict[int, dict] = {}
+        for cue in entry_elem.findall('CUE_V2'):
+            try:
+                t_type = int(cue.get('TYPE', '0'))
+                hot = int(cue.get('HOTCUE', '-1'))
+                # Skip grid
+                if t_type == 4:
+                    continue
+                # Only map valid hotcue slots 0..7
+                if hot < 0 or hot > 7:
+                    continue
+                idx = hot + 1  # Traktor HOTCUE 0 → RCue1
+                start_raw = cue.get('START', '0')
+                len_raw = cue.get('LEN', '0')
+                # Traktor provides seconds; convert to ms Decimal
+                start_ms = Decimal(str(start_raw)) * Decimal('1000')
+                len_ms = Decimal(str(len_raw)) * Decimal('1000') if len_raw and float(len_raw) > 0 else None
+                slots[idx] = {
+                    'time_ms': start_ms,
+                    'len_ms': len_ms,
+                    'traktor_type': t_type,
+                }
+            except Exception:
+                continue
+        # Apply into cue_points model fields
+        for i in range(1, 9):
+            data = slots.get(i)
+            if not data:
+                continue
+            cp = getattr(cue_points, f'cue_point_{i}', None)
+            if cp:
+                cp.time_ms = data['time_ms']
+                cp.len_ms = data['len_ms'] if data['len_ms'] is not None else None
+                cp.traktor_type = data['traktor_type']
+                # Also update display fields if present
+                try:
+                    seconds = (data['time_ms'] / Decimal('1000'))
+                    cp.time = f"{float(seconds):.3f}"
+                except Exception:
+                    pass
+                cp.save()

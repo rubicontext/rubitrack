@@ -1,7 +1,0 @@
-{% extends 'admin/base_site.html' %}
-{% block content %}
-  <h1>Importer les clés musicales</h1>
-  <form method="post">{% csrf_token %}
-    <button type="submit" class="default">Lancer l'import des clés musicales</button>
-  </form>
-{% endblock %}

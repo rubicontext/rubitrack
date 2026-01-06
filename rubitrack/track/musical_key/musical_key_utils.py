@@ -79,22 +79,27 @@ def is_traditional_musical_notation(key_string: str) -> bool:
     Returns:
         True si c'est déjà de la notation musicale traditionnelle
     """
-    # Pattern pour notation musicale : C, C#, Db, Fm, G#m, etc.
-    musical_pattern = r'^[A-G][#b]?m?$'
+    # Pattern pour notation musicale : C, C#, C♯, Db, D♭, Fm, G#m, G♯m, etc.
+    musical_pattern = r'^[A-G][#♯b♭]?m?$'
     return bool(re.match(musical_pattern, key_string.strip(), re.IGNORECASE))
 
 
 def standardize_traditional_notation(key_string: str) -> str:
     """
     Standardise une notation musicale traditionnelle (capitalisation, etc.)
+    Convertit les caractères Unicode ♯/♭ en ASCII #/b
     
     Args:
         key_string: Notation musicale à standardiser
         
     Returns:
-        Notation standardisée
+        Notation standardisée avec # et b ASCII
     """
     key_string = key_string.strip()
+    
+    # Convertir les caractères Unicode vers ASCII
+    key_string = key_string.replace('♯', '#')  # Sharp Unicode -> ASCII
+    key_string = key_string.replace('♭', 'b')  # Flat Unicode -> ASCII
     
     # Première lettre en majuscule
     if len(key_string) > 0:
@@ -144,7 +149,6 @@ def extract_musical_key_from_filename(filename: str) -> Optional[str]:
     ]
     
     for pattern in patterns:
-        import re
         matches = re.finditer(pattern, filename, re.IGNORECASE)
         for match in matches:
             key_candidate = match.group(1)

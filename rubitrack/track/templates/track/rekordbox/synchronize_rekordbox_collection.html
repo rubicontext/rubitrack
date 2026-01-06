@@ -1,0 +1,304 @@
+{% extends "admin/base_site.html" %}
+{% load static %}
+
+{% block title %}Synchronisation Rekordbox Collection - Cue Points{% endblock %}
+
+{% block content %}
+<div class="module">
+    <h1>Synchronisation Collection Rekordbox</h1>
+    
+    <div class="form-row">
+        <div class="field-box">
+            <h2>Statistiques actuelles</h2>
+            <div id="stats-container">
+                <p>Chargement des statistiques...</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="form-row">
+        <div class="field-box">
+            <h2>Synchroniser un fichier Rekordbox</h2>
+            <p>Uploadez votre fichier collection.xml Rekordbox pour y ajouter les cue points de Rubitrack.</p>
+            
+            <form id="sync-form" enctype="multipart/form-data">
+                <div class="form-group">
+                    <label for="rekordbox_file">Fichier collection.xml Rekordbox :</label>
+                    <input type="file" id="rekordbox_file" name="rekordbox_file" accept=".xml" required>
+                </div>
+                
+                <div class="form-group">
+                    <button type="button" class="button-overwrite" onclick="syncCuePoints('overwrite')">Écraser tous les cue points</button>
+                    <button type="button" class="button-add" onclick="syncCuePoints('add_only')">Ajouter uniquement les cue points manquants</button>
+                </div>
+            </form>
+            
+            <div id="progress" style="display: none;">
+                <p>Synchronisation en cours...</p>
+                <div class="progress-bar">
+                    <div class="progress-fill"></div>
+                </div>
+            </div>
+            
+            <div id="result" style="display: none;">
+                <!-- Résultats de la synchronisation -->
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.field-box {
+    background: #f9f9f9;
+    border: 1px solid #ddd;
+    padding: 20px;
+    margin: 20px 0;
+    border-radius: 4px;
+}
+
+.form-group {
+    margin-bottom: 15px;
+}
+
+.form-group label {
+    display: block;
+    font-weight: bold;
+    margin-bottom: 5px;
+}
+
+.form-group input[type="file"] {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
+
+.progress-bar {
+    width: 100%;
+    height: 20px;
+    background-color: #f0f0f0;
+    border-radius: 10px;
+    overflow: hidden;
+    margin-top: 10px;
+}
+
+.progress-fill {
+    height: 100%;
+    background-color: #4CAF50;
+    width: 0%;
+    transition: width 0.3s ease;
+    animation: progress-animation 2s infinite;
+}
+
+@keyframes progress-animation {
+    0% { width: 0%; }
+    50% { width: 100%; }
+    100% { width: 0%; }
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
+    margin-top: 15px;
+}
+
+.stat-item {
+    background: white;
+    padding: 15px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    text-align: center;
+}
+
+.stat-number {
+    font-size: 24px;
+    font-weight: bold;
+    color: #333;
+}
+
+.stat-label {
+    font-size: 14px;
+    color: #666;
+    margin-top: 5px;
+}
+
+.success {
+    background-color: #d4edda;
+    border-color: #c3e6cb;
+    color: #155724;
+    padding: 15px;
+    border-radius: 4px;
+    margin: 10px 0;
+}
+
+.error {
+    background-color: #f8d7da;
+    border-color: #f5c6cb;
+    color: #721c24;
+    padding: 15px;
+    border-radius: 4px;
+    margin: 10px 0;
+}
+
+.button-overwrite { background:#dc3545; color:#fff; border:1px solid #b52a37; }
+.button-overwrite:hover { background:#c82333; }
+.button-preserve { background:#28a745; color:#fff; border:1px solid #1e7e34; }
+.button-preserve:hover { background:#218838; }
+.button-add { background:#28a745; color:#fff; border:1px solid #1e7e34; }
+.button-add:hover { background:#218838; }
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Chargement des statistiques
+    loadStats();
+    
+    // Gestion du formulaire de synchronisation
+    document.getElementById('sync-form').addEventListener('submit', function(e) {
+        e.preventDefault();
+        syncCuePoints();
+    });
+});
+
+function loadStats() {
+    fetch('/track/rekordbox/api/stats/')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                displayStats(data.stats);
+            } else {
+                document.getElementById('stats-container').innerHTML = 
+                    '<p class="error">Erreur lors du chargement des statistiques: ' + data.error + '</p>';
+            }
+        })
+        .catch(error => {
+            document.getElementById('stats-container').innerHTML = 
+                '<p class="error">Erreur réseau lors du chargement des statistiques</p>';
+        });
+}
+
+function displayStats(stats) {
+    const container = document.getElementById('stats-container');
+    
+    let html = '<div class="stats-grid">';
+    html += '<div class="stat-item"><div class="stat-number">' + stats.total_tracks + '</div><div class="stat-label">Tracks totales</div></div>';
+    html += '<div class="stat-item"><div class="stat-number">' + stats.tracks_with_cue_points + '</div><div class="stat-label">Tracks avec cue points</div></div>';
+    html += '<div class="stat-item"><div class="stat-number">' + stats.tracks_without_cue_points + '</div><div class="stat-label">Tracks sans cue points</div></div>';
+    
+    // Détail des cue points par position
+    for (let i = 1; i <= 8; i++) {
+        const count = stats.cue_points_by_position['cue_point_' + i] || 0;
+        html += '<div class="stat-item"><div class="stat-number">' + count + '</div><div class="stat-label">Cue Point ' + i + '</div></div>';
+    }
+    
+    html += '</div>';
+    container.innerHTML = html;
+}
+
+function syncCuePoints(modeFlag) {
+    const fileInput = document.getElementById('rekordbox_file');
+    const progressDiv = document.getElementById('progress');
+    const resultDiv = document.getElementById('result');
+    
+    if (!fileInput.files[0]) {
+        alert('Veuillez sélectionner un fichier');
+        return;
+    }
+    
+    // Affichage du progress
+    progressDiv.style.display = 'block';
+    resultDiv.style.display = 'none';
+    
+    // Préparation des données
+    const formData = new FormData();
+    formData.append('rekordbox_file', fileInput.files[0]);
+    formData.append('mode', modeFlag);
+    
+    // Envoi de la requête
+    fetch('/track/rekordbox/api/synchronize/', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => {
+        if (response.ok) {
+            return response.json().then(data => {
+                if (data.success) {
+                    // Téléchargement du fichier XML Rekordbox
+                    const xmlBlob = new Blob([data.xml_file.content], { type: data.xml_file.type });
+                    const xmlUrl = window.URL.createObjectURL(xmlBlob);
+                    const xmlLink = document.createElement('a');
+                    xmlLink.href = xmlUrl;
+                    xmlLink.download = data.xml_file.filename;
+                    document.body.appendChild(xmlLink);
+                    xmlLink.click();
+                    document.body.removeChild(xmlLink);
+                    window.URL.revokeObjectURL(xmlUrl);
+                    
+                    // Téléchargement du fichier des tracks non trouvées
+                    const txtBlob = new Blob([data.not_found_file.content], { type: data.not_found_file.type });
+                    const txtUrl = window.URL.createObjectURL(txtBlob);
+                    const txtLink = document.createElement('a');
+                    txtLink.href = txtUrl;
+                    txtLink.download = data.not_found_file.filename;
+                    document.body.appendChild(txtLink);
+                    txtLink.click();
+                    document.body.removeChild(txtLink);
+                    window.URL.revokeObjectURL(txtUrl);
+                    
+                    // Affichage des statistiques
+                    const stats = data.stats;
+                    let message = '<strong>Synchronisation réussie !</strong><br><br>';
+                    message += `Mode: <strong>${data.mode}</strong><br><br>`;
+                    message += `
+                        📊 <strong>Statistiques :</strong><br>
+                        • Tracks dans le fichier Rekordbox : <strong>${stats.total_tracks_in_rekordbox_file}</strong><br>
+                        • Tracks Rubitrack avec cue points : <strong>${stats.rubitrack_tracks_processed}</strong><br>
+                        • Tracks trouvées et correspondantes : <strong>${stats.tracks_found_and_matched}</strong><br>
+                        • Tracks mises à jour : <strong>${stats.tracks_updated_with_cue_points}</strong><br>
+                        • Cue points ajoutés : <strong>${stats.total_cue_points_added}</strong><br>
+                        • Tracks non trouvées : <strong>${stats.unmatched_count}</strong><br><br>
+                        📁 Deux fichiers ont été téléchargés :<br>
+                        • ${data.xml_file.filename}<br>
+                        • ${data.not_found_file.filename}
+                    `;
+                    
+                    showResult(true, message);
+                } else {
+                    throw new Error(data.error || 'Erreur lors de la synchronisation');
+                }
+            });
+        } else {
+            return response.json().then(data => {
+                throw new Error(data.error || 'Erreur lors de la synchronisation');
+            }).catch(jsonError => {
+                throw new Error(`Erreur HTTP ${response.status}: ${response.statusText}`);
+            });
+        }
+    })
+    .then(data => {
+        if (data && data.success === false) {
+            throw new Error(data.error);
+        }
+    })
+    .catch(error => {
+        showResult(false, error.message);
+    })
+    .finally(() => {
+        progressDiv.style.display = 'none';
+    });
+}
+
+function showResult(success, message) {
+    const resultDiv = document.getElementById('result');
+    resultDiv.className = success ? 'success' : 'error';
+    resultDiv.innerHTML = message;
+    resultDiv.style.display = 'block';
+    
+    // Recharger les statistiques
+    if (success) {
+        setTimeout(loadStats, 1000);
+    }
+}
+</script>
+{% endblock %}

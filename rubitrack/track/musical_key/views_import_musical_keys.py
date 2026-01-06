@@ -26,5 +26,5 @@ def import_musical_keys():
 def import_musical_keys_view(request):
     if request.method == 'POST':
         import_musical_keys()
-        return render(request, 'admin/import_musical_keys_done.html')
-    return render(request, 'admin/import_musical_keys.html')
+        return render(request, 'tool/import_musical_keys_done.html')
+    return render(request, 'tool/import_musical_keys.html')
