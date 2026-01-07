@@ -7,7 +7,7 @@ import xml.etree.ElementTree as ET
 from xml.dom import minidom
 from ...models import Track
 import logging
-from typing import Dict, Iterable
+from typing import Dict, Iterable, Optional, Tuple, Union
 from decimal import Decimal, ROUND_HALF_UP
 
 logger = logging.getLogger(__name__)
@@ -29,8 +29,8 @@ class RekordboxCollectionSynchronizer:
     """
     
     def __init__(self) -> None:
-        self.tree: ET.ElementTree | None = None
-        self.root: ET.Element | None = None
+        self.tree: Optional[ET.ElementTree] = None
+        self.root: Optional[ET.Element] = None
     
     def load_rekordbox_file(self, file_path: str) -> bool:
         """
@@ -100,7 +100,7 @@ class RekordboxCollectionSynchronizer:
         """
         return time_ms / 1000
 
-    def seconds_to_rekordbox_position(self, seconds: float) -> str:
+    def seconds_to_rekordbox_position(self, seconds: Union[float, Decimal]) -> str:
         """Retourne la position Rekordbox en secondes avec 3 décimales (ex: 33.000), arrondie correctement."""
         try:
             d = seconds if isinstance(seconds, Decimal) else Decimal(str(seconds))
@@ -133,13 +133,13 @@ class RekordboxCollectionSynchronizer:
         s = re.sub(r"\s+", " ", s).strip()
         return s
 
-    def _rb_fields(self, track: ET.Element) -> tuple[str, str]:
+    def _rb_fields(self, track: ET.Element) -> Tuple[str, str]:
         """Helper to fetch normalized Artist/Name from a Rekordbox TRACK."""
         artist = self._normalize_text(track.get('Artist', ''))
         title = self._normalize_text(track.get('Name', ''))
         return artist, title
 
-    def find_track_element(self, artist_name: str, track_title: str) -> ET.Element | None:
+    def find_track_element(self, artist_name: str, track_title: str) -> Optional[ET.Element]:
         """
         Trouve un élément TRACK dans la collection Rekordbox avec recherche intelligente
         
@@ -237,7 +237,7 @@ class RekordboxCollectionSynchronizer:
         time_seconds: float,
         name: str,
         num_value: int,
-        end_seconds: float | None = None,
+        end_seconds: Optional[float] = None,
     ) -> None:
         """
         Ajoute un cue point à une track Rekordbox.
@@ -350,9 +350,9 @@ class RekordboxCollectionSynchronizer:
     def synchronize_rekordbox_collection(
         self,  # type: ignore[override]
         input_file: str,
-        output_file: str | None = None,
+        output_file: Optional[str] = None,
         overwrite_existing: bool = True,
-        mode: str | None = None
+        mode: Optional[str] = None
     ) -> dict:
         """
         Synchronise les cue points de Rubitrack vers Rekordbox
@@ -419,13 +419,13 @@ class RekordboxCollectionSynchronizer:
             cue_points__isnull=False
         ).select_related('artist').prefetch_related('cue_points')
 
-    def _build_rubitrack_lookup(self, rubitrack_tracks: Iterable[Track]) -> Dict[str, Dict[str, str | Track]]:
-        lookup: Dict[str, Dict[str, str | Track]] = {}
+    def _build_rubitrack_lookup(self, rubitrack_tracks: Iterable[Track]) -> Dict[str, Dict[str, Union[str, Track]]]:
+        lookup: Dict[str, Dict[str, Union[str, Track]]] = {}
         for track in rubitrack_tracks:
             artist_name = self._normalize_text(track.artist.name) if track.artist else ''
             title = self._normalize_text(track.title)
             key = f"{artist_name.lower()}|{title.lower()}"
-            item: Dict[str, str | Track] = {
+            item: Dict[str, Union[str, Track]] = {
                 'track': track,
                 'file_path': (track.file_path or '').lower(),
                 'audio_id': (track.audio_id or '').lower(),
@@ -522,9 +522,9 @@ class RekordboxCollectionSynchronizer:
                     final_num_value = -1
                 # Ne pas dédupliquer: conserver les existants
             # Calcul d'une éventuelle loop via LEN/duration
-            end_seconds_dec: Decimal | None = None
+            end_seconds_dec: Optional[Decimal] = None
             len_ms_val = getattr(cue_point_obj, 'len_ms', None)
-            loop_len_ms_dec: Decimal | None = None
+            loop_len_ms_dec: Optional[Decimal] = None
             if len_ms_val is not None:
                 try:
                     loop_len_ms_dec = Decimal(str(len_ms_val))
@@ -584,9 +584,9 @@ class RekordboxCollectionSynchronizer:
 
 def synchronize_rekordbox_collection(
     input_file: str,
-    output_file: str | None = None,
+    output_file: Optional[str] = None,
     overwrite_existing: bool = True,
-    mode: str | None = None
+    mode: Optional[str] = None
 ) -> dict:
     """
     Fonction utilitaire pour synchroniser les cue points vers Rekordbox

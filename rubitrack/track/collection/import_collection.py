@@ -5,6 +5,7 @@ import pytz
 import re
 import unicodedata
 from decimal import Decimal, InvalidOperation
+from typing import Optional, Set
 
 from django import forms
 from django.shortcuts import render
@@ -37,7 +38,7 @@ def handle_uploaded_file(file, user):
     cptNewTracks = 0
     cptExistingTracks = 0
     # Evite les doublons d'ENTRY pour le même morceau (first-wins)
-    processed_keys: set[str] = set()
+    processed_keys: Set[str] = set()
     for current_entry in entry_list:
         # for current_entry in entry_list[0:10]:
 
@@ -348,7 +349,7 @@ def extract_and_save_cue_points(current_entry, track):
             cp.delete()
         setattr(track_cue_points, f'cue_point_{idx}', None)
     
-    seen_slots: set[int] = set()
+    seen_slots: Set[int] = set()
     
     for cue_xml in cue_points_list:
         if not cue_xml.hasAttribute('HOTCUE'):
@@ -386,7 +387,7 @@ def extract_and_save_cue_points(current_entry, track):
         # LEN (toujours millisecondes)
         duration_seconds = None
         end_time_formatted = None
-        len_ms_dec: Decimal | None = None
+        len_ms_dec: Optional[Decimal] = None
         if cue_xml.hasAttribute('LEN'):
             try:
                 len_raw = cue_xml.getAttribute('LEN')
