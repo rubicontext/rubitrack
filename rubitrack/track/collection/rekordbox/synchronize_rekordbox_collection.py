@@ -100,7 +100,7 @@ class RekordboxCollectionSynchronizer:
         """
         return time_ms / 1000
 
-    def seconds_to_rekordbox_position(self, seconds: float | Decimal) -> str:
+    def seconds_to_rekordbox_position(self, seconds: float) -> str:
         """Retourne la position Rekordbox en secondes avec 3 décimales (ex: 33.000), arrondie correctement."""
         try:
             d = seconds if isinstance(seconds, Decimal) else Decimal(str(seconds))
