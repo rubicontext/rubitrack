@@ -128,7 +128,7 @@ def handle_uploaded_file(file, user):
         # Extract and save cue points
         extract_and_save_cue_points(current_entry, track)
 
-    import_playlist_from_xml_doc(xmldoc)
+    import_playlist_from_xml_doc(xmldoc, userCollection)
 
     return cptNewTracks, cptExistingTracks
 
@@ -440,7 +440,7 @@ def convert_milliseconds_to_time_format(milliseconds_str: str) -> str:
         return "0:00.000"
 
 
-def import_playlist_from_xml_doc(xmldoc: Element) -> None:
+def import_playlist_from_xml_doc(xmldoc: Element, user_collection: Collection) -> None:
 
     playlists = xmldoc.getElementsByTagName('PLAYLISTS')
     playlist_list = playlists[0].getElementsByTagName('NODE')
@@ -460,7 +460,7 @@ def import_playlist_from_xml_doc(xmldoc: Element) -> None:
 
         # PLAYLIST NAME
         name = current_playlist.attributes['NAME'].value
-        playlist = get_or_create_single_playlist_from_name(existing_playlist_count, new_playlist_count, name)
+        playlist = get_or_create_single_playlist_from_name(existing_playlist_count, new_playlist_count, name, user_collection)
 
         # PLAYLIST TRACKS
         playlist_entry_list = current_playlist.getElementsByTagName('ENTRY')
@@ -495,17 +495,21 @@ def import_playlist_from_xml_doc(xmldoc: Element) -> None:
 
 
 def get_or_create_single_playlist_from_name(
-    existing_playlist_count: int, new_playlist_count: int, name: str
+    existing_playlist_count: int, new_playlist_count: int, name: str, user_collection: Collection
 ) -> Playlist:
     existing_playlists = Playlist.objects.filter(name=name)
     if len(existing_playlists) > 0:
         playlist = existing_playlists[0]
+        # Backfill collection if missing
+        if getattr(playlist, 'collection_id', None) is None:
+            playlist.collection = user_collection
         playlist.save()
         existing_playlist_count = existing_playlist_count + 1
     else:
         playlist = Playlist()
         playlist.name = name
         playlist.rank = get_order_rank(name)
+        playlist.collection = user_collection
         new_playlist_count = new_playlist_count + 1
         playlist.save()
     return playlist
