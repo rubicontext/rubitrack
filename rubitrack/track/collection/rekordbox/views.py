@@ -12,6 +12,7 @@ from django.core.files.base import ContentFile
 from datetime import datetime
 import tempfile
 import os
+from typing import Any, Dict, List, Optional
 
 from .synchronize_rekordbox_collection import synchronize_rekordbox_collection
 
@@ -127,21 +128,14 @@ def synchronize_rekordbox_collection_api(request):
         }, status=500)
 
 
-def generate_not_found_file(unmatched_tracks: list[dict]) -> str:
+def generate_not_found_file(unmatched_tracks: List[Dict[str, Any]]) -> str:
     """Génère le contenu du fichier des tracks non trouvées"""
-    if not unmatched_tracks:
-        return "Aucune track Rekordbox non trouvée dans la collection Rubitrack.\n"
-    
-    content = f"Tracks Rekordbox non trouvées dans la collection Rubitrack ({len(unmatched_tracks)})\n"
-    content += "=" * 70 + "\n\n"
-    
-    for track in unmatched_tracks:
-        title = track.get('title', 'Sans titre')
-        artist = track.get('artist', 'Artiste inconnu')
-        content += f"• {title} - {artist}\n"
-    
-    content += f"\nGénéré le {datetime.now().strftime('%d/%m/%Y à %H:%M')}\n"
-    return content
+    lines: List[str] = []
+    for t in unmatched_tracks:
+        title = t.get('title') or t.get('Name') or ''
+        artist = t.get('artist') or t.get('Artist') or ''
+        lines.append(f"{artist} - {title}")
+    return "\n".join(lines)
 
 
 @staff_member_required
