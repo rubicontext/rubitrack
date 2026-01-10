@@ -120,7 +120,7 @@ class Track(models.Model):
         try:
             if not hasattr(self, 'cue_points') or not self.cue_points:
                 return "_|_|_|_"  # 4 segments empty
-            parts: list[str] = []
+            parts: List[str] = []
             for i in range(5, 9):
                 cp = getattr(self.cue_points, f'cue_point_{i}', None)
                 if cp:
@@ -139,8 +139,8 @@ class Track(models.Model):
         try:
             if not hasattr(self, 'cue_points') or not self.cue_points:
                 return "|".join(["_"] * 4) + "//" + "|".join(["_"] * 4)
-            parts_first: list[str] = []
-            parts_last: list[str] = []
+            parts_first: List[str] = []
+            parts_last: List[str] = []
             for i in range(1, 9):
                 cp = getattr(self.cue_points, f'cue_point_{i}', None)
                 if cp:
@@ -398,12 +398,12 @@ class TrackCuePoints(models.Model):
                 cue_points_export.append((i, cue_point.time))
         return cue_points_export
 
-    def get_cue_points_for_display_no_ms(self) -> list[tuple[int, str]]:
+    def get_cue_points_for_display_no_ms(self) -> List[Tuple[int, str]]:
         """
         Retourne les cue points sous forme de liste de tuples pour l'affichage sans millisecondes
         Format: [(num, time_no_ms), ...]
         """
-        result: list[tuple[int, str]] = []
+        result: List[Tuple[int, str]] = []
         for i in range(1, 9):
             cue_point = getattr(self, f'cue_point_{i}')
             if cue_point:
