@@ -113,6 +113,49 @@ class Track(models.Model):
         except MusicalKey.DoesNotExist:
             return None
 
+    def get_last_four_cue_points_text_no_ms(self) -> str:
+        """Return a compact string of times for cue points 5..8 without milliseconds.
+        Missing cue points are rendered as '_' segments. Example: "3:31/_/3:45/4:01" when slot 6 missing.
+        """
+        try:
+            if not hasattr(self, 'cue_points') or not self.cue_points:
+                return "_|_|_|_"  # 4 segments empty
+            parts: list[str] = []
+            for i in range(5, 9):
+                cp = getattr(self.cue_points, f'cue_point_{i}', None)
+                if cp:
+                    val = cp.get_time_without_ms() if hasattr(cp, 'get_time_without_ms') else (cp.time or '')
+                    parts.append(val if val else '_')
+                else:
+                    parts.append('_')
+            return "|".join(parts)
+        except Exception:
+            return "_|_|_|_"
+
+    def get_all_cue_points_text_no_ms(self) -> str:
+        """Return 8 cue points (slots 1..8) times without milliseconds.
+        First 4 joined by '/', then '//', then last 4 joined by '/'. Missing -> '_'.
+        """
+        try:
+            if not hasattr(self, 'cue_points') or not self.cue_points:
+                return "|".join(["_"] * 4) + "//" + "|".join(["_"] * 4)
+            parts_first: list[str] = []
+            parts_last: list[str] = []
+            for i in range(1, 9):
+                cp = getattr(self.cue_points, f'cue_point_{i}', None)
+                if cp:
+                    val = cp.get_time_without_ms() if hasattr(cp, 'get_time_without_ms') else (cp.time or '')
+                    segment = val if val else '_'
+                else:
+                    segment = '_'
+                if i <= 4:
+                    parts_first.append(segment)
+                else:
+                    parts_last.append(segment)
+            return "|".join(parts_first) + "//" + "|".join(parts_last)
+        except Exception:
+            return "|".join(["_"] * 4) + "//" + "|".join(["_"] * 4)
+
 
 class Playlist(models.Model):
     name = models.CharField(max_length=200)
@@ -261,8 +304,29 @@ class CuePoint(models.Model):
         verbose_name_plural = "Cue Points"
         ordering = ['time']
     
-    def __str__(self):
+    def __str__(self) -> str:
         return f"CuePoint({self.time})"
+
+    def get_time_without_ms(self) -> str:
+        """
+        Return a human-readable time without milliseconds.
+        Priority:
+        - If `time` is present (e.g., "1:23.456" or "1:23"), strip any fractional part.
+        - Else if `time_ms` is present, format as "M:SS".
+        - Else return empty string.
+        """
+        if self.time:
+            return str(self.time).split('.')[0]
+        if self.time_ms is not None:
+            try:
+                total_ms = float(self.time_ms)
+                total_seconds = int(round(total_ms / 1000.0))
+                minutes = total_seconds // 60
+                seconds = total_seconds % 60
+                return f"{minutes}:{seconds:02d}"
+            except Exception:
+                return ""
+        return ""
 
 
 class TrackCuePoints(models.Model):
@@ -289,7 +353,7 @@ class TrackCuePoints(models.Model):
         verbose_name = "Track Cue Points"
         verbose_name_plural = "Track Cue Points"
     
-    def __str__(self):
+    def __str__(self) -> str:
         return f"Cue Points for {self.track.title}"
     
     def get_cue_points_list(self):
@@ -333,3 +397,15 @@ class TrackCuePoints(models.Model):
             if cue_point:
                 cue_points_export.append((i, cue_point.time))
         return cue_points_export
+
+    def get_cue_points_for_display_no_ms(self) -> list[tuple[int, str]]:
+        """
+        Retourne les cue points sous forme de liste de tuples pour l'affichage sans millisecondes
+        Format: [(num, time_no_ms), ...]
+        """
+        result: list[tuple[int, str]] = []
+        for i in range(1, 9):
+            cue_point = getattr(self, f'cue_point_{i}')
+            if cue_point:
+                result.append((i, cue_point.get_time_without_ms()))
+        return result

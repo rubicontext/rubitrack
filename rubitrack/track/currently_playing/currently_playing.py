@@ -59,6 +59,28 @@ def get_cue_points_slots_for_track(track, slots: int = 8):
             slots_list.append({'slot': i, 'time': '-', 'exists': False})
     return slots_list
 
+# Non-regressive helper to get cue points times without milliseconds
+# Does not change existing behavior; safe to call where display without ms is needed
+
+def get_cue_points_times_for_track_no_ms(track, slots: int = 8):
+    """Return a list of cue point times (without milliseconds) indexed by slot number (1..slots).
+    Each position i reflects cue_point_i (1-based). Missing or empty -> '-'.
+    """
+    result = ['-'] * slots
+    if not track:
+        return result
+    try:
+        if hasattr(track, 'cue_points') and track.cue_points:
+            for i in range(1, slots + 1):
+                cp = getattr(track.cue_points, f'cue_point_{i}', None)
+                if cp:
+                    # Prefer model helper if available, fallback to raw time
+                    time_val = cp.get_time_without_ms() if hasattr(cp, 'get_time_without_ms') else (cp.time or '-')
+                    result[i - 1] = time_val if time_val else '-'
+    except Exception:
+        pass
+    return result
+
 @login_required
 def display_currently_playing(request):
     current_track = get_currently_playing_track(with_refresh=True)
@@ -83,7 +105,7 @@ def display_currently_playing(request):
         playlists_with_track = get_playlists_by_track_id(current_track.id)
         
         # Prépare une liste de 8 time cue points (centralisé)
-        cue_points_times = get_cue_points_times_for_track(current_track)
+        cue_points_times = get_cue_points_times_for_track_no_ms(current_track)
         cue_points_slots = get_cue_points_slots_for_track(current_track)
         return render(
             request,
@@ -129,7 +151,7 @@ def display_history_editing(request, track_id):
         # Ajout : tracks suivantes dans les playlists
         next_tracks_in_playlists = get_next_tracks_in_playlists(current_track.id)
         # Prépare une liste de 8 time cue points (centralisé)
-        cue_points_times = get_cue_points_times_for_track(current_track)
+        cue_points_times = get_cue_points_times_for_track_no_ms(current_track)
         cue_points_slots = get_cue_points_slots_for_track(current_track)
         config = Config.get_config()
         print("Edit history for track :", current_track)
@@ -323,7 +345,7 @@ def get_more_transition_block(request):
 
     transitions_before = get_transitions_before(current_track_db)
     transitions_after = get_transitions_after(current_track_db)
-    cue_points_times = get_cue_points_times_for_track(current_track_db)
+    cue_points_times = get_cue_points_times_for_track_no_ms(current_track_db)
     cue_points_slots = get_cue_points_slots_for_track(current_track_db)
     return render(
         request,
@@ -353,7 +375,7 @@ def get_more_transition_block_history(request, current_track_id=None):
         if current_track_db is not None:
             transitions_before = get_transitions_before(current_track_db)
             transitions_after = get_transitions_after(current_track_db)
-            cue_points_times = get_cue_points_times_for_track(current_track_db)
+            cue_points_times = get_cue_points_times_for_track_no_ms(current_track_db)
             cue_points_slots = get_cue_points_slots_for_track(current_track_db)
 
             return render(
@@ -429,7 +451,7 @@ def get_all_currently_playing_data(request):
     playlists_with_track = get_playlists_by_track_id(current_track.id)
     
     # Prépare une liste de 8 time cue points (centralisé)
-    cue_points_times = get_cue_points_times_for_track(current_track)
+    cue_points_times = get_cue_points_times_for_track_no_ms(current_track)
     cue_points_slots = get_cue_points_slots_for_track(current_track)
     return render(
         request,
