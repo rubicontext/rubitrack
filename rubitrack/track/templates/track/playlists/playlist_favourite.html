@@ -36,7 +36,7 @@
               {{ currentTransition.track_destination.title|slice:":20" }}
             </a></td>
           <td>{{ currentTransition.track_destination.artist.name }}</td>
-         <td>{{ currentTransition.comment }} |{{ currentTransition.track_destination.get_last_four_cue_points_text_no_ms }}</td>
+         <td>{{ currentTransition.comment }} |{{ currentTransition.track_source.get_last_four_cue_points_text_no_ms }}</td>
 
        </tr>
          {% endfor %}
