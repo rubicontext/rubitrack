@@ -7,7 +7,7 @@ from ..models import Playlist
 from .playlist_transitions import get_transitions_from_playlist, get_ordered_tracks_from_playlist
 
 # Default favourite playlist IDs (semicolon-separated). Update to your own defaults.
-DEFAULT_PLAYLIST_FAVOURITES = "634;611;621;616;621"
+DEFAULT_PLAYLIST_FAVOURITES = "634;611;621;616;630"
 
 
 @login_required
