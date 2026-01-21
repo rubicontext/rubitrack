@@ -20,7 +20,7 @@ from .currently_playing.transition_view import (
     delete_transition,
     update_transition_comment
 )
-from .playlist import playlist_transitions
+from .playlist import playlist_transitions, playlist_favourite
 from .duplicate.display_duplicate import display_duplicates, manual_merge_track_batch, merge_tracks, bulk_merge_tracks
 from .currently_playing.manual_transition import manual_transition
 from .duplicate.manual_merge_duplicate import manual_merge_duplicate
@@ -131,6 +131,7 @@ urlpatterns = [
     path('rekordbox/', rekordbox_sync_view, name='rekordbox_sync'),
     path('rekordbox/api/synchronize/', synchronize_rekordbox_collection_api, name='rekordbox_api_synchronize'),
     path('rekordbox/api/stats/', cue_points_stats_api, name='rekordbox_api_stats'),
+    path('playlist_favourite/', playlist_favourite.playlist_favourite, name='playlist_favourite'),
 ] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
 
 urlpatterns += [

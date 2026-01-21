@@ -1,0 +1,63 @@
+{% extends "admin/base_site.html" %}
+{% load admin_urls %}
+
+{% block title %}Playlist Favourite{% endblock title %}
+
+{% block content %}
+<h2>Playlist Favourite</h2>
+
+<style>
+/* Highlight style, same as playlist page */
+.highlightedTransition{font-weight:bold;background-color:#52d3aa;}
+</style>
+
+<form method="get" action="" class="form-inline" style="margin-bottom: 12px;">
+  <input type="text" name="ids" value="{{ ids }}" placeholder="e.g. 12;34;56" size="40" />
+  <button type="submit" class="btn btn-primary">Display</button>
+</form>
+
+{% if playlists %}
+  {% for item in playlists %}
+    <div class="blue_subtitle_small">Playlist: {{ item.playlist.name }}</div>
+    <div class="blue_subtitle_xsmall">First Track : {{ item.firstTrack.title |slice:":20" }} - {{ item.firstTrack.artist.name }}</div>
+
+    <div id="transitionsTableDiv">
+      <table id="transitionsTable" class="table table-striped table-condensed table-transition">
+        <tr>                    
+          <th>Title</th>
+          <th>Artist</th>
+          <th>Comment</th>
+         </tr>
+
+         {% for currentTransition in item.transitions %}
+         <tr class="transitionRow inactiveTransition">                    
+          <td>
+            <a href="{% url 'history_editing_view' currentTransition.track_destination.id%}">
+              {{ currentTransition.track_destination.title|slice:":20" }}
+            </a></td>
+          <td>{{ currentTransition.track_destination.artist.name }}</td>
+         <td>{{ currentTransition.comment }} |{{ currentTransition.track_destination.get_last_four_cue_points_text_no_ms }}</td>
+
+       </tr>
+         {% endfor %}
+
+            </table>
+      </div>
+
+    <div style="margin:10px 0;border-bottom:1px solid #ddd;"></div>
+  {% empty %}
+    <p>No playlists found.</p>
+  {% endfor %}
+{% else %}
+  <p>Enter semicolon-separated playlist IDs, then click Display.</p>
+{% endif %}
+
+<script>
+// Highlight clicked transition row (same behavior as playlist page)
+$(document).on("click", ".transitionRow", function(){
+  $(".transitionRow").removeClass("highlightedTransition");
+  $(this).toggleClass('highlightedTransition');
+});
+</script>
+
+{% endblock content %}
