@@ -2,7 +2,7 @@
 {% load admin_urls %}
 <!-- <link rel="stylesheet" href="http://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.min.css"> -->
  
-{% block title %}Playlist transitions - {{ currentPlaylist.name }}{% endblock title %}
+{% block title %}{{ currentPlaylist.name }} - Playlist transitions{% endblock title %}
   
   {% block content %}
   <style>
@@ -45,7 +45,7 @@
        </tr>
 
        {% for currentTransition in playlistTransitions %}
-       <tr class="transitionRow inactiveTransition">                    
+       <tr class="transitionRow inactiveTransition" data-track-id="{{ currentTransition.track_destination.id }}">                    
         <td>
           <a href="{% url 'history_editing_view' currentTransition.track_destination.id%}">
             {{ currentTransition.track_destination.title|slice:":20" }}
@@ -53,6 +53,40 @@
         <td>{{ currentTransition.track_destination.artist.name }}</td>
        <td>{{ currentTransition.comment }} |{{ currentTransition.track_source.get_last_four_cue_points_text_no_ms }}</td>
 
+     </tr>
+       {% endfor %}
+
+          </table>
+    </div>
+
+
+  <!-- NEW: Transitions Table With Waveform -->
+  <div class="blue_subtitle_small">Transitions Table With Waveform</div>
+  <div class="blue_subtitle_xsmall">First Track : {{ firstTrack.title |slice:":20" }} - {{ firstTrack.artist.name }}</div>
+
+  <div id="transitionsWaveformTableDiv">
+    <table id="transitionsWaveformTable" class="table table-striped table-condensed table-transition">
+      <tr>                    
+        <th>Track (Title - Artist)</th>
+        <th>Comment</th>
+        <th>Waveform</th>
+       </tr>
+
+       {% for item in transitions_with_waveforms %}
+       <tr class="transitionRow inactiveTransition" data-track-id="{{ item.transition.track_destination.id }}">                    
+        <td>
+          <a href="{% url 'history_editing_view' item.transition.track_destination.id%}">
+            {{ item.transition.track_destination.title|slice:":20" }} - <span class="artist_green_flashy">{{ item.transition.track_destination.artist.name }}</span>
+          </a>
+        </td>
+        <td>{{ item.transition.comment }} |{{ item.transition.track_source.get_last_four_cue_points_text_no_ms }}</td>
+        <td style="padding: 2px;">
+          {% if item.waveform_url %}
+            <img src="{{ item.waveform_url }}" alt="Waveform" style="width: 100%; max-height: 50px; display: block; background: white;">
+          {% else %}
+            <span style="color: #999; font-size: 11px;">No waveform</span>
+          {% endif %}
+        </td>
      </tr>
        {% endfor %}
 
@@ -139,10 +173,15 @@
       });
   })
 
-  //HIGHLIGHT clicked row
+  //HIGHLIGHT clicked row and all rows with same track
   $(document).on("click", ".transitionRow", function(){
+    var trackId = $(this).data('track-id');
     $(".transitionRow").removeClass("highlightedTransition");
-    $(this).toggleClass('highlightedTransition');
+    if (trackId) {
+      $(".transitionRow[data-track-id='" + trackId + "']").addClass('highlightedTransition');
+    } else {
+      $(this).addClass('highlightedTransition');
+    }
   })
 
 </script>

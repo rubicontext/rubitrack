@@ -3,11 +3,8 @@ from django.shortcuts import render
 from typing import List
 from django.http import HttpRequest, HttpResponse
 
-from ..models import Playlist
+from ..models import Playlist, Config
 from .playlist_transitions import get_transitions_from_playlist, get_ordered_tracks_from_playlist
-
-# Default favourite playlist IDs (semicolon-separated). Update to your own defaults.
-DEFAULT_PLAYLIST_FAVOURITES = "634;611;621;616;630"
 
 
 @login_required
@@ -15,7 +12,12 @@ def playlist_favourite(request: HttpRequest) -> HttpResponse:
     """Display transitions for multiple playlists selected by semicolon-separated IDs.
     Query param or POST field: ids="1;2;3"
     """
-    ids_raw = (request.GET.get('ids') or request.POST.get('ids') or DEFAULT_PLAYLIST_FAVOURITES)
+    config = Config.get_config()
+    ids_raw = (
+        request.GET.get('ids') or
+        request.POST.get('ids') or
+        config.default_playlist_favourites
+    )
     playlist_ids: List[int] = []
     for part in ids_raw.split(';'):
         part = part.strip()

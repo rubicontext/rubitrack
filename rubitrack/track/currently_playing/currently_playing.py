@@ -154,6 +154,16 @@ def display_history_editing(request, track_id):
         cue_points_times = get_cue_points_times_for_track_no_ms(current_track)
         cue_points_slots = get_cue_points_slots_for_track(current_track)
         config = Config.get_config()
+        
+        # Vérifier si une waveform existe pour cette track
+        import os
+        from django.conf import settings
+        waveform_filename = f'waveform_track_{current_track.id}.png'
+        waveform_path = os.path.join(settings.MEDIA_ROOT, 'waveforms', waveform_filename)
+        waveform_url = None
+        if os.path.exists(waveform_path):
+            waveform_url = f"{settings.MEDIA_URL}waveforms/{waveform_filename}"
+        
         print("Edit history for track :", current_track)
         return render(
             request,
@@ -171,6 +181,7 @@ def display_history_editing(request, track_id):
                 'cue_points_slots': cue_points_slots,
                 'all_tracks': Track.objects.order_by('title','artist__name').only('id','title','artist__name'),
                 'default_ranking_min': config.default_ranking_min,
+                'waveform_url': waveform_url,
             },
         )
 

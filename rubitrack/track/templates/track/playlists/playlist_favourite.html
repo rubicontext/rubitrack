@@ -1,7 +1,7 @@
 {% extends "admin/base_site.html" %}
 {% load admin_urls %}
 
-{% block title %}Playlist Favourite{% endblock title %}
+{% block title %}Playlists Favourite{% endblock title %}
 
 {% block content %}
 <h2>Playlist Favourite</h2>
@@ -18,7 +18,9 @@
 
 {% if playlists %}
   {% for item in playlists %}
-    <div class="blue_subtitle_small">Playlist: {{ item.playlist.name }}</div>
+    <div style="font-size: 20px; font-weight: bold; color: #283C4F; margin-top: 20px; margin-bottom: 8px;">
+      {{ item.playlist.name }}
+    </div>
     <div class="blue_subtitle_xsmall">First Track : {{ item.firstTrack.title |slice:":20" }} - {{ item.firstTrack.artist.name }}</div>
 
     <div id="transitionsTableDiv">
@@ -30,7 +32,7 @@
          </tr>
 
          {% for currentTransition in item.transitions %}
-         <tr class="transitionRow inactiveTransition">                    
+         <tr class="transitionRow inactiveTransition" data-track-id="{{ currentTransition.track_destination.id }}">                    
           <td>
             <a href="{% url 'history_editing_view' currentTransition.track_destination.id%}">
               {{ currentTransition.track_destination.title|slice:":20" }}
@@ -53,10 +55,15 @@
 {% endif %}
 
 <script>
-// Highlight clicked transition row (same behavior as playlist page)
+// Highlight clicked transition row and all rows with same track
 $(document).on("click", ".transitionRow", function(){
+  var trackId = $(this).data('track-id');
   $(".transitionRow").removeClass("highlightedTransition");
-  $(this).toggleClass('highlightedTransition');
+  if (trackId) {
+    $(".transitionRow[data-track-id='" + trackId + "']").addClass('highlightedTransition');
+  } else {
+    $(this).addClass('highlightedTransition');
+  }
 });
 </script>
 

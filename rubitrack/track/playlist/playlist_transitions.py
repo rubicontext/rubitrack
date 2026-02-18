@@ -1,9 +1,9 @@
 import ast
-
+import os
 import string
 
 from django.shortcuts import render
-
+from django.conf import settings
 from django.contrib.auth.decorators import login_required
 
 from track.currently_playing.transition import create_transition
@@ -12,6 +12,19 @@ from ..models import Track, Transition, Playlist
 
 PLAYLIST_TRANSITION_AUTO_GENERATED = 'Generated from Playlist : '
 SEPARATOR_TRACK_ID = 14294
+
+
+def get_waveform_url_for_track(track):
+    """
+    Get the waveform URL for a given track if it exists
+    Returns None if waveform file doesn't exist
+    """
+    waveform_filename = f'waveform_track_{track.id}.png'
+    waveform_path = os.path.join(settings.MEDIA_ROOT, 'waveforms', waveform_filename)
+    if os.path.exists(waveform_path):
+        return f"{settings.MEDIA_URL}waveforms/{waveform_filename}"
+    return None
+
 
 @login_required
 def display_playlist_transitions(request, PlaylistId):
@@ -30,6 +43,16 @@ def display_playlist_transitions(request, PlaylistId):
     else:
         playlistTransitions = get_transitions_from_playlist(currentPlaylist)
         playlistTracks = get_ordered_tracks_from_playlist(currentPlaylist)
+        
+        # Add waveform URLs to transitions
+        transitions_with_waveforms = []
+        for transition in playlistTransitions:
+            waveform_url = get_waveform_url_for_track(transition.track_source)
+            transitions_with_waveforms.append({
+                'transition': transition,
+                'waveform_url': waveform_url
+            })
+        
         print("All transitions for playlist : ", currentPlaylist)
         return render(
             request,
@@ -39,6 +62,7 @@ def display_playlist_transitions(request, PlaylistId):
                 'playlistTransitions': playlistTransitions,
                 'playlistTracks': playlistTracks,
                 'firstTrack': playlistTracks[0],
+                'transitions_with_waveforms': transitions_with_waveforms,
             },
         )
     
@@ -52,6 +76,10 @@ def get_transitions_from_playlist(current_playlist: Playlist):
     for index_track_id in range(len(track_ids)-1):
         track_source_id = track_ids[index_track_id]
         track_destination_id = track_ids[index_track_id+1]
+
+        # Skip transitions involving the separator track
+        if track_source_id == SEPARATOR_TRACK_ID or track_destination_id == SEPARATOR_TRACK_ID:
+            continue
 
         current_transition_qs = Transition.objects.filter(track_source_id=track_source_id,
                                                        track_destination_id=track_destination_id)
@@ -114,20 +142,22 @@ def get_order_rank(playlist_name:str) -> int:
         return 130
     elif playlist_name.startswith('2027'):
         return 140
-    elif playlist_name.startswith('2025'):
+    elif playlist_name.startswith('2026'):
         return 150
-    elif playlist_name.startswith('2024'):
+    elif playlist_name.startswith('2025'):
         return 160
-    elif playlist_name.startswith('2023'):
+    elif playlist_name.startswith('2024'):
         return 170
-    elif playlist_name.startswith('2022'):
+    elif playlist_name.startswith('2023'):
         return 180
-    elif playlist_name.startswith('2021'):
+    elif playlist_name.startswith('2022'):
         return 185
-    elif playlist_name.startswith('2020'):
+    elif playlist_name.startswith('2021'):
         return 190
-    elif playlist_name.startswith('2019'):
+    elif playlist_name.startswith('2020'):
         return 195
+    elif playlist_name.startswith('2021'):
+        return 196
     
     if is_name_parsable_for_numeric_indexing(playlist_name):
         return 999
@@ -167,5 +197,6 @@ def delete_all_generated_transitions(request):
 def get_playlists_by_track_id(track_id: int) -> list:
     playlists = Playlist.objects.filter(tracks__id=track_id).distinct()
     # Order in Python using existing get_order_rank to avoid duplicated ranking logic
-    ordered = sorted(playlists, key=lambda p: (get_order_rank(p.name), p.name.lower() if p.name else ''))
+    # Si même rank, trier par ID décroissant
+    ordered = sorted(playlists, key=lambda p: (get_order_rank(p.name), -p.id))
     return ordered

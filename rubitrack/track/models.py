@@ -260,7 +260,16 @@ class Config(models.Model):
     
     # Transition settings
     default_comment_size = models.IntegerField(default=60, help_text="Default size for transition comments")
-    transition_animation_duration_ms = models.IntegerField(default=300, help_text="Duration of transition animations (milliseconds)")
+    transition_animation_duration_ms = models.IntegerField(
+        default=300, help_text="Duration of transition animations (milliseconds)"
+    )
+    
+    # Playlist settings
+    default_playlist_favourites = models.CharField(
+        max_length=500,
+        default="634;611;621;616;630",
+        help_text="Default favourite playlist IDs (semicolon-separated)"
+    )
     
     # Metadata
     created_at = models.DateTimeField(auto_now_add=True)

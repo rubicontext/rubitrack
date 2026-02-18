@@ -1,0 +1,45 @@
+{% extends "admin/change_list.html" %}
+{% load admin_urls static %}
+
+{% block content_title %}
+<style>
+.playlist-favourite-btn {
+    display: inline-block;
+    background: linear-gradient(135deg, #283C4F 0%, #1a2937 100%);
+    color: #52d3aa !important;
+    padding: 14px 28px;
+    border-radius: 6px;
+    text-decoration: none;
+    font-weight: bold;
+    font-size: 16px;
+    box-shadow: 0 4px 10px rgba(40, 60, 79, 0.4);
+    transition: all 0.2s ease;
+    margin-bottom: 20px;
+    border: 2px solid #52d3aa;
+    margin-right: 10px;
+}
+
+.playlist-favourite-btn:hover {
+    background: linear-gradient(135deg, #52d3aa 0%, #3fb896 100%);
+    box-shadow: 0 6px 14px rgba(82, 211, 170, 0.5);
+    transform: translateY(-2px);
+    color: #283C4F !important;
+    border-color: #52d3aa;
+}
+
+.playlist-favourite-btn i {
+    margin-right: 8px;
+}
+</style>
+
+<div style="margin-bottom: 20px; text-align: center;">
+    <a href="{% url 'playlist_list' %}" class="playlist-favourite-btn">
+        <i class="fas fa-list"></i> Standalone Playlist View
+    </a>
+    <a href="{% url 'playlist_favourite' %}" class="playlist-favourite-btn">
+        <i class="fas fa-star"></i> Playlist Favourite
+    </a>
+</div>
+
+{{ block.super }}
+{% endblock %}

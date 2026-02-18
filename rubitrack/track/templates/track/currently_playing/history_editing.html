@@ -5,7 +5,7 @@
 <link rel="stylesheet" href="http://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.min.css">
 <link rel="stylesheet" href="/static/css/rubitrack.css">
 
-{% block title %}History Editing - {{ currentTrack.title }}{% endblock title %}
+{% block title %}{{ currentTrack.title }} - History Editing{% endblock title %}
   
   {% block content %}
 
@@ -169,6 +169,188 @@
 
 </script>
 
+<!-- Boutons pour ajouter des transitions -->
+<div style="margin-top: 30px; padding: 20px; background: #f8f9fa; border: 1px solid #e0e4e7; border-radius: 6px; text-align: center;">
+    <h3 style="font-size: 18px; margin-bottom: 15px; color: #283C4F;">Quick Add Transition</h3>
+    <div style="display: flex; gap: 15px; justify-content: center; flex-wrap: wrap;">
+        <a href="{% url 'manual_transition' %}?track_destination={{ currentTrack.id }}" 
+           class="btn" 
+           style="background: linear-gradient(135deg, #283C4F 0%, #1a2937 100%); color: #52d3aa; padding: 12px 24px; border: 2px solid #52d3aa; border-radius: 6px; text-decoration: none; font-weight: bold; transition: all 0.2s ease;">
+            <i class="fa fa-arrow-left"></i> Add Transition BEFORE this track
+        </a>
+        <a href="{% url 'manual_transition' %}?track_source={{ currentTrack.id }}" 
+           class="btn" 
+           style="background: linear-gradient(135deg, #283C4F 0%, #1a2937 100%); color: #52d3aa; padding: 12px 24px; border: 2px solid #52d3aa; border-radius: 6px; text-decoration: none; font-weight: bold; transition: all 0.2s ease;">
+            Add Transition AFTER this track <i class="fa fa-arrow-right"></i>
+        </a>
+    </div>
+</div>
+
+<!-- Bloc pour coller une waveform depuis le presse-papier -->
+<div style="margin-top: 30px; padding: 20px; background: #f0f8ff; border: 2px dashed #52d3aa; border-radius: 6px;">
+    <h3 style="font-size: 18px; margin-bottom: 15px; color: #283C4F;">
+        <i class="fa fa-picture-o"></i> {% if waveform_url %}Update Waveform Image{% else %}Add Waveform Image{% endif %}
+    </h3>
+    {% if waveform_url %}
+    <p style="color: #666; font-size: 13px; margin-bottom: 15px;">
+        A waveform is already saved for this track. You can update it by pasting a new image with <kbd>Ctrl+V</kbd>
+    </p>
+    {% else %}
+    <p style="color: #666; font-size: 13px; margin-bottom: 15px;">
+        Press <kbd>Ctrl+V</kbd> to paste a waveform image from clipboard
+    </p>
+    {% endif %}
+    
+    <div id="waveformPreviewContainer" style="display: none; margin-bottom: 15px;">
+        <canvas id="waveformCanvas" style="width: 100%; max-width: 100%; height: 80px; border: 1px solid #ccc; border-radius: 4px; background: #fff;"></canvas>
+    </div>
+    
+    <div id="waveformStatus" style="text-align: center; padding: 40px; color: #999; border: 1px dashed #ddd; border-radius: 4px; background: #fafafa;">
+        <i class="fa fa-clipboard" style="font-size: 48px; margin-bottom: 10px; opacity: 0.3;"></i>
+        <p style="margin: 0;">No image pasted yet</p>
+    </div>
+    
+    <div id="waveformActions" style="display: none; margin-top: 15px; text-align: center;">
+        <button id="saveWaveformBtn" class="btn" style="background: #52d3aa; color: white; padding: 10px 20px; border: none; border-radius: 4px; font-weight: bold; margin-right: 10px;">
+            <i class="fa fa-save"></i> Save Waveform
+        </button>
+        <button id="clearWaveformBtn" class="btn" style="background: #dc3545; color: white; padding: 10px 20px; border: none; border-radius: 4px; font-weight: bold;">
+            <i class="fa fa-trash"></i> Clear
+        </button>
+    </div>
+</div>
+
+<script>
+// Gestion du clipboard pour les waveforms
+(function() {
+    let currentImageData = null;
+    const canvas = document.getElementById('waveformCanvas');
+    const ctx = canvas.getContext('2d');
+    const previewContainer = document.getElementById('waveformPreviewContainer');
+    const statusDiv = document.getElementById('waveformStatus');
+    const actionsDiv = document.getElementById('waveformActions');
+    
+    // Écouter les événements paste sur tout le document
+    document.addEventListener('paste', function(e) {
+        const items = e.clipboardData.items;
+        
+        for (let i = 0; i < items.length; i++) {
+            if (items[i].type.indexOf('image') !== -1) {
+                e.preventDefault();
+                const blob = items[i].getAsFile();
+                const reader = new FileReader();
+                
+                reader.onload = function(event) {
+                    const img = new Image();
+                    img.onload = function() {
+                        // Redimensionner pour un format waveform (très large, peu haut)
+                        const targetHeight = 80;
+                        const targetWidth = Math.max(800, img.width);
+                        
+                        canvas.width = targetWidth;
+                        canvas.height = targetHeight;
+                        
+                        // Dessiner l'image redimensionnée
+                        ctx.clearRect(0, 0, targetWidth, targetHeight);
+                        ctx.drawImage(img, 0, 0, targetWidth, targetHeight);
+                        
+                        // Sauvegarder les données pour l'upload
+                        currentImageData = canvas.toDataURL('image/png');
+                        
+                        // Afficher le preview
+                        previewContainer.style.display = 'block';
+                        statusDiv.style.display = 'none';
+                        actionsDiv.style.display = 'block';
+                    };
+                    img.src = event.target.result;
+                };
+                reader.readAsDataURL(blob);
+                break;
+            }
+        }
+    });
+    
+    // Bouton Clear
+    document.getElementById('clearWaveformBtn').addEventListener('click', function() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        currentImageData = null;
+        previewContainer.style.display = 'none';
+        statusDiv.style.display = 'block';
+        actionsDiv.style.display = 'none';
+    });
+    
+    // Bouton Save
+    document.getElementById('saveWaveformBtn').addEventListener('click', function() {
+        if (!currentImageData) {
+            alert('No image to save');
+            return;
+        }
+        
+        const trackId = document.getElementById('currentTrackId').value;
+        
+        fetch('/track/save_waveform/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            body: JSON.stringify({
+                track_id: trackId,
+                image_data: currentImageData
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('Waveform saved successfully!');
+                // Recharger la page pour afficher la waveform en haut
+                window.location.reload();
+            } else {
+                alert('Error saving waveform: ' + (data.error || 'Unknown error'));
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error saving waveform');
+        });
+    });
+    
+    // Helper pour récupérer le CSRF token
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+})();
+</script>
+
+<style>
+a.btn:hover {
+    background: linear-gradient(135deg, #52d3aa 0%, #3fb896 100%) !important;
+    color: #283C4F !important;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 14px rgba(82, 211, 170, 0.5);
+}
+
+kbd {
+    background: #283C4F;
+    color: #52d3aa;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-size: 12px;
+    font-family: monospace;
+    border: 1px solid #52d3aa;
+}
+</style>
 
  {% endblock content %}
 

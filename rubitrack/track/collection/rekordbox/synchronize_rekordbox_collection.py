@@ -238,10 +238,11 @@ class RekordboxCollectionSynchronizer:
         name: str,
         num_value: int,
         end_seconds: Optional[float] = None,
+        force_loop: bool = False,
     ) -> None:
         """
         Ajoute un cue point à une track Rekordbox.
-        - Si end_seconds est fourni et > start: export en loop (Type 4) avec End et couleurs orange.
+        - Si end_seconds est fourni et > start OU force_loop=True: export en loop (Type 4) avec couleurs orange.
           Si un num_value (0..2) est fourni, on positionne aussi Num pour créer une "loop hot cue" (supporté par Rekordbox).
         - Sinon: export en hot cue (Type 0) avec Num et couleurs vertes.
         """
@@ -249,18 +250,20 @@ class RekordboxCollectionSynchronizer:
         position_mark.set('Name', name)
         start_value = self.seconds_to_rekordbox_position(time_seconds)
         position_mark.set('Start', start_value)
-        if end_seconds is not None and end_seconds > time_seconds:
-            # Loop (Type 4) avec End et couleur orange
-            end_value = self.seconds_to_rekordbox_position(end_seconds)
+        # Créer comme loop si: durée définie OU force_loop=True (traktor_type=4 pour cues 4-8)
+        if force_loop or (end_seconds is not None and end_seconds > time_seconds):
+            # Loop (Type 4) avec couleur orange
             position_mark.set('Type', '4')
-            position_mark.set('End', end_value)
+            if end_seconds is not None and end_seconds > time_seconds:
+                end_value = self.seconds_to_rekordbox_position(end_seconds)
+                position_mark.set('End', end_value)
             # S'il s'agit d'un slot hot (0..2), renseigner Num pour qu'elle apparaisse sur le pad correspondant
             if num_value != -1:
                 position_mark.set('Num', str(num_value))
             position_mark.set('Red', '255')
             position_mark.set('Green', '140')
             position_mark.set('Blue', '0')
-            logger.debug("Add LOOP POSITION_MARK: start=%s end=%s num=%s", start_value, end_value, (str(num_value) if num_value != -1 else ''))
+            logger.debug("Add LOOP POSITION_MARK: start=%s end=%s num=%s force_loop=%s", start_value, (end_value if end_seconds else 'None'), (str(num_value) if num_value != -1 else ''), force_loop)
         else:
             # Hot cue (Type 0) avec Num et couleur verte
             position_mark.set('Type', '0')
@@ -540,6 +543,11 @@ class RekordboxCollectionSynchronizer:
             if loop_len_ms_dec and loop_len_ms_dec > 0:
                 end_seconds_dec = (start_ms_dec + loop_len_ms_dec) / Decimal('1000')
 
+            # Pour les cue points 4-8, si traktor_type=4 (loop), créer comme Type 4 dans Rekordbox
+            force_loop = False
+            if i > 3 and is_type4:
+                force_loop = True
+
             self.add_cue_point_to_track(
                 rekordbox_track,
                 i,
@@ -547,6 +555,7 @@ class RekordboxCollectionSynchronizer:
                 name,
                 final_num_value,
                 float(end_seconds_dec) if end_seconds_dec is not None else None,
+                force_loop=force_loop,
             )
             cue_points_added += 1
         if cue_points_added > 0:

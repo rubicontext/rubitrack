@@ -55,4 +55,13 @@
             </table>
         </td>
     </tr>
+    
+    <!-- Ligne de la waveform juste après les cue points -->
+    {% if waveform_url %}
+    <tr>
+        <td colspan="3" style="padding:0; margin:0;">
+            <img src="{{ waveform_url }}" alt="Waveform" style="width: 100%; height: auto; max-height: 70px; display: block; background: white; border:none;">
+        </td>
+    </tr>
+    {% endif %}
 </table>

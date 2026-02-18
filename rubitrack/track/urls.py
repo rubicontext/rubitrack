@@ -21,8 +21,12 @@ from .currently_playing.transition_view import (
     update_transition_comment
 )
 from .playlist import playlist_transitions, playlist_favourite
+from .playlist.toggle_favourite import toggle_playlist_favourite
+from .playlist.playlist_list_view import playlist_list_view
+from .navigation_view import navigation_view
 from .duplicate.display_duplicate import display_duplicates, manual_merge_track_batch, merge_tracks, bulk_merge_tracks
 from .currently_playing.manual_transition import manual_transition
+from .currently_playing.save_waveform import save_waveform
 from .duplicate.manual_merge_duplicate import manual_merge_duplicate
 from .duplicate.manual_merge_artist import manual_merge_artist
 from .currently_playing.suggestions_block_view import ajax_suggestions, suggestions_block
@@ -45,6 +49,7 @@ from django.conf.urls.static import static
 urlpatterns = [
     path('favicon.ico', RedirectView.as_view(url=staticfiles_storage.url('favicon.ico'))),
     path('static/favicon.ico', RedirectView.as_view(url=staticfiles_storage.url('favicon.ico'))),
+    path('', navigation_view, name='navigation'),
     path('import_collection/', import_collection.upload_file, name='import_collection_view'),
     path('currently_playing/', display_currently_playing, name='currently_playing_view'),
     path('history_editing/<int:track_id>', display_history_editing, name='history_editing_view'),
@@ -113,6 +118,7 @@ urlpatterns = [
     path('merge_tracks/', merge_tracks, name='merge_tracks'),
     path('bulk_merge_tracks/', bulk_merge_tracks, name='bulk_merge_tracks'),
     path('manual_transition/', manual_transition, name='manual_transition'),
+    path('save_waveform/', save_waveform, name='save_waveform'),
     path('manual_merge_track/', manual_merge_duplicate, name='manual_merge_track'),
     path('manual_merge_artist/', manual_merge_artist, name='manual_merge_artist'),
     # SUGGESTIONS
@@ -132,6 +138,8 @@ urlpatterns = [
     path('rekordbox/api/synchronize/', synchronize_rekordbox_collection_api, name='rekordbox_api_synchronize'),
     path('rekordbox/api/stats/', cue_points_stats_api, name='rekordbox_api_stats'),
     path('playlist_favourite/', playlist_favourite.playlist_favourite, name='playlist_favourite'),
+    path('toggle_playlist_favourite/', toggle_playlist_favourite, name='toggle_playlist_favourite'),
+    path('playlists/', playlist_list_view, name='playlist_list'),
 ] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
 
 urlpatterns += [

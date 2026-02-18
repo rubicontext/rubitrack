@@ -83,6 +83,7 @@ def config_reset_view(request):
         config.max_upload_size_mb = 10
         config.default_comment_size = 60
         config.transition_animation_duration_ms = 300
+        config.default_playlist_favourites = "634;611;621;616;630"
         config.updated_by = request.user
         config.save()
         messages.success(request, 'Configuration reset to default values!')

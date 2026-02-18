@@ -1,9 +1,15 @@
 {% extends 'admin/base_site.html' %}
-{% block title %}Create Manual Transition{% endblock title %}
+{% block title %}Transitions{% endblock title %}
 {% block content %}
-<h1>Create manual transition</h1>
+<h1>Transitions</h1>
 {% if message %}
-    <div class="alert alert-success">{{ message }}</div>
+    {% if message|slice:":6" == "error:" %}
+        <div class="alert alert-danger" style="background-color:#f8d7da; border-color:#f5c6cb; color:#721c24; padding:12px; border-radius:4px; margin-bottom:20px;">
+            <strong>Error!</strong> {{ message|slice:"6:" }}
+        </div>
+    {% else %}
+        <div class="alert alert-success">{{ message }}</div>
+    {% endif %}
 {% endif %}
 <form method="post">
     {% csrf_token %}
@@ -12,7 +18,7 @@
         <select name="track1_id" class="form-control" required>
             <option value="">-- Choisir --</option>
             {% for track in tracks %}
-                <option value="{{ track.id }}">{{ track.title }} ({{ track.artist.name }})</option>
+                <option value="{{ track.id }}" {% if preselected_source and track.id|stringformat:"s" == preselected_source %}selected{% endif %}>{{ track.title }} ({{ track.artist.name }})</option>
             {% endfor %}
         </select>
     </div>
@@ -21,7 +27,7 @@
         <select name="track2_id" class="form-control" required>
             <option value="">-- Choisir --</option>
             {% for track in tracks %}
-                <option value="{{ track.id }}">{{ track.title }} ({{ track.artist.name }})</option>
+                <option value="{{ track.id }}" {% if preselected_destination and track.id|stringformat:"s" == preselected_destination %}selected{% endif %}>{{ track.title }} ({{ track.artist.name }})</option>
             {% endfor %}
         </select>
     </div>
@@ -57,6 +63,44 @@
         </p>
     </form>
 </div>
+
+<hr style="margin:40px 0;"/>
+
+<!-- Nouvelle section : Copy All Transitions -->
+<div style="margin-top:20px; padding:20px; background:#d4edda; border:2px solid #52d3aa; border-radius:6px; max-width:520px;">
+    <h3 style="margin-top:0; font-size:20px; color:#155724;">
+        <i class="fa fa-copy"></i> Copy All Transitions
+    </h3>
+    <p style="font-size:13px; color:#155724; margin-bottom:15px;">
+        Copier toutes les transitions (entrantes et sortantes) d'une track vers une autre track.
+    </p>
+    <form method="post">
+        {% csrf_token %}
+        <div class="form-group">
+            <label for="copy_source_id" style="font-weight:600;">Track Source (copier depuis) :</label>
+            <select name="copy_source_id" id="copy_source_id" class="form-control" required>
+                <option value="">-- Choisir --</option>
+                {% for track in tracks %}
+                    <option value="{{ track.id }}">{{ track.title }} ({{ track.artist.name }})</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="form-group">
+            <label for="copy_dest_id" style="font-weight:600;">Track Destination (copier vers) :</label>
+            <select name="copy_dest_id" id="copy_dest_id" class="form-control" required>
+                <option value="">-- Choisir --</option>
+                {% for track in tracks %}
+                    <option value="{{ track.id }}">{{ track.title }} ({{ track.artist.name }})</option>
+                {% endfor %}
+            </select>
+        </div>
+        <button type="submit" name="copy_all" class="btn" style="background: linear-gradient(135deg, #52d3aa 0%, #3fb896 100%); color:#155724; border:none; font-weight:bold; padding:10px 20px;">
+            <i class="fa fa-copy"></i> Copy All Transitions
+        </button>
+    </form>
+</div>
+
+
 <script>
 function jumpToHistory(){
   var sel = document.getElementById('jumpTrackSelect');

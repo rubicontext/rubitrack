@@ -1,0 +1,378 @@
+{% extends "admin/base_site.html" %}
+{% load admin_urls %}
+
+{% block title %}Playlists - RubiTrack{% endblock title %}
+
+{% block extrastyle %}
+{{ block.super }}
+<link rel="stylesheet" href="http://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.min.css">
+<link rel="stylesheet" href="/static/css/rubitrack.css">
+    
+    <style>
+        #content {
+            margin-left: 0 !important;
+        }
+        
+        #content-main {
+            padding: 20px;
+        }
+        
+        body {
+            background: #f5f7fa;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        }
+        
+        .container-fluid {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        .action-bar {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        
+        .search-box {
+            flex: 1;
+            max-width: 400px;
+        }
+        
+        .search-box input {
+            width: 100%;
+            padding: 10px 15px;
+            border: 2px solid #e0e4e7;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+        
+        .search-box input:focus {
+            outline: none;
+            border-color: #52d3aa;
+        }
+        
+        .btn-favourite {
+            background: linear-gradient(135deg, #283C4F 0%, #1a2937 100%) !important;
+            color: white !important;
+            padding: 10px 20px;
+            border: 2px solid #283C4F;
+            border-radius: 6px;
+            text-decoration: none;
+            font-weight: bold;
+            transition: all 0.2s ease;
+            display: inline-block;
+        }
+        
+        .btn-favourite:hover {
+            background: linear-gradient(135deg, #52d3aa 0%, #3fb896 100%) !important;
+            color: white !important;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 14px rgba(82, 211, 170, 0.5);
+            text-decoration: none;
+        }
+        
+        .playlist-table {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            overflow: hidden;
+        }
+        
+        .playlist-table table {
+            margin-bottom: 0;
+        }
+        
+        .playlist-table thead {
+            background: #283C4F;
+            color: white;
+        }
+        
+        .playlist-table thead th {
+            padding: 15px;
+            font-weight: bold;
+            border: none;
+        }
+        
+        .playlist-table tbody tr {
+            border-bottom: 1px solid #f0f2f5;
+            transition: background 0.2s ease;
+        }
+        
+        .playlist-table tbody tr:hover {
+            background: #f8fafb;
+        }
+        
+        .playlist-table tbody td {
+            padding: 15px;
+            vertical-align: middle;
+        }
+        
+        .favourite-star {
+            cursor: pointer;
+            font-size: 24px;
+            transition: all 0.2s ease;
+            user-select: none;
+            display: inline-block;
+        }
+        
+        .favourite-star:hover {
+            transform: scale(1.3);
+        }
+        
+        .favourite-star-filled {
+            color: #FFD700;
+        }
+        
+        .favourite-star-empty {
+            color: #ccc;
+        }
+        
+        .favourite-star-empty:hover {
+            color: #ffd700;
+            opacity: 0.7;
+        }
+        
+        .playlist-link {
+            color: #283C4F;
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.2s ease;
+        }
+        
+        .playlist-link:hover {
+            color: #52d3aa;
+            text-decoration: none;
+        }
+        
+        .playlist-id {
+            color: #999;
+            font-size: 12px;
+            font-family: monospace;
+        }
+        
+        .stats-badge {
+            background: #e8f5f1;
+            color: #52d3aa;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        
+        .no-results {
+            text-align: center;
+            padding: 60px 20px;
+            color: #999;
+        }
+        
+        .no-results i {
+            font-size: 64px;
+            opacity: 0.3;
+            margin-bottom: 20px;
+        }
+        
+        @media (max-width: 768px) {
+            .action-bar {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .search-box {
+                max-width: 100%;
+            }
+        }
+    </style>
+{% endblock extrastyle %}
+
+{% block content %}
+    <div class="container-fluid">
+        
+        <!-- Action Bar -->
+        <div class="action-bar">
+            <div>
+                <a href="{% url 'playlist_favourite' %}" class="btn-favourite">
+                    <i class="fa fa-star"></i> View Favourites
+                </a>
+            </div>
+            
+            <div class="search-box">
+                <form method="get" action="">
+                    <input type="text" 
+                           name="q" 
+                           placeholder="Search playlists..." 
+                           value="{{ search_query }}"
+                           autocomplete="off">
+                </form>
+            </div>
+        </div>
+        
+        <!-- Playlists Table -->
+        <div class="playlist-table">
+            {% if playlists %}
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th style="width: 60px; text-align: center;">⭐</th>
+                        <th>Playlist Name</th>
+                        <th style="width: 100px;">ID</th>
+                        <th style="width: 200px;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for playlist in playlists %}
+                    <tr>
+                        <td style="text-align: center;">
+                            <span class="favourite-star {% if playlist.is_favourite %}favourite-star-filled{% else %}favourite-star-empty{% endif %}"
+                                  data-playlist-id="{{ playlist.id }}"
+                                  title="Click to toggle favourite">
+                                {% if playlist.is_favourite %}★{% else %}☆{% endif %}
+                            </span>
+                        </td>
+                        <td>
+                            <a href="/track/playlist_transitions/{{ playlist.id }}" class="playlist-link">
+                                {{ playlist.name }}
+                            </a>
+                        </td>
+                        <td>
+                            <span class="playlist-id">#{{ playlist.id }}</span>
+                        </td>
+                        <td>
+                            <a href="/track/playlist_transitions/{{ playlist.id }}" 
+                               class="btn btn-sm btn-default"
+                               title="View Transitions">
+                                <i class="fa fa-exchange"></i> Transitions
+                            </a>
+                            <a href="/admin/track/playlist/{{ playlist.id }}/change/" 
+                               class="btn btn-sm btn-default"
+                               title="Edit in Admin"
+                               target="_blank">
+                                <i class="fa fa-edit"></i> Edit
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            
+            <!-- Results count -->
+            <div style="padding: 15px; background: #f8fafb; border-top: 1px solid #e0e4e7; text-align: center; color: #666;">
+                <small>
+                    <i class="fa fa-info-circle"></i>
+                    Showing {{ total_count }} playlist{{ total_count|pluralize }}
+                    {% if search_query %}
+                        matching "{{ search_query }}"
+                    {% endif %}
+                </small>
+            </div>
+            
+            {% else %}
+            <div class="no-results">
+                <i class="fa fa-music"></i>
+                <h3>No playlists found</h3>
+                {% if search_query %}
+                <p>No playlists match your search "{{ search_query }}"</p>
+                <a href="{% url 'playlist_list' %}" class="btn btn-default">Clear search</a>
+                {% else %}
+                <p>No playlists available yet</p>
+                {% endif %}
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    
+    <!-- Favourite Star Toggle Script -->
+    <script>
+    (function($) {
+        'use strict';
+        
+        $(document).ready(function() {
+            // Handle star click
+            $(document).on('click', '.favourite-star', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                
+                var $star = $(this);
+                var playlistId = $star.data('playlist-id');
+                
+                if (!playlistId) {
+                    console.error('No playlist ID found');
+                    return;
+                }
+                
+                // Get CSRF token
+                var csrftoken = getCookie('csrftoken');
+                
+                // Send AJAX request
+                $.ajax({
+                    url: '/track/toggle_playlist_favourite/',
+                    type: 'POST',
+                    data: {
+                        'playlist_id': playlistId,
+                        'csrfmiddlewaretoken': csrftoken
+                    },
+                    success: function(response) {
+                        if (response.success) {
+                            // Toggle star appearance
+                            var isFavourite = response.is_favourite;
+                            
+                            if (isFavourite) {
+                                $star.text('★');
+                                $star.removeClass('favourite-star-empty');
+                                $star.addClass('favourite-star-filled');
+                            } else {
+                                $star.text('☆');
+                                $star.removeClass('favourite-star-filled');
+                                $star.addClass('favourite-star-empty');
+                            }
+                            
+                            console.log('Playlist favourite toggled:', response);
+                        } else {
+                            alert('Error toggling favourite: ' + (response.error || 'Unknown error'));
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        console.error('AJAX error:', status, error);
+                        alert('Error toggling favourite playlist');
+                    }
+                });
+            });
+            
+            // Auto-submit search on input (with debounce)
+            var searchTimeout;
+            $('input[name="q"]').on('input', function() {
+                clearTimeout(searchTimeout);
+                var $input = $(this);
+                searchTimeout = setTimeout(function() {
+                    if ($input.val().length >= 2 || $input.val().length === 0) {
+                        $input.closest('form').submit();
+                    }
+                }, 500);
+            });
+        });
+        
+        // Helper function to get CSRF token from cookies
+        function getCookie(name) {
+            var cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                var cookies = document.cookie.split(';');
+                for (var i = 0; i < cookies.length; i++) {
+                    var cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+        
+    })(jQuery);
+    </script>
+{% endblock content %}
