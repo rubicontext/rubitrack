@@ -436,12 +436,12 @@ def get_playing_track_list_history(with_refresh=True, remove_last=True, current_
 
 
 def get_transitions_after(track):
-    transitions = Transition.objects.filter(track_source=track).exclude(track_source_id=SEPARATOR_TRACK_ID)
+    transitions = Transition.objects.filter(track_source=track).exclude(track_destination_id=SEPARATOR_TRACK_ID)
     return transitions
 
 
 def get_transitions_before(track):
-    transitions = Transition.objects.filter(track_destination=track).exclude(track_destination_id=SEPARATOR_TRACK_ID)
+    transitions = Transition.objects.filter(track_destination=track).exclude(track_source_id=SEPARATOR_TRACK_ID)
     return transitions
 
 

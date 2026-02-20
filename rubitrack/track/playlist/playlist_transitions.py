@@ -78,8 +78,8 @@ def get_transitions_from_playlist(current_playlist: Playlist):
         track_destination_id = track_ids[index_track_id+1]
 
         # Skip transitions involving the separator track
-        if track_source_id == SEPARATOR_TRACK_ID or track_destination_id == SEPARATOR_TRACK_ID:
-            continue
+        # if track_source_id == SEPARATOR_TRACK_ID or track_destination_id == SEPARATOR_TRACK_ID:
+        #     continue
 
         current_transition_qs = Transition.objects.filter(track_source_id=track_source_id,
                                                        track_destination_id=track_destination_id)
