@@ -41,6 +41,10 @@ def populate_positions(apps, schema_editor):
 
 class Migration(migrations.Migration):
 
+    # Non-atomique: même précaution PostgreSQL que 0025 (data migration puis
+    # ALTER TABLE / RENAME sur la même table dans la même transaction).
+    atomic = False
+
     dependencies = [
         ('track', '0026_track_playtime_alter_track_audio_id_and_more'),
     ]

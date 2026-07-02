@@ -23,6 +23,11 @@ def populate_track_and_slot(apps, schema_editor):
 
 class Migration(migrations.Migration):
 
+    # Non-atomique: le RunPython met à jour des FK (triggers différés PostgreSQL)
+    # et les AlterField suivants font un ALTER TABLE sur la même table —
+    # impossible dans une même transaction ("pending trigger events").
+    atomic = False
+
     dependencies = [
         ('track', '0024_config_separator_track_id'),
     ]
