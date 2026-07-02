@@ -503,16 +503,6 @@ def import_playlist_from_xml_doc(xmldoc: Element, user_collection: Collection) -
 
         # PLAYLIST TRACKS
         playlist_entry_list = current_playlist.getElementsByTagName('ENTRY')
-        track_ids = []
-
-        # option 1 we reset all tracks to avoid deletion undetected (could be improved?)
-        # playlist.tracks.clear()
-
-        # option 2, we check if number of track has changed (DANGEROUS!)
-        if len(playlist_entry_list) == len(playlist.tracks.all()):
-            continue
-
-        # option 3, we check for equality in track ids list and order?
 
         found_tracks = []
         for current_entry in playlist_entry_list:
@@ -526,12 +516,12 @@ def import_playlist_from_xml_doc(xmldoc: Element, user_collection: Collection) -
                     continue
 
                 track_found_count = track_found_count + 1
-                track_ids.append(track.id)
                 found_tracks.append(track)
 
-        if found_tracks:
-            playlist.tracks.add(*found_tracks)
-        playlist.track_ids = track_ids
+        # Ne réécrire que si le contenu ou l'ordre a changé
+        new_ids = [t.id for t in found_tracks]
+        if new_ids != playlist.get_ordered_track_ids():
+            playlist.set_tracks(found_tracks)
         playlist.save()
 
 

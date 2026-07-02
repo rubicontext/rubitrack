@@ -125,13 +125,57 @@ class Track(models.Model):
 
 class Playlist(models.Model):
     name = models.CharField(max_length=200)
-    track_ids = models.CharField(max_length=20000, blank=True, null=True)
-    tracks = models.ManyToManyField(Track)
+    tracks = models.ManyToManyField(Track, through='PlaylistTrack')
     rank = models.IntegerField(blank=True, null=True)
     collection = models.ForeignKey('Collection', on_delete=models.CASCADE)
 
     def __str__(self):
         return self.name
+
+    def get_ordered_track_ids(self):
+        """IDs des tracks dans l'ordre de la playlist."""
+        return list(
+            self.playlist_tracks.order_by('position').values_list('track_id', flat=True)
+        )
+
+    def get_ordered_tracks(self):
+        """Tracks dans l'ordre de la playlist (une seule requête)."""
+        return [
+            pt.track
+            for pt in self.playlist_tracks.select_related('track').order_by('position')
+        ]
+
+    def set_tracks(self, tracks):
+        """Remplace le contenu de la playlist par `tracks`, dans cet ordre.
+        Les doublons sont dédupliqués (première occurrence conservée)."""
+        self.playlist_tracks.all().delete()
+        entries = []
+        seen = set()
+        for track in tracks:
+            if track.pk in seen:
+                continue
+            seen.add(track.pk)
+            entries.append(PlaylistTrack(playlist=self, track=track, position=len(entries)))
+        PlaylistTrack.objects.bulk_create(entries)
+
+
+class PlaylistTrack(models.Model):
+    """Liaison playlist/track ordonnée (remplace l'ancien champ texte track_ids)."""
+    playlist = models.ForeignKey(Playlist, on_delete=models.CASCADE, related_name='playlist_tracks')
+    track = models.ForeignKey(Track, on_delete=models.CASCADE, related_name='playlist_entries')
+    position = models.PositiveIntegerField()
+
+    class Meta:
+        ordering = ['position']
+        constraints = [
+            models.UniqueConstraint(fields=['playlist', 'track'], name='unique_playlist_track'),
+        ]
+        indexes = [
+            models.Index(fields=['playlist', 'position'], name='track_playl_playlis_pos_idx'),
+        ]
+
+    def __str__(self):
+        return f"{self.playlist.name}[{self.position}] {self.track.title}"
 
 
 class Collection(models.Model):

@@ -1,4 +1,3 @@
-import ast
 import os
 import string
 
@@ -8,7 +7,7 @@ from django.contrib.auth.decorators import login_required
 
 from track.currently_playing.transition import create_transition
 
-from ..models import Config, Track, Transition, Playlist
+from ..models import Config, Transition, Playlist
 import logging
 
 logger = logging.getLogger(__name__)
@@ -75,11 +74,13 @@ def display_playlist_transitions(request, PlaylistId):
     
 
 def get_transitions_from_playlist(current_playlist: Playlist):
-    if not current_playlist or not current_playlist.track_ids or len(current_playlist.track_ids) < 2:
+    if not current_playlist:
+        return []
+    track_ids = get_track_ids_from_playlist(current_playlist)
+    if len(track_ids) < 2:
         return []
 
     transitions = []
-    track_ids = get_track_ids_from_playlist(current_playlist)
     for index_track_id in range(len(track_ids)-1):
         track_source_id = track_ids[index_track_id]
         track_destination_id = track_ids[index_track_id+1]
@@ -104,34 +105,17 @@ def get_transitions_from_playlist(current_playlist: Playlist):
 
 
 def get_ordered_tracks_from_playlist(current_playlist: Playlist):
-    if not current_playlist or not current_playlist.track_ids:
+    if not current_playlist:
         return []
-
-    ordered_tracks = []
-    for track_id in get_track_ids_from_playlist(current_playlist):
-        current_track = Track.objects.get(id=track_id)
-        if current_track:
-            ordered_tracks.append(current_track)
-
-    return ordered_tracks
+    return current_playlist.get_ordered_tracks()
 
 
 def get_track_ids_from_playlist(current_playlist: Playlist):
-    if not current_playlist or not current_playlist.track_ids:
+    """IDs ordonnés de la playlist. L'existence des tracks est garantie par la FK
+    (suppression en cascade), plus besoin de filtrer."""
+    if not current_playlist:
         return []
-    
-    # Parser les IDs depuis la chaîne stockée
-    all_track_ids = ast.literal_eval(current_playlist.track_ids)
-    
-    # Filtrer pour ne garder que les tracks qui existent encore
-    existing_track_ids = []
-    for track_id in all_track_ids:
-        if Track.objects.filter(id=track_id).exists():
-            existing_track_ids.append(track_id)
-        else:
-            logger.info(f"Track avec ID {track_id} n'existe plus, ignoré dans la playlist {current_playlist.name}")
-    
-    return existing_track_ids
+    return current_playlist.get_ordered_track_ids()
 
 
 def get_order_rank(playlist_name:str) -> int:

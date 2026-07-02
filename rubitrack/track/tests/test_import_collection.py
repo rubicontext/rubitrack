@@ -104,6 +104,18 @@ class TestImportPlaylists:
         titles = {t.title for t in playlist.tracks.all()}
         assert titles == {"Strobe", "Opus - A#m - 6"}
 
+    def test_playlist_order_preserved(self, imported):
+        playlist = Playlist.objects.get(name="My Test Set")
+        ordered_titles = [t.title for t in playlist.get_ordered_tracks()]
+        # Ordre du fichier NML: Strobe puis Opus
+        assert ordered_titles == ["Strobe", "Opus - A#m - 6"]
+
+    def test_reimport_keeps_order(self, imported, user):
+        handle_uploaded_file(str(TRAKTOR_NML), user)
+        playlist = Playlist.objects.get(name="My Test Set")
+        ordered_titles = [t.title for t in playlist.get_ordered_tracks()]
+        assert ordered_titles == ["Strobe", "Opus - A#m - 6"]
+
 
 @pytest.mark.django_db
 class TestImportTransaction:

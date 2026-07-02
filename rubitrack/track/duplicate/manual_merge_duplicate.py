@@ -1,7 +1,6 @@
 from django.shortcuts import render, redirect
-from ..models import Track, Transition, CurrentlyPlaying, Playlist
+from ..models import Track, Transition, CurrentlyPlaying, PlaylistTrack
 from django import forms
-import ast
 import logging
 
 logger = logging.getLogger(__name__)
@@ -52,27 +51,15 @@ def merge_duplicate_tracks(track_a_id: int, track_b_id: int):
     # Remplacer B par A dans CurrentlyPlaying
     CurrentlyPlaying.objects.filter(track__title=track_b.title.strip(), track__artist=track_b.artist).update(track=track_a)
     
-    # Mettre à jour les playlists - ManyToManyField
-    for playlist in Playlist.objects.filter(tracks=track_b):
-        playlist.tracks.remove(track_b)
-        playlist.tracks.add(track_a)
-    
-    # Mettre à jour les playlists - track_ids field
-    for playlist in Playlist.objects.all():
-        if playlist.track_ids:
-            try:
-                # Parse the track_ids field (Python list format)
-                track_ids = ast.literal_eval(playlist.track_ids)
-                if isinstance(track_ids, list) and track_b_id in track_ids:
-                    # Replace track_b_id with track_a_id
-                    updated_ids = [track_a_id if tid == track_b_id else tid for tid in track_ids]
-                    playlist.track_ids = str(updated_ids)
-                    playlist.save()
-            except (ValueError, SyntaxError):
-                # Skip playlists with invalid track_ids format
-                logger.warning(f"Warning: Invalid track_ids format in playlist {playlist.name}")
-                continue
-    
+    # Mettre à jour les playlists: B remplacé par A à la même position
+    # (si la playlist contient déjà A, l'entrée de B est simplement supprimée)
+    for entry in PlaylistTrack.objects.filter(track=track_b):
+        if PlaylistTrack.objects.filter(playlist_id=entry.playlist_id, track=track_a).exists():
+            entry.delete()
+        else:
+            entry.track = track_a
+            entry.save()
+
     # Supprimer la track B
     track_b.delete()
 
