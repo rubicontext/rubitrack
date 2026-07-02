@@ -8,17 +8,46 @@ class ManualMergeForm(forms.Form):
     track_a = forms.ModelChoiceField(queryset=Track.objects.all().order_by('title'), label="Track à garder (A)")
     track_b = forms.ModelChoiceField(queryset=Track.objects.all().order_by('title'), label="Track à supprimer (B)")
 
+# Mapping des tonalités enharmoniques équivalentes (bémols <-> dièses)
+ENHARMONIC_EQUIVALENTS = {
+    'A#': 'Bb', 'Bb': 'A#',
+    'A#m': 'Bbm', 'Bbm': 'A#m',
+    'C#': 'Db', 'Db': 'C#',
+    'C#m': 'Dbm', 'Dbm': 'C#m',
+    'D#': 'Eb', 'Eb': 'D#',
+    'D#m': 'Ebm', 'Ebm': 'D#m',
+    'F#': 'Gb', 'Gb': 'F#',
+    'F#m': 'Gbm', 'Gbm': 'F#m',
+    'G#': 'Ab', 'Ab': 'G#',
+    'G#m': 'Abm', 'Abm': 'G#m',
+}
+
+
+def normalize_key_enharmonic(key: str) -> str:
+    """Normalise une tonalité vers sa forme canonique (dièse préféré au bémol)."""
+    if not key:
+        return key
+    return ENHARMONIC_EQUIVALENTS.get(key, key)
+
+
+def keys_are_equivalent(key_a: str, key_b: str) -> bool:
+    """Retourne True si deux tonalités sont enharmoniquement équivalentes."""
+    if not key_a or not key_b:
+        return False
+    return normalize_key_enharmonic(key_a) == normalize_key_enharmonic(key_b)
+
+
 def find_duplicate_tracks():
     tracks = Track.objects.all().order_by('title').reverse()
     duplicates = []
     
-    # Détection classique "Smoke Out - Fm - 6" vs "Smoke Out"
+    # Détection classique : titres identiques après strip (espace en début/fin)
     for track in tracks:
         title_a = track.title.strip()
         others = Track.objects.filter(artist=track.artist).exclude(id=track.id)
         for other in others:
             title_b = other.title.strip()
-            # Cas 1 : titres identiques ou A = le plus long
+            # Cas 1 : titres identiques après strip
             if title_a == title_b or (len(title_a) > len(title_b) and title_b in title_a):
                 pair = (track, other)
                 if (other, track) not in duplicates and pair not in duplicates:
@@ -30,6 +59,7 @@ def find_duplicate_tracks():
                     duplicates.append(pair)
 
     # Détection titres identiques hors musical_key "Smoke Out - Fm - 6" vs "Smoke Out - Am - 6"
+    # Inclut les cas enharmoniques : "Smoke Out - Bbm - 6" vs "Smoke Out - A#m - 6"
     for track in tracks:
         title_a = track.title.strip()
         parts_a = title_a.split(' - ')
@@ -39,10 +69,19 @@ def find_duplicate_tracks():
             title_b = other.title.strip()
             parts_b = title_b.split(' - ')
             base_title_b = ' - '.join(parts_b[:-2]) if len(parts_b) >= 3 else (' - '.join(parts_b[:-1]) if len(parts_b) >= 2 else title_b)
-            if base_title_a == base_title_b and track.musical_key != other.musical_key:
-                pair = (track, other)
-                if (other, track) not in duplicates and pair not in duplicates:
-                    duplicates.append(pair)
+            if base_title_a == base_title_b:
+                # Doublons avec tonalités différentes (y compris enharmoniques)
+                key_a = track.musical_key or ''
+                key_b = other.musical_key or ''
+                if key_a != key_b and not keys_are_equivalent(key_a, key_b):
+                    pair = (track, other)
+                    if (other, track) not in duplicates and pair not in duplicates:
+                        duplicates.append(pair)
+                # Cas enharmonique : même tonalité mais notation différente (Bbm vs A#m)
+                elif keys_are_equivalent(key_a, key_b) and key_a != key_b:
+                    pair = (track, other)
+                    if (other, track) not in duplicates and pair not in duplicates:
+                        duplicates.append(pair)
     return duplicates
 
 

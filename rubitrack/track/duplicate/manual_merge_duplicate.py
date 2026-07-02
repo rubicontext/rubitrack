@@ -19,8 +19,20 @@ def merge_duplicate_tracks(track_a_id: int, track_b_id: int):
     # Si A n'a pas de commentaire mais B en a un, copier le commentaire de B vers A
     if track_b.comment and track_b.comment.strip() and (not track_a.comment or not track_a.comment.strip()):
         track_a.comment = track_b.comment
-        track_a.save()
         print(f"📝 Commentaire copié de B vers A: '{track_a.comment}'")
+
+    # Si A n'a pas d'audio_id mais B en a un, copier l'audio_id de B vers A
+    # Cela évite qu'un prochain import recrée B comme une nouvelle track
+    if track_b.audio_id and not track_a.audio_id:
+        track_a.audio_id = track_b.audio_id
+        print(f"� audio_id copié de B vers A: '{track_a.audio_id}'")
+
+    # Si A n'a pas de file_path mais B en a un, copier aussi
+    if track_b.file_path and not track_a.file_path:
+        track_a.file_path = track_b.file_path
+        print(f"📁 file_path copié de B vers A: '{track_a.file_path}'")
+
+    track_a.save()
     
     # Copier toutes les transitions de B vers A
     for t in Transition.objects.filter(track_source=track_b):

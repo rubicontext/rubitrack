@@ -13,6 +13,7 @@ from django.shortcuts import render
 from track.playlist.playlist_transitions import get_order_rank
 from ..models import Playlist, Track, Artist, Genre, Collection, CuePoint, TrackCuePoints
 from ..musical_key.musical_key_utils import extract_musical_key_from_filename, get_conflicting_musical_keys, normalize_musical_key_notation
+from ..duplicate.display_duplicate import keys_are_equivalent
 
 from django.contrib.auth.decorators import login_required
 
@@ -81,25 +82,50 @@ def handle_uploaded_file(file, user):
         genre = get_genre_db_from_genre_name(genreName)
 
         # Check if TRACK exists or insert it
-        # 1 find by artist and title
+        # 1 find by artist and title (exact match)
         trackList = Track.objects.filter(title=title, artist=artist)
         if len(trackList) > 0:
             trackDb = trackList[0]
             track = trackDb
             cptExistingTracks = cptExistingTracks + 1
         else:
-            # 2 find by audio ID
-            trackList = Track.objects.filter(audio_id=audio_id)
-            if len(trackList) > 0:
-                trackDb = trackList[0]
-                track = trackDb
-                track.title = title
+            # 1b find by stripped title (handles leading/trailing spaces)
+            # or by enharmonically equivalent title (e.g. "Song - Bbm - 6" vs "Song - A#m - 6")
+            title_stripped = title.strip()
+            found_stripped = None
+            for existing_track in Track.objects.filter(artist=artist):
+                existing_stripped = existing_track.title.strip()
+                if existing_stripped == title_stripped:
+                    found_stripped = existing_track
+                    break
+                # Check enharmonic equivalence in title
+                # e.g. "Song - A#m - 6" should match "Song - Bbm - 6"
+                existing_parts = existing_stripped.split(' - ')
+                import_parts = title_stripped.split(' - ')
+                if (len(existing_parts) >= 2 and len(import_parts) >= 2
+                        and existing_parts[0] == import_parts[0]
+                        and keys_are_equivalent(existing_parts[-2], import_parts[-2])):
+                    found_stripped = existing_track
+                    print(f"FOUND by enharmonic key: '{existing_track.title}' ~ '{title}'")
+                    break
+            if found_stripped:
+                track = found_stripped
                 cptExistingTracks = cptExistingTracks + 1
-            # 3 create it!
+                print(f"FOUND by stripped/enharmonic title: '{found_stripped.title}' == '{title}'")
             else:
-                track = Track()
-                track.title = title
-                cptNewTracks = cptNewTracks + 1
+                # 2 find by audio ID
+                trackList = Track.objects.filter(audio_id=audio_id)
+                if len(trackList) > 0:
+                    trackDb = trackList[0]
+                    track = trackDb
+                    track.title = title
+                    cptExistingTracks = cptExistingTracks + 1
+                # 3 create it!
+                else:
+                    track = Track()
+                    track.title = title
+                    cptNewTracks = cptNewTracks + 1
+                    print(f"NEW TRACK created: '{title}' - artist='{artist.name if artist else '?'}' - audio_id='{audio_id}'")
 
         # update track infos
         track.artist = artist
