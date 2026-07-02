@@ -30,7 +30,7 @@ def get_list_track_suggestions_auto(track):
             if track.musical_key not in compatible_keys_clean:
                 compatible_keys_clean.append(normalize_musical_key_notation(track.musical_key))
             base_qs = base_qs.filter(musical_key__in=compatible_keys_clean)
-        except Exception as e:
+        except (KeyError, ValueError, TypeError) as e:
             # Fallback exact key
             logger.error('Compatible keys error, fallback to exact key: %s', e)
             base_qs = base_qs.filter(musical_key=track.musical_key)
@@ -40,11 +40,8 @@ def get_list_track_suggestions_auto(track):
     # Compute musical key order (Traktor/Camelot) and sort accordingly
     enriched = []
     for t in list_tracks:
-        try:
-            mk_obj = t.get_musical_key_obj()
-            order_val = mk_obj.order if mk_obj else None
-        except Exception:
-            order_val = None
+        mk_obj = t.get_musical_key_obj()
+        order_val = mk_obj.order if mk_obj else None
         setattr(t, 'musical_key_order', order_val)
         enriched.append(t)
 

@@ -1,7 +1,11 @@
+import logging
+
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
 from django.views.decorators.http import require_POST
 from ..models import Config
+
+logger = logging.getLogger(__name__)
 
 
 @login_required
@@ -45,4 +49,5 @@ def toggle_playlist_favourite(request):
         })
         
     except Exception as e:
+        logger.exception('Erreur toggle favourite')
         return JsonResponse({'success': False, 'error': str(e)}, status=500)

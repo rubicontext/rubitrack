@@ -19,8 +19,8 @@ def create_transition(trackSourceId, trackDestinationId, comment):
     except Track.DoesNotExist:
         logger.info(f"Erreur: Track avec ID {trackSourceId} ou {trackDestinationId} n'existe pas")
         return None
-    except Exception as e:
-        logger.info(f"Erreur lors de la création de la transition: {e}")
+    except TransitionType.DoesNotExist as e:
+        logger.error(f"Erreur lors de la création de la transition: {e}")
         return None
 
 

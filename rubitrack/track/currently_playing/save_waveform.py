@@ -69,7 +69,7 @@ def save_waveform(request):
             'path': relative_path
         })
         
-    except Exception as e:
+    except (ValueError, OSError) as e:
         return JsonResponse({
             'success': False,
             'error': str(e)

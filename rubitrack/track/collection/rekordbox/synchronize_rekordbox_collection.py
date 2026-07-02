@@ -7,7 +7,7 @@ import logging
 import re
 import unicodedata
 import xml.etree.ElementTree as ET
-from decimal import Decimal, ROUND_HALF_UP
+from decimal import Decimal, InvalidOperation, ROUND_HALF_UP
 from typing import Dict, Iterable, Optional, Union
 from urllib.parse import unquote, urlparse
 from xml.dom import minidom
@@ -90,7 +90,7 @@ class RekordboxCollectionSynchronizer:
         try:
             d = seconds if isinstance(seconds, Decimal) else Decimal(str(seconds))
             return f"{d.quantize(Decimal('0.000'), rounding=ROUND_HALF_UP)}"
-        except Exception:
+        except (InvalidOperation, ValueError, TypeError):
             return "0.000"
     
     def _normalize_text(self, s: str) -> str:
@@ -201,17 +201,14 @@ class RekordboxCollectionSynchronizer:
             track_element (ET.Element): Élément TRACK
         """
         for pm in list(track_element.findall('POSITION_MARK')):
-            try:
-                name = pm.get('Name', '')
-                pm_type = pm.get('Type')
-                if name.startswith('RCue'):
-                    track_element.remove(pm)
-                    logger.debug(f"Supprimé cue point système (RCue*): {name}")
-                elif pm_type == '0' and name in {'A', 'B', 'C'}:
-                    track_element.remove(pm)
-                    logger.debug(f"Supprimé cue point système legacy: {name}")
-            except Exception:
-                continue
+            name = pm.get('Name', '')
+            pm_type = pm.get('Type')
+            if name.startswith('RCue'):
+                track_element.remove(pm)
+                logger.debug(f"Supprimé cue point système (RCue*): {name}")
+            elif pm_type == '0' and name in {'A', 'B', 'C'}:
+                track_element.remove(pm)
+                logger.debug(f"Supprimé cue point système legacy: {name}")
 
     def _hot_cue_exists(self, track_element: ET.Element, num: int) -> bool:
         """
@@ -238,7 +235,7 @@ class RekordboxCollectionSynchronizer:
         try:
             delta = Decimal(str(diff_ms)) / Decimal('1000')
             target = Decimal(str(start_seconds))
-        except Exception:
+        except (InvalidOperation, ValueError):
             return False
         for pm in track_element.findall('POSITION_MARK'):
             # Ignorer nos propres marqueurs RCue
@@ -250,7 +247,7 @@ class RekordboxCollectionSynchronizer:
                 continue
             try:
                 s_dec = Decimal(str(s))
-            except Exception:
+            except (InvalidOperation, ValueError):
                 continue
             if (target - s_dec).copy_abs() <= delta:
                 return True
@@ -413,7 +410,7 @@ class RekordboxCollectionSynchronizer:
                 else:
                     sec = self.parse_time_to_seconds(cue_point_obj.time)
                     start_ms_dec = Decimal(str(sec)) * Decimal('1000')
-            except Exception as e:
+            except (InvalidOperation, ValueError, TypeError) as e:
                 logger.error(f"Conversion temps échouée pour cue {i}: {e}")
                 continue
 
@@ -439,14 +436,14 @@ class RekordboxCollectionSynchronizer:
             if len_ms_val is not None:
                 try:
                     loop_len_ms_dec = Decimal(str(len_ms_val))
-                except Exception:
+                except (InvalidOperation, ValueError):
                     loop_len_ms_dec = None
             else:
                 duration_attr = getattr(cue_point_obj, 'duration', None)
                 if duration_attr is not None:
                     try:
                         loop_len_ms_dec = Decimal(str(duration_attr)) * Decimal('1000')
-                    except Exception:
+                    except (InvalidOperation, ValueError):
                         loop_len_ms_dec = None
             if loop_len_ms_dec and loop_len_ms_dec > 0:
                 end_seconds_dec = (start_ms_dec + loop_len_ms_dec) / Decimal('1000')
@@ -493,7 +490,7 @@ class RekordboxCollectionSynchronizer:
             # Sinon, nombre simple: ms ou s
             val = float(s)
             return val / 1000.0 if val > 1000 else val
-        except Exception:
+        except (ValueError, TypeError):
             logger.error(f"Invalid time value: {time_str}")
             return 0.0
 

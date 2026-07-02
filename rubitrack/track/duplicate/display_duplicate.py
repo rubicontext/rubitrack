@@ -117,8 +117,8 @@ def bulk_merge_tracks(request):
                     track_a_id, track_b_id = pair.split(',')
                     merge_duplicate_tracks(int(track_a_id), int(track_b_id))
                     merged_count += 1
-                except Exception as e:
-                    logger.info(f"Erreur lors du merge de la paire {pair}: {e}")
+                except (ValueError, Track.DoesNotExist) as e:
+                    logger.warning(f"Erreur lors du merge de la paire {pair}: {e}")
             logger.info(f"Merged {merged_count} paires de tracks")
         return redirect("manual_merge_track_batch")
     return redirect("manual_merge_track_batch")

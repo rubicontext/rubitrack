@@ -42,7 +42,7 @@ def get_cue_points_times_for_track(track, slots: int = 8):
                 if cp:
                     time_val = getattr(cp, 'time', None)
                     result[i - 1] = time_val if time_val else '-'
-    except Exception:
+    except AttributeError:
         pass
     return result
 
@@ -79,7 +79,7 @@ def get_cue_points_times_for_track_no_ms(track, slots: int = 8):
                     # Prefer model helper if available, fallback to raw time
                     time_val = cp.get_time_without_ms() if hasattr(cp, 'get_time_without_ms') else (cp.time or '-')
                     result[i - 1] = time_val if time_val else '-'
-    except Exception:
+    except AttributeError:
         pass
     return result
 
@@ -282,7 +282,7 @@ def save_track_played_to_db_from_log_line(track_line_log):
         current_play.date_played = log_time_object
         current_play.save()
         return True
-    except Exception as e:
+    except (ValueError, IndexError) as e:
         logger.error('Error parsing log line: %s %s', track_line_log, e)
         return False
 
@@ -516,5 +516,6 @@ def ajax_cue_points(request):
     except TrackCuePoints.DoesNotExist:
         return JsonResponse({'success': True, 'cue_points': [], 'compact_text': ''})
     except Exception as e:
+        logger.exception('Erreur API cue points')
         return JsonResponse({'error': str(e)}, status=500)
 

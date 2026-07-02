@@ -4,6 +4,7 @@ Vues pour la synchronisation avec Rekordbox
 
 import io
 import json
+import logging
 import os
 import tempfile
 import zipfile
@@ -18,6 +19,8 @@ from django.views.decorators.http import require_http_methods
 from track.models import Config
 
 from .synchronize_rekordbox_collection import synchronize_rekordbox_collection
+
+logger = logging.getLogger(__name__)
 
 
 @staff_member_required
@@ -112,6 +115,7 @@ def synchronize_rekordbox_collection_api(request):
         return response
 
     except Exception as e:
+        logger.exception('Erreur lors de la synchronisation Rekordbox')
         return JsonResponse({
             'success': False,
             'error': f'Erreur lors de la synchronisation: {str(e)}'
@@ -164,6 +168,7 @@ def cue_points_stats_api(request) -> JsonResponse:
         })
 
     except Exception as e:
+        logger.exception('Erreur lors du calcul des statistiques cue points')
         return JsonResponse({
             'success': False,
             'error': f'Erreur lors du calcul des statistiques: {str(e)}'

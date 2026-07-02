@@ -128,7 +128,7 @@ class Track(models.Model):
                 else:
                     parts.append('_')
             return "|".join(parts)
-        except Exception:
+        except AttributeError:
             return "_|_|_|_"
 
     def get_all_cue_points_text_no_ms(self) -> str:
@@ -152,7 +152,7 @@ class Track(models.Model):
                 else:
                     parts_last.append(segment)
             return "|".join(parts_first) + "//" + "|".join(parts_last)
-        except Exception:
+        except AttributeError:
             return "|".join(["_"] * 4) + "//" + "|".join(["_"] * 4)
 
 
@@ -332,7 +332,7 @@ class CuePoint(models.Model):
                 minutes = total_seconds // 60
                 seconds = total_seconds % 60
                 return f"{minutes}:{seconds:02d}"
-            except Exception:
+            except (ValueError, TypeError):
                 return ""
         return ""
 
