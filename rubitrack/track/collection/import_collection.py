@@ -8,6 +8,7 @@ from decimal import Decimal, InvalidOperation
 from typing import Optional, Set
 
 from django import forms
+from django.db import transaction
 from django.shortcuts import render
 
 from track.playlist.playlist_transitions import get_order_rank
@@ -29,6 +30,7 @@ class UploadCollectionForm(forms.Form):
     file = forms.FileField()
 
 
+@transaction.atomic
 def handle_uploaded_file(file, user):
 
     xmldoc = xml.dom.minidom.parse(file)
@@ -320,9 +322,8 @@ def get_default_collection_for_user(currentUser):
 
 
 def add_track_to_user_collection(collection: Collection, track: Track) -> bool:
-    existingTrack = collection.tracks.filter(title=track.title, artist=track.artist)
-    if existingTrack is None:
-        collection.tracks.append(track)
+    if not collection.tracks.filter(pk=track.pk).exists():
+        collection.tracks.add(track)
         return True
     return False
 
@@ -361,22 +362,17 @@ def extract_and_save_cue_points(current_entry, track):
     - START et LEN sont TOUJOURS en millisecondes (Decimal), sans détection d’unité
     - Inclure TYPE=4 (grid) pour remplir RCue1 quand HOTCUE=0 est un grid
     - En cas de doublons sur le même HOTCUE, on garde le premier rencontré (first-wins)
+    - Les CuePoint existants sont mis à jour en place (ids stables entre imports)
     """
     cue_points_list = current_entry.getElementsByTagName('CUE_V2')
     if not cue_points_list:
         return
-        
+
     track_cue_points, _ = TrackCuePoints.objects.get_or_create(track=track)
-    
-    # Reset existing 8 slots
-    for idx in range(1, 9):
-        cp = getattr(track_cue_points, f'cue_point_{idx}')
-        if cp:
-            cp.delete()
-        setattr(track_cue_points, f'cue_point_{idx}', None)
-    
+
     seen_slots: Set[int] = set()
-    
+    new_cue_data: dict = {}
+
     for cue_xml in cue_points_list:
         if not cue_xml.hasAttribute('HOTCUE'):
             continue
@@ -431,20 +427,33 @@ def extract_and_save_cue_points(current_entry, track):
         comment = name
         if traktor_type and traktor_type != name:
             comment = f"{comment} (Type: {traktor_type})" if comment else f"Type: {traktor_type}"
-        
-        cue_point = CuePoint.objects.create(
-            time=time_formatted,
-            type=name,
-            comment=comment,
-            traktor_type=traktor_type,
-            end_time=end_time_formatted,
-            duration=duration_seconds,
-            time_ms=start_ms_dec,
-            len_ms=len_ms_dec
-        )
-        
-        setattr(track_cue_points, f'cue_point_{slot}', cue_point)
-    
+
+        new_cue_data[slot] = {
+            'time': time_formatted,
+            'type': name,
+            'comment': comment,
+            'traktor_type': traktor_type,
+            'end_time': end_time_formatted,
+            'duration': duration_seconds,
+            'time_ms': start_ms_dec,
+            'len_ms': len_ms_dec,
+        }
+
+    # Appliquer sur les 8 slots: update en place, création ou suppression
+    for slot in range(1, 9):
+        existing = getattr(track_cue_points, f'cue_point_{slot}')
+        data = new_cue_data.get(slot)
+        if data:
+            if existing:
+                for field, value in data.items():
+                    setattr(existing, field, value)
+                existing.save()
+            else:
+                setattr(track_cue_points, f'cue_point_{slot}', CuePoint.objects.create(**data))
+        elif existing:
+            existing.delete()
+            setattr(track_cue_points, f'cue_point_{slot}', None)
+
     track_cue_points.save()
 
 
@@ -539,60 +548,3 @@ def get_or_create_single_playlist_from_name(
         new_playlist_count = new_playlist_count + 1
         playlist.save()
     return playlist
-
-
-class TraktorImporter:
-    def extract_and_save_cue_points(self, entry_elem, track_obj) -> None:
-        """Parse CUE_V2 from Traktor ENTRY and populate Track.cue_points (cue_point_1..8).
-        - Map Traktor HOTCUE 0..7 to RCue 1..8 (index = HOTCUE + 1)
-        - TYPE 0 (hot cue) → store start, set traktor_type=0
-        - TYPE 5 (loop) → store start & len_ms, traktor_type=5
-        - TYPE 4 (grid) → ignore for DB cue points
-        Preserve millisecond precision in time_ms/len_ms (Decimal up to 6 places).
-        """
-        from decimal import Decimal
-        cue_points = getattr(track_obj, 'cue_points', None)
-        if not cue_points:
-            return
-        # Reset a working dict for 1..8
-        slots: dict[int, dict] = {}
-        for cue in entry_elem.findall('CUE_V2'):
-            try:
-                t_type = int(cue.get('TYPE', '0'))
-                hot = int(cue.get('HOTCUE', '-1'))
-                # Skip grid
-                if t_type == 4:
-                    continue
-                # Only map valid hotcue slots 0..7
-                if hot < 0 or hot > 7:
-                    continue
-                idx = hot + 1  # Traktor HOTCUE 0 → RCue1
-                start_raw = cue.get('START', '0')
-                len_raw = cue.get('LEN', '0')
-                # Traktor provides seconds; convert to ms Decimal
-                start_ms = Decimal(str(start_raw)) * Decimal('1000')
-                len_ms = Decimal(str(len_raw)) * Decimal('1000') if len_raw and float(len_raw) > 0 else None
-                slots[idx] = {
-                    'time_ms': start_ms,
-                    'len_ms': len_ms,
-                    'traktor_type': t_type,
-                }
-            except Exception:
-                continue
-        # Apply into cue_points model fields
-        for i in range(1, 9):
-            data = slots.get(i)
-            if not data:
-                continue
-            cp = getattr(cue_points, f'cue_point_{i}', None)
-            if cp:
-                cp.time_ms = data['time_ms']
-                cp.len_ms = data['len_ms'] if data['len_ms'] is not None else None
-                cp.traktor_type = data['traktor_type']
-                # Also update display fields if present
-                try:
-                    seconds = (data['time_ms'] / Decimal('1000'))
-                    cp.time = f"{float(seconds):.3f}"
-                except Exception:
-                    pass
-                cp.save()

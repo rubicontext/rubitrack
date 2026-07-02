@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
+<NML VERSION="19">
+  <HEAD COMPANY="www.native-instruments.com" PROGRAM="Traktor"></HEAD>
+  <COLLECTION ENTRIES="4">
+    <ENTRY MODIFIED_DATE="2025/12/01" TITLE="Strobe" ARTIST="Deadmau5" AUDIO_ID="AUDIOID_STROBE_001">
+      <LOCATION DIR="/:Users/:antoine/:Music/:" FILE="strobe.mp3" VOLUME="C:" VOLUMEID="c"></LOCATION>
+      <INFO BITRATE="320000" GENRE="Pro" KEY="Am" PLAYCOUNT="12" RANKING="255" LAST_PLAYED="2025/12/1" COMMENT="banger"></INFO>
+      <TEMPO BPM="128.000000" BPM_QUALITY="100.000000"></TEMPO>
+      <CUE_V2 NAME="AutoGrid" DISPL_ORDER="0" TYPE="4" START="61.250000" LEN="0.000000" REPEATS="-1" HOTCUE="0"></CUE_V2>
+      <CUE_V2 NAME="Drop" DISPL_ORDER="0" TYPE="0" START="30000.500000" LEN="0.000000" REPEATS="-1" HOTCUE="1"></CUE_V2>
+      <CUE_V2 NAME="MainLoop" DISPL_ORDER="0" TYPE="5" START="60000.000000" LEN="15000.000000" REPEATS="-1" HOTCUE="4"></CUE_V2>
+      <CUE_V2 NAME="GridMark" DISPL_ORDER="0" TYPE="4" START="120000.000000" LEN="0.000000" REPEATS="-1" HOTCUE="5"></CUE_V2>
+      <CUE_V2 NAME="DropDuplicate" DISPL_ORDER="0" TYPE="0" START="99999.000000" LEN="0.000000" REPEATS="-1" HOTCUE="1"></CUE_V2>
+    </ENTRY>
+    <ENTRY MODIFIED_DATE="2025/11/15" TITLE="Opus - A#m - 6" ARTIST="Eric Prydz" AUDIO_ID="AUDIOID_OPUS_002">
+      <LOCATION DIR="/:Users/:antoine/:Music/:" FILE="opus.mp3" VOLUME="C:" VOLUMEID="c"></LOCATION>
+      <INFO BITRATE="320000" KEY="A#m" PLAYCOUNT="3" RANKING="204"></INFO>
+      <TEMPO BPM="126.000000" BPM_QUALITY="100.000000"></TEMPO>
+      <CUE_V2 NAME="Intro" DISPL_ORDER="0" TYPE="0" START="5000.000000" LEN="0.000000" REPEATS="-1" HOTCUE="0"></CUE_V2>
+    </ENTRY>
+    <ENTRY MODIFIED_DATE="2025/11/15" TITLE="No Cues Here" ARTIST="Some Artist" AUDIO_ID="AUDIOID_NOCUE_003">
+      <LOCATION DIR="/:Users/:antoine/:Music/:" FILE="no_cues.mp3" VOLUME="C:" VOLUMEID="c"></LOCATION>
+      <INFO BITRATE="192000" RANKING="51"></INFO>
+    </ENTRY>
+    <ENTRY MODIFIED_DATE="2025/10/01" TITLE="Sample Kick"></ENTRY>
+  </COLLECTION>
+  <PLAYLISTS>
+    <NODE TYPE="FOLDER" NAME="$ROOT">
+      <SUBNODES COUNT="1">
+        <NODE TYPE="PLAYLIST" NAME="My Test Set">
+          <PLAYLIST ENTRIES="2" TYPE="LIST" UUID="abc123">
+            <ENTRY>
+              <PRIMARYKEY TYPE="TRACK" KEY="C:/:Users/:antoine/:Music/:strobe.mp3"></PRIMARYKEY>
+            </ENTRY>
+            <ENTRY>
+              <PRIMARYKEY TYPE="TRACK" KEY="C:/:Users/:antoine/:Music/:opus.mp3"></PRIMARYKEY>
+            </ENTRY>
+          </PLAYLIST>
+        </NODE>
+      </SUBNODES>
+    </NODE>
+  </PLAYLISTS>
+</NML>

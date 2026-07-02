@@ -133,6 +133,28 @@ class RekordboxCollectionSynchronizer:
         s = re.sub(r"\s+", " ", s).strip()
         return s
 
+    @staticmethod
+    def _normalize_traktor_path(path: str) -> str:
+        """Normalise un chemin Traktor ("C:/:Users/:antoine/:Music/:strobe.mp3")
+        vers une forme comparable ("c:/users/antoine/music/strobe.mp3")."""
+        return (path or '').replace('/:', '/').lower()
+
+    @staticmethod
+    def _normalize_rekordbox_location(location: str) -> str:
+        """Normalise l'attribut Location d'un TRACK Rekordbox
+        ("file://localhost/C:/Program%20Files/x.mp3") vers la même forme
+        comparable que _normalize_traktor_path ("c:/program files/x.mp3")."""
+        from urllib.parse import unquote, urlparse
+        if not location:
+            return ''
+        if location.startswith('file://'):
+            path = unquote(urlparse(location).path)
+            # "/C:/Users/..." -> "C:/Users/..."
+            if len(path) >= 3 and path[0] == '/' and path[2] == ':':
+                path = path[1:]
+            return path.lower()
+        return unquote(location).lower()
+
     def _rb_fields(self, track: ET.Element) -> Tuple[str, str]:
         """Helper to fetch normalized Artist/Name from a Rekordbox TRACK."""
         artist = self._normalize_text(track.get('Artist', ''))
@@ -430,38 +452,38 @@ class RekordboxCollectionSynchronizer:
             key = f"{artist_name.lower()}|{title.lower()}"
             item: Dict[str, Union[str, Track]] = {
                 'track': track,
-                'file_path': (track.file_path or '').lower(),
-                'audio_id': (track.audio_id or '').lower(),
+                'file_path': self._normalize_traktor_path(track.file_path),
             }
-            lookup[key] = item
-            if item['file_path']:
-                lookup[f"path|{item['file_path']}"] = item
-            if item['audio_id']:
-                lookup[f"audio|{item['audio_id']}"] = item
+            if key in lookup:
+                # Deux tracks Rubitrack se normalisent vers la même clé: on garde
+                # la première (first-wins) pour rester déterministe
+                logger.warning(
+                    "Collision de clé de matching '%s': '%s' ignorée, '%s' conservée",
+                    key, track.title, lookup[key]['track'].title,
+                )
+            else:
+                lookup[key] = item
+            path_key = f"path|{item['file_path']}"
+            if item['file_path'] and path_key not in lookup:
+                lookup[path_key] = item
         return lookup
 
     def _process_tracks(self, rubitrack_tracks, collection, stats, mode, rubitrack_lookup):
         for rekordbox_track in collection.findall('TRACK'):
+            # Dans un XML Rekordbox, la localisation est l'attribut Location
+            # du TRACK (URI file://localhost/...), pas un élément enfant
+            rb_path = self._normalize_rekordbox_location(rekordbox_track.get('Location', ''))
             # Skip Rekordbox sampler content
-            rb_path = ''
-            loc = rekordbox_track.find('LOCATION')
-            if loc is not None:
-                rb_file = (loc.get('FILE') or '').lower()
-                rb_dir = (loc.get('DIR') or '').lower()
-                rb_vol = (loc.get('VOLUME') or '').lower()
-                rb_path = f"{rb_vol}{rb_dir}{rb_file}"
-                if '/rekordbox/sampler/' in rb_path:
-                    # do not count as unmatched or processed
-                    continue
+            if '/rekordbox/sampler/' in rb_path:
+                # do not count as unmatched or processed
+                continue
             rb_artist = self._normalize_text(rekordbox_track.get('Artist', '')).lower()
             rb_title = self._normalize_text(rekordbox_track.get('Name', '')).lower()
             key = f"{rb_artist}|{rb_title}"
             item = rubitrack_lookup.get(key)
-            if not item:
-                # try path / audio id fallback
-                audio_id = (rekordbox_track.get('AudioId') or '').lower()
-                path_key = f"path|{rb_path}" if rb_path else None
-                item = (rubitrack_lookup.get(path_key) if path_key else None) or rubitrack_lookup.get(f"audio|{audio_id}")
+            if not item and rb_path:
+                # Fallback: match par chemin de fichier
+                item = rubitrack_lookup.get(f"path|{rb_path}")
             if item:
                 stats['tracks_found_and_matched'] += 1
                 try:
@@ -490,8 +512,9 @@ class RekordboxCollectionSynchronizer:
                 continue
 
             # Déterminer le type Traktor du cue (0=hot, 4=grid/loop) pour refléter exactement dans Rekordbox
+            # traktor_type est un CharField: comparer en str
             traktor_type = getattr(cue_point_obj, 'traktor_type', None)
-            is_type4 = (traktor_type == 4)
+            is_type4 = (str(traktor_type) == '4')
 
             # Calcul en Decimal pour conserver la précision Traktor
             try:
