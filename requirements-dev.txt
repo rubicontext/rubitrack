@@ -1,0 +1,6 @@
+# Dépendances de développement (tests + lint)
+-r requirements.txt
+pytest>=8.0
+pytest-django>=4.8
+ruff>=0.4
+vulture>=2.10

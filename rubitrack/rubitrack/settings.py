@@ -20,12 +20,21 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 # See https://docs.djangoproject.com/en/3.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'vnmok48@6s+qq37anrk4xz)1es$uac1xsy3sh0=t47jg#6h!wo'
+# En production, definir DJANGO_SECRET_KEY dans l'environnement.
+# La valeur par defaut ci-dessous ne sert qu'au developpement local.
+SECRET_KEY = os.environ.get(
+    'DJANGO_SECRET_KEY',
+    'django-insecure-dev-only-o0m$r3pl4c3-m3-1n-pr0d^&k2'
+)
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+# En production, definir DJANGO_DEBUG=false dans l'environnement.
+DEBUG = os.environ.get('DJANGO_DEBUG', 'true').lower() in ('1', 'true', 'yes')
 
-ALLOWED_HOSTS = ['lula', 'http://193.70.86.101/', 'https://193.70.86.101/', '193.70.86.101', '127.0.0.1', 'testserver', 'localhost']
+ALLOWED_HOSTS = os.environ.get(
+    'DJANGO_ALLOWED_HOSTS',
+    'lula,193.70.86.101,127.0.0.1,testserver,localhost'
+).split(',')
 
 
 # Application definition
@@ -75,27 +84,17 @@ WSGI_APPLICATION = 'rubitrack.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/3.0/ref/settings/#databases
 
+# Identifiants surchargés par variables d'environnement (obligatoire en production)
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'rubitrack_dev',
-        # 'USER': 'postgres',
-        # 'PASSWORD': 'ibat_db',
-        'USER': 'rubi',
-        'PASSWORD': 'rubi_db',
-        #'HOST': 'lula',
-        'HOST': 'localhost',
-        'PORT': '5432',
+        'NAME': os.environ.get('RUBITRACK_DB_NAME', 'rubitrack_dev'),
+        'USER': os.environ.get('RUBITRACK_DB_USER', 'rubi'),
+        'PASSWORD': os.environ.get('RUBITRACK_DB_PASSWORD', 'rubi_db'),
+        'HOST': os.environ.get('RUBITRACK_DB_HOST', 'localhost'),
+        'PORT': os.environ.get('RUBITRACK_DB_PORT', '5432'),
     }
 }
-
-# DATABASES = {
-#     'default': {
-#         'ENGINE': 'django.db.backends.sqlite3',
-#         'NAME': 'mydatabase', # This is where you put the name of the db file.
-#                  # If one doesn't exist, it will be created at migration time.
-#     }
-# }
 
 # Password validation
 # https://docs.djangoproject.com/en/3.0/ref/settings/#auth-password-validators
@@ -146,3 +145,27 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 MEDIA_URL = '/media/'
 
 LOGIN_URL = '/admin/login/'
+
+# Logging: les modules applicatifs utilisent logging.getLogger(__name__)
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'simple': {
+            'format': '{levelname} {asctime} {name} {message}',
+            'style': '{',
+        },
+    },
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+            'formatter': 'simple',
+        },
+    },
+    'loggers': {
+        'track': {
+            'handlers': ['console'],
+            'level': os.environ.get('RUBITRACK_LOG_LEVEL', 'INFO'),
+        },
+    },
+}
