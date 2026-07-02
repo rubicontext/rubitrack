@@ -20,6 +20,9 @@ from ..track_db_service import (
     get_currently_playing_track_from_db,
     get_currently_playing_track_time_from_db,
 )
+import logging
+
+logger = logging.getLogger(__name__)
 
 BLANK_TEMPLATE = 'track/blank.html'
 
@@ -163,7 +166,7 @@ def display_history_editing(request, track_id):
         if os.path.exists(waveform_path):
             waveform_url = f"{settings.MEDIA_URL}waveforms/{waveform_filename}"
         
-        print("Edit history for track :", current_track)
+        logger.info('Edit history for track : %s', current_track)
         return render(
             request,
             'track/currently_playing/history_editing.html',
@@ -197,12 +200,12 @@ def refresh_currently_playing_from_log():
     file = open(path_to_playlist_log, 'r')
     line_list = file.readlines()
     if len(line_list) < 1:
-        print("Nothing to scrap in playlist log")
+        logger.info("Nothing to scrap in playlist log")
         return False
 
     # we check if the previous lines have been added from log to db
     last_db_played_time = get_currently_playing_track_time_from_db()
-    print("Current last time played in DB:", last_db_played_time)
+    logger.info('Current last time played in DB: %s', last_db_played_time)
 
     # new version to iterate on lines, to see if past tracks have been saved into DB
     with open(path_to_playlist_log) as playlist_file:
@@ -219,12 +222,7 @@ def refresh_currently_playing_from_log():
             log_time_object = utc.localize(log_time_object)
 
             if log_time_object > last_db_played_time:
-                print(
-                    'Last DB time (',
-                    last_db_played_time,
-                    ') is anterior to previous logs time ==> saving past logs:',
-                    current_line,
-                )
+                logger.info('Last DB time ( %s %s %s', last_db_played_time, ') is anterior to previous logs time ==> saving past logs:', current_line)
                 save_track_played_to_db_from_log_line(current_line)
 
 
@@ -261,15 +259,15 @@ def save_track_played_to_db_from_log_line(track_line_log):
             initial_key = track_fields[2]
             energy = track_fields[3]
         else:
-            print("Unexpected track field count:", track_fields)
+            logger.info('Unexpected track field count: %s', track_fields)
             return False
 
-        print(f"track_title : {track_title}")
-        print(f"artist_name : {artist_name}")
+        logger.info(f"track_title : {track_title}")
+        logger.info(f"artist_name : {artist_name}")
         if initial_key:
-            print(f"initial_key : {initial_key}")
+            logger.info(f"initial_key : {initial_key}")
         if energy:
-            print(f"energy : {energy}")
+            logger.info(f"energy : {energy}")
 
         search_title = track_title
         track = get_track_by_title_and_artist_name(search_title, artist_name)
@@ -285,7 +283,7 @@ def save_track_played_to_db_from_log_line(track_line_log):
         current_play.save()
         return True
     except Exception as e:
-        print("Error parsing log line:", track_line_log, e)
+        logger.error('Error parsing log line: %s %s', track_line_log, e)
         return False
 
 def get_log_time_object_from_log_parts(parts):
@@ -297,7 +295,7 @@ def get_log_parts_from_log_line(track_line_log):
     line = track_line_log.strip()
     parts = line.split('|')
     if len(parts) < 4:
-        print("Log line format error:", line)
+        logger.error('Log line format error: %s', line)
         parts = None
     return parts
 
@@ -399,7 +397,7 @@ def get_more_transition_block_history(request, current_track_id=None):
                     'cue_points_slots': cue_points_slots,
                 },
             )
-    print('ERROR TRACK NOT FOUND')
+    logger.error('ERROR TRACK NOT FOUND')
     return render(request, BLANK_TEMPLATE)
 
 

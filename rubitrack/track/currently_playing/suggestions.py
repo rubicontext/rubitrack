@@ -1,4 +1,7 @@
 from track.models import Track, Config
+import logging
+
+logger = logging.getLogger(__name__)
 
 def get_list_track_suggestions_auto(track):
     """Return automatic suggestions based on currently_* config parameters"""
@@ -29,7 +32,7 @@ def get_list_track_suggestions_auto(track):
             base_qs = base_qs.filter(musical_key__in=compatible_keys_clean)
         except Exception as e:
             # Fallback exact key
-            print("Compatible keys error, fallback to exact key:", e)
+            logger.error('Compatible keys error, fallback to exact key: %s', e)
             base_qs = base_qs.filter(musical_key=track.musical_key)
 
     list_tracks = base_qs.order_by('bpm')

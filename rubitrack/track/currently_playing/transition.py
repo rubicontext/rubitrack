@@ -1,4 +1,7 @@
 from ..models import Transition, TransitionType, Track
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 def create_transition(trackSourceId, trackDestinationId, comment):
@@ -14,10 +17,10 @@ def create_transition(trackSourceId, trackDestinationId, comment):
         transition.save()
         return transition
     except Track.DoesNotExist:
-        print(f"Erreur: Track avec ID {trackSourceId} ou {trackDestinationId} n'existe pas")
+        logger.info(f"Erreur: Track avec ID {trackSourceId} ou {trackDestinationId} n'existe pas")
         return None
     except Exception as e:
-        print(f"Erreur lors de la création de la transition: {e}")
+        logger.info(f"Erreur lors de la création de la transition: {e}")
         return None
 
 

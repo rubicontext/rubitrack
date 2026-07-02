@@ -2,6 +2,9 @@ from django.shortcuts import render, redirect
 from ..models import Track, Transition, CurrentlyPlaying, Playlist, TrackCuePoints
 from django import forms
 import ast
+import logging
+
+logger = logging.getLogger(__name__)
 
 class TrackChoiceField(forms.ModelChoiceField):
     def label_from_instance(self, obj):
@@ -18,18 +21,18 @@ def merge_duplicate_tracks(track_a_id: int, track_b_id: int):
     # Si A n'a pas de commentaire mais B en a un, copier le commentaire de B vers A
     if track_b.comment and track_b.comment.strip() and (not track_a.comment or not track_a.comment.strip()):
         track_a.comment = track_b.comment
-        print(f"📝 Commentaire copié de B vers A: '{track_a.comment}'")
+        logger.info(f"📝 Commentaire copié de B vers A: '{track_a.comment}'")
 
     # Si A n'a pas d'audio_id mais B en a un, copier l'audio_id de B vers A
     # Cela évite qu'un prochain import recrée B comme une nouvelle track
     if track_b.audio_id and not track_a.audio_id:
         track_a.audio_id = track_b.audio_id
-        print(f"🆔 audio_id copié de B vers A: '{track_a.audio_id}'")
+        logger.info(f"🆔 audio_id copié de B vers A: '{track_a.audio_id}'")
 
     # Si A n'a pas de file_path mais B en a un, copier aussi
     if track_b.file_path and not track_a.file_path:
         track_a.file_path = track_b.file_path
-        print(f"📁 file_path copié de B vers A: '{track_a.file_path}'")
+        logger.info(f"📁 file_path copié de B vers A: '{track_a.file_path}'")
 
     track_a.save()
     
@@ -82,7 +85,7 @@ def merge_duplicate_tracks(track_a_id: int, track_b_id: int):
                     playlist.save()
             except (ValueError, SyntaxError):
                 # Skip playlists with invalid track_ids format
-                print(f"Warning: Invalid track_ids format in playlist {playlist.name}")
+                logger.warning(f"Warning: Invalid track_ids format in playlist {playlist.name}")
                 continue
     
     # Supprimer la track B

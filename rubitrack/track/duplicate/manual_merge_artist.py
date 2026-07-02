@@ -1,6 +1,9 @@
 from django.shortcuts import render, redirect
 from ..models import Track, Artist
 from django import forms
+import logging
+
+logger = logging.getLogger(__name__)
 
 class ArtistChoiceField(forms.ModelChoiceField):
     def label_from_instance(self, obj):
@@ -21,7 +24,7 @@ def merge_duplicate_artists(artist_a_id: int, artist_b_id: int):
     artist_a = Artist.objects.get(id=artist_a_id)
     artist_b = Artist.objects.get(id=artist_b_id)
     
-    print(f"Merging artist '{artist_b.name}' into '{artist_a.name}'")
+    logger.info(f"Merging artist '{artist_b.name}' into '{artist_a.name}'")
     
     # Get all tracks from artist B
     tracks_b = Track.objects.filter(artist=artist_b)
@@ -33,7 +36,7 @@ def merge_duplicate_artists(artist_a_id: int, artist_b_id: int):
     
     # Delete artist B (tracks are now reassigned, so this should be safe)
     artist_b.delete()
-    print(f"Deleted artist '{artist_b.name}'")
+    logger.info(f"Deleted artist '{artist_b.name}'")
 
 def manual_merge_artist(request):
     manual_merge_form = ManualMergeArtistForm()

@@ -1,4 +1,7 @@
 from .models import Track, Artist, Transition, CurrentlyPlaying
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 def is_similar_with_char_diff(str1: str, str2: str, max_diff: int = 1) -> bool:
@@ -35,7 +38,7 @@ def is_similar_with_char_diff(str1: str, str2: str, max_diff: int = 1) -> bool:
                         dp[i-1][j-1]   # substitution
                     )
 
-        print("Edit distance between '{}' and '{}' is {}".format(s1, s2, dp[m][n]))
+        logger.info("Edit distance between '{}' and '{}' is {}".format(s1, s2, dp[m][n]))
 
         return dp[m][n]
     
@@ -62,7 +65,7 @@ def get_track_db_from_title_artist(track_title: str, artist_db: Artist):
         return track_list[0]
 
     if len(track_list) > 1:
-        print("WARNING DUPLICATE track :", track_title, "By artist :", artist_db.name)
+        logger.warning('WARNING DUPLICATE track : %s %s %s', track_title, "By artist :", artist_db.name)
         return track_list[0]
     
 
@@ -70,7 +73,7 @@ def get_track_db_from_title_artist(track_title: str, artist_db: Artist):
     search_title = track_title[:-1]
     track_list = Track.objects.filter(title=search_title, artist=artist_db)
     if len(track_list) > 0:
-        print("FOUND with 1 char removed :", search_title, " original:", track_title)
+        logger.info('FOUND with 1 char removed : %s %s %s', search_title, " original:", track_title)
         return track_list[0]
 
     # check for close matches by same artists, when changing only 1 char is a match
@@ -78,7 +81,7 @@ def get_track_db_from_title_artist(track_title: str, artist_db: Artist):
     all_tracks = Track.objects.filter(artist=artist_db)
     for track in all_tracks:
         if is_similar_with_char_diff(track_title, track.title, max_diff=1):
-            print("FOUND with 1 char difference :", track.title, " original:", track_title)
+            logger.info('FOUND with 1 char difference : %s %s %s', track.title, " original:", track_title)
             return track
 
     # no exact match found
@@ -86,11 +89,11 @@ def get_track_db_from_title_artist(track_title: str, artist_db: Artist):
     search_title = track_title.lstrip()
     track_list = Track.objects.filter(title__icontains=search_title, artist=artist_db)
     if len(track_list) > 0:
-        print("FOUND with strip :", search_title, " original:", track_title)
+        logger.info('FOUND with strip : %s %s %s', search_title, " original:", track_title)
         return track_list[0]
     
     # create new track, should only happen if no import of collection
-    print("WARNING Created new track, :", track_title)
+    logger.warning('WARNING Created new track, : %s', track_title)
     track_db = Track()
     track_db.title = track_title
     track_db.artist = artist_db
@@ -135,34 +138,34 @@ def get_artist_db_from_artist_name(artist_name):
     all_artists = Artist.objects.all()
     for artist in all_artists:
         if is_similar_with_char_diff(artist_name, artist.name.strip(), max_diff=1):
-            print("FOUND similar artist with 1 char difference:", artist.name, "original:", original_name)
+            logger.info('FOUND similar artist with 1 char difference: %s %s %s', artist.name, "original:", original_name)
             return artist
 
     # icontains on trimmed
     artist_list = Artist.objects.filter(name__icontains=artist_name)
     if artist_list:
-        print("FOUND with icontains:", artist_list[0].name, " original:", original_name)
+        logger.info('FOUND with icontains: %s %s %s', artist_list[0].name, " original:", original_name)
         return artist_list[0]
 
     # icontains on original (rare case)
     if original_name != artist_name:
         artist_list = Artist.objects.filter(name__icontains=original_name)
         if artist_list:
-            print("FOUND with icontains original:", artist_list[0].name, " original:", original_name)
+            logger.info('FOUND with icontains original: %s %s %s', artist_list[0].name, " original:", original_name)
             return artist_list[0]
 
     # Create new artist with trimmed canonical name
     artist_db = Artist()
     artist_db.name = artist_name
     artist_db.save()
-    print("WARNING Created new artist (normalized from '{}'): {}".format(original_name, artist_name))
+    logger.warning("WARNING Created new artist (normalized from '{}'): {}".format(original_name, artist_name))
     return artist_db
 
 
 def get_track_by_title_and_artist_name(track_title, artist_name):
     # Normalize whitespace on track title too
     normalized_title = track_title.strip() if track_title else track_title
-    print("about to look for track:", normalized_title, "By artist :", artist_name)
+    logger.info('about to look for track: %s %s %s', normalized_title, "By artist :", artist_name)
     artist_db = get_artist_db_from_artist_name(artist_name)
     return get_track_db_from_title_artist(normalized_title, artist_db)
 

@@ -9,6 +9,9 @@ from django.contrib.auth.decorators import login_required
 from track.currently_playing.transition import create_transition
 
 from ..models import Track, Transition, Playlist
+import logging
+
+logger = logging.getLogger(__name__)
 
 PLAYLIST_TRANSITION_AUTO_GENERATED = 'Generated from Playlist : '
 SEPARATOR_TRACK_ID = 14294
@@ -53,7 +56,7 @@ def display_playlist_transitions(request, PlaylistId):
                 'waveform_url': waveform_url
             })
         
-        print("All transitions for playlist : ", currentPlaylist)
+        logger.info('All transitions for playlist :  %s', currentPlaylist)
         return render(
             request,
             'track/playlists/playlist_transitions.html',
@@ -88,10 +91,10 @@ def get_transitions_from_playlist(current_playlist: Playlist):
                                        track_destination_id,
                                        PLAYLIST_TRANSITION_AUTO_GENERATED + current_playlist.name)
             if current_transition:  # Seulement ajouter si la transition a été créée avec succès
-                print('Generated auto transition : ', current_transition)
+                logger.info('Generated auto transition :  %s', current_transition)
                 transitions.append(current_transition)
             else:
-                print(f'Impossible de créer la transition: track {track_source_id} -> {track_destination_id}')
+                logger.info(f'Impossible de créer la transition: track {track_source_id} -> {track_destination_id}')
         else:
             current_transition = current_transition_qs[0]
             transitions.append(current_transition)
@@ -125,7 +128,7 @@ def get_track_ids_from_playlist(current_playlist: Playlist):
         if Track.objects.filter(id=track_id).exists():
             existing_track_ids.append(track_id)
         else:
-            print(f"Track avec ID {track_id} n'existe plus, ignoré dans la playlist {current_playlist.name}")
+            logger.info(f"Track avec ID {track_id} n'existe plus, ignoré dans la playlist {current_playlist.name}")
     
     return existing_track_ids
 
@@ -174,21 +177,21 @@ def is_name_parsable_for_numeric_indexing(playlist_name):
 
 
 def delete_playlist_transitions(request):
-    print('DELETE playlist transitions....')
+    logger.info('DELETE playlist transitions....')
     playlistId = request.GET['playlistId']
     all_playlist_transitions = get_transitions_from_playlist(Playlist.objects.get(id=playlistId))
     for current_transition in all_playlist_transitions:
-        print('COMMENT : ', current_transition.comment)
+        logger.info('COMMENT :  %s', current_transition.comment)
         if PLAYLIST_TRANSITION_AUTO_GENERATED in current_transition.comment:
             current_transition.delete()
-            print('Transition DELETED ', current_transition.track_source.title, '/', current_transition.track_destination.title)
+            logger.info('Transition DELETED  %s %s %s', current_transition.track_source.title, '/', current_transition.track_destination.title)
 
     #TODO a date on ne renvoit rien, page non mise à jour car sinon on va re générer ces transitions..
     return None
 
 
 def delete_all_generated_transitions(request):
-    print('DELETE ALL generated transitions....')
+    logger.info('DELETE ALL generated transitions....')
     all_genrated_transitions = Transition.objects.filter(comment__contains=PLAYLIST_TRANSITION_AUTO_GENERATED)
     all_genrated_transitions.delete()
     return None

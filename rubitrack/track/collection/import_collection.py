@@ -17,6 +17,9 @@ from ..duplicate.display_duplicate import keys_are_equivalent
 from django.contrib.auth.decorators import login_required
 
 import xml.dom.minidom
+import logging
+
+logger = logging.getLogger(__name__)
 
 UNKNOWN_ARTIST_NAME = "Unknown Artist"
 MAX_COMMENT_LENGTH = 500
@@ -59,14 +62,14 @@ class TrackImportIndex:
         for existing_track in self.by_artist[artist.id]:
             existing_stripped = existing_track.title.strip()
             if existing_stripped == title_stripped:
-                print(f"FOUND by stripped title: '{existing_track.title}' == '{title}'")
+                logger.info(f"FOUND by stripped title: '{existing_track.title}' == '{title}'")
                 return existing_track
             # e.g. "Song - A#m - 6" should match "Song - Bbm - 6"
             existing_parts = existing_stripped.split(' - ')
             if (len(existing_parts) >= 2 and len(import_parts) >= 2
                     and existing_parts[0] == import_parts[0]
                     and keys_are_equivalent(existing_parts[-2], import_parts[-2])):
-                print(f"FOUND by enharmonic key: '{existing_track.title}' ~ '{title}'")
+                logger.info(f"FOUND by enharmonic key: '{existing_track.title}' ~ '{title}'")
                 return existing_track
 
         if audio_id:
@@ -150,7 +153,7 @@ def handle_uploaded_file(file, user):
             track = Track()
             track.title = title
             cptNewTracks = cptNewTracks + 1
-            print(f"NEW TRACK created: '{title}' - artist='{artist.name if artist else '?'}' - audio_id='{audio_id}'")
+            logger.info(f"NEW TRACK created: '{title}' - artist='{artist.name if artist else '?'}' - audio_id='{audio_id}'")
 
         # update track infos
         track.artist = artist
@@ -197,7 +200,7 @@ def get_audio_id_from_entry(current_entry):
     if 'AUDIO_ID' in current_entry.attributes:
         return current_entry.attributes['AUDIO_ID'].value
     else:
-        print('WARNING no audio_id tag for entry : ', get_title_from_entry(current_entry))
+        logger.warning('WARNING no audio_id tag for entry :  %s', get_title_from_entry(current_entry))
         return None
 
 
@@ -510,7 +513,7 @@ def import_playlist_from_xml_doc(xmldoc: Element, user_collection: Collection) -
                 track = tracks_by_file_path.get(file_path)
                 if track is None:
                     track_not_found_count = track_not_found_count + 1
-                    print('WARNING - Track not found for file_path: ', file_path)
+                    logger.warning('WARNING - Track not found for file_path:  %s', file_path)
                     continue
 
                 track_found_count = track_found_count + 1

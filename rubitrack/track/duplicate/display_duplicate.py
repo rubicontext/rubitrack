@@ -2,6 +2,9 @@ from django.shortcuts import render, redirect
 from ..models import Track
 from django import forms
 from .manual_merge_duplicate import merge_duplicate_tracks
+import logging
+
+logger = logging.getLogger(__name__)
 
 class ManualMergeForm(forms.Form):
     track_a = forms.ModelChoiceField(queryset=Track.objects.all().order_by('title'), label="Track à garder (A)")
@@ -115,7 +118,7 @@ def bulk_merge_tracks(request):
                     merge_duplicate_tracks(int(track_a_id), int(track_b_id))
                     merged_count += 1
                 except Exception as e:
-                    print(f"Erreur lors du merge de la paire {pair}: {e}")
-            print(f"Merged {merged_count} paires de tracks")
+                    logger.info(f"Erreur lors du merge de la paire {pair}: {e}")
+            logger.info(f"Merged {merged_count} paires de tracks")
         return redirect("manual_merge_track_batch")
     return redirect("manual_merge_track_batch")

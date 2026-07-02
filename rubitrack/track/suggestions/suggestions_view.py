@@ -1,6 +1,9 @@
 from django.http import JsonResponse
 from ..models import Track
 import json
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 def get_suggestions_for_track(track_id, bpm_range_percent=10, sort_by='playcount', 
@@ -130,10 +133,10 @@ def ajax_suggestions(request):
         if current_track and current_track.musical_key and musical_key_distance < 12:
             from rubitrack.track.musical_key.musical_key_utils import get_compatible_keys
             compatible_keys = get_compatible_keys(current_track.musical_key, musical_key_distance)
-            print(f"Clés compatibles pour {current_track.musical_key} (distance {musical_key_distance}) : {compatible_keys}")
-            print(f"Suggestions avant filtrage : {[t.musical_key for t in Track.objects.exclude(id=current_track.id)]}")
-        print(f"AJAX params: track_id={track_id}, bpm_range={bpm_range}, ranking_min={ranking_min}, musical_key_distance={musical_key_distance}, genre_mode={genre_mode}")
-        print(f"Suggestions trouvées: {len(suggestions)}")
+            logger.info(f"Clés compatibles pour {current_track.musical_key} (distance {musical_key_distance}) : {compatible_keys}")
+            logger.info(f"Suggestions avant filtrage : {[t.musical_key for t in Track.objects.exclude(id=current_track.id)]}")
+        logger.info(f"AJAX params: track_id={track_id}, bpm_range={bpm_range}, ranking_min={ranking_min}, musical_key_distance={musical_key_distance}, genre_mode={genre_mode}")
+        logger.info(f"Suggestions trouvées: {len(suggestions)}")
         
         # Tri des suggestions par ordre Traktor (musical_key_order), puis limitation
         suggestions_data = sorted(suggestions_data, key=lambda x: x['musical_key_order'] if x['musical_key_order'] is not None else 999)
