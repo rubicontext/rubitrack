@@ -16,7 +16,7 @@ from track.collection.import_collection import handle_uploaded_file
 from track.collection.rekordbox.synchronize_rekordbox_collection import (
     synchronize_rekordbox_collection,
 )
-from track.models import Artist, CuePoint, Track, TrackCuePoints
+from track.models import Artist, CuePoint, Track
 
 FIXTURES = Path(__file__).parent / "fixtures"
 TRAKTOR_NML = FIXTURES / "traktor_collection.nml"
@@ -36,14 +36,12 @@ def populated_db(db):
         artist=artist,
         file_path="C:/:Users/:antoine/:Music/:manual_cues.mp3",
     )
-    tcp = TrackCuePoints.objects.create(track=manual)
     # Slot 1 : pad 0 déjà occupé côté Rekordbox par un cue manuel -> doit être skippé en add_only
-    tcp.cue_point_1 = CuePoint.objects.create(time="0:12.000", time_ms=Decimal("12000"), traktor_type="0")
+    CuePoint.objects.create(track=manual, slot=1, time="0:12.000", time_ms=Decimal("12000"), traktor_type="0")
     # Slot 2 : position à 45.45s, à moins de 100ms du cue manuel Rekordbox à 45.5s -> skippé en add_only
-    tcp.cue_point_2 = CuePoint.objects.create(time="0:45.450", time_ms=Decimal("45450"), traktor_type="0")
+    CuePoint.objects.create(track=manual, slot=2, time="0:45.450", time_ms=Decimal("45450"), traktor_type="0")
     # Slot 8 : position libre -> ajouté
-    tcp.cue_point_8 = CuePoint.objects.create(time="3:30.000", time_ms=Decimal("210000"), traktor_type="0")
-    tcp.save()
+    CuePoint.objects.create(track=manual, slot=8, time="3:30.000", time_ms=Decimal("210000"), traktor_type="0")
     return user
 
 
@@ -94,9 +92,7 @@ class TestMatching:
         déclencher un warning au lieu d'un écrasement silencieux."""
         artist = Artist.objects.get(name="Deadmau5")
         collider = Track.objects.create(title="Strobe (Club Mix)", artist=artist)
-        tcp = TrackCuePoints.objects.create(track=collider)
-        tcp.cue_point_1 = CuePoint.objects.create(time="0:01.000", time_ms=Decimal("1000"))
-        tcp.save()
+        CuePoint.objects.create(track=collider, slot=1, time="0:01.000", time_ms=Decimal("1000"))
 
         with caplog.at_level(logging.WARNING):
             stats, tree = run_sync(tmp_path, "overwrite")

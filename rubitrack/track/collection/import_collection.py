@@ -10,7 +10,7 @@ from django.db import transaction
 from django.shortcuts import render
 
 from track.playlist.playlist_transitions import get_order_rank
-from ..models import Playlist, Track, Artist, Genre, Collection, CuePoint, TrackCuePoints
+from ..models import Playlist, Track, Artist, Genre, Collection, CuePoint
 from ..musical_key.musical_key_utils import extract_musical_key_from_filename, normalize_musical_key_notation
 from ..duplicate.display_duplicate import keys_are_equivalent
 
@@ -366,8 +366,8 @@ def get_ranking_from_xml_info(info) -> int:
 
 def extract_and_save_cue_points(current_entry, track):
     """
-    Extract cue points from XML entry and save them to TrackCuePoints.
-    - Map Traktor HOTCUE 0..7 → cue_point_1..8 (RCue1 = HOTCUE=0)
+    Extract cue points from XML entry and save them as CuePoint(track, slot).
+    - Map Traktor HOTCUE 0..7 → slot 1..8 (RCue1 = HOTCUE=0)
     - START et LEN sont TOUJOURS en millisecondes (Decimal), sans détection d’unité
     - Inclure TYPE=4 (grid) pour remplir RCue1 quand HOTCUE=0 est un grid
     - En cas de doublons sur le même HOTCUE, on garde le premier rencontré (first-wins)
@@ -376,8 +376,6 @@ def extract_and_save_cue_points(current_entry, track):
     cue_points_list = current_entry.getElementsByTagName('CUE_V2')
     if not cue_points_list:
         return
-
-    track_cue_points, _ = TrackCuePoints.objects.get_or_create(track=track)
 
     seen_slots: Set[int] = set()
     new_cue_data: dict = {}
@@ -449,8 +447,9 @@ def extract_and_save_cue_points(current_entry, track):
         }
 
     # Appliquer sur les 8 slots: update en place, création ou suppression
+    existing_by_slot = {cp.slot: cp for cp in track.cue_points.all()}
     for slot in range(1, 9):
-        existing = getattr(track_cue_points, f'cue_point_{slot}')
+        existing = existing_by_slot.get(slot)
         data = new_cue_data.get(slot)
         if data:
             if existing:
@@ -458,12 +457,9 @@ def extract_and_save_cue_points(current_entry, track):
                     setattr(existing, field, value)
                 existing.save()
             else:
-                setattr(track_cue_points, f'cue_point_{slot}', CuePoint.objects.create(**data))
+                CuePoint.objects.create(track=track, slot=slot, **data)
         elif existing:
             existing.delete()
-            setattr(track_cue_points, f'cue_point_{slot}', None)
-
-    track_cue_points.save()
 
 
 def import_playlist_from_xml_doc(xmldoc: Element, user_collection: Collection) -> None:

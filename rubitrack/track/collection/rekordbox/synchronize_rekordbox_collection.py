@@ -328,7 +328,7 @@ class RekordboxCollectionSynchronizer:
     def _get_rubitrack_tracks(self) -> Iterable[Track]:
         return Track.objects.filter(
             cue_points__isnull=False
-        ).select_related('artist').prefetch_related('cue_points')
+        ).distinct().select_related('artist').prefetch_related('cue_points')
 
     def _build_rubitrack_lookup(self, rubitrack_tracks: Iterable[Track]) -> Dict[str, Dict[str, Union[str, Track]]]:
         lookup: Dict[str, Dict[str, Union[str, Track]]] = {}
@@ -389,11 +389,11 @@ class RekordboxCollectionSynchronizer:
             # Ne supprime que nos marqueurs RCue*
             self.remove_system_generated_cue_points(rekordbox_track)
 
-        track_cue_points = rubitrack_track.cue_points
+        cue_points_by_slot = {cp.slot: cp for cp in rubitrack_track.cue_points.all()}
         cue_points_added = 0
         # Ne PAS compacter: respecter les indices d'origine 1..8
         for i in range(1, 9):
-            cue_point_obj = getattr(track_cue_points, f'cue_point_{i}', None)
+            cue_point_obj = cue_points_by_slot.get(i)
             if not cue_point_obj:
                 continue
 

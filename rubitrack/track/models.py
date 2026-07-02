@@ -66,24 +66,11 @@ class Track(models.Model):
         Retourne une chaîne de texte compact avec les cue points de la track
         Format: "1=0:30, 2=1:15, 3=2:45" etc.
         """
-        try:
-            track_cue_points = self.cue_points
-            cue_points_list = track_cue_points.get_cue_points_list()
-            
-            if not cue_points_list:
-                return ""
-            
-            # Créer la liste des couples numéro=temps
-            cue_text_parts = []
-            for i in range(1, 9):
-                cue_point = getattr(track_cue_points, f'cue_point_{i}')
-                if cue_point:
-                    cue_text_parts.append(f"{i}={cue_point.time}")
-            
-            return ", ".join(cue_text_parts)
-            
-        except TrackCuePoints.DoesNotExist:
-            return ""
+        return ", ".join(f"{cp.slot}={cp.time}" for cp in self.cue_points.all())
+
+    def get_cue_points_by_slot(self):
+        """Retourne un dict {slot: CuePoint} pour les slots occupés (1..8)."""
+        return {cp.slot: cp for cp in self.cue_points.all()}
 
     def get_musical_key_color(self):
         """
@@ -114,46 +101,25 @@ class Track(models.Model):
 
     def get_last_four_cue_points_text_no_ms(self) -> str:
         """Return a compact string of times for cue points 5..8 without milliseconds.
-        Missing cue points are rendered as '_' segments. Example: "3:31/_/3:45/4:01" when slot 6 missing.
+        Missing cue points are rendered as '_' segments. Example: "3:31|_|3:45|4:01" when slot 6 missing.
         """
-        try:
-            if not hasattr(self, 'cue_points') or not self.cue_points:
-                return "_|_|_|_"  # 4 segments empty
-            parts: List[str] = []
-            for i in range(5, 9):
-                cp = getattr(self.cue_points, f'cue_point_{i}', None)
-                if cp:
-                    val = cp.get_time_without_ms() if hasattr(cp, 'get_time_without_ms') else (cp.time or '')
-                    parts.append(val if val else '_')
-                else:
-                    parts.append('_')
-            return "|".join(parts)
-        except AttributeError:
-            return "_|_|_|_"
+        by_slot = self.get_cue_points_by_slot()
+        parts: List[str] = []
+        for i in range(5, 9):
+            cp = by_slot.get(i)
+            parts.append((cp.get_time_without_ms() or '_') if cp else '_')
+        return "|".join(parts)
 
     def get_all_cue_points_text_no_ms(self) -> str:
         """Return 8 cue points (slots 1..8) times without milliseconds.
-        First 4 joined by '/', then '//', then last 4 joined by '/'. Missing -> '_'.
+        First 4 joined by '|', then '//', then last 4 joined by '|'. Missing -> '_'.
         """
-        try:
-            if not hasattr(self, 'cue_points') or not self.cue_points:
-                return "|".join(["_"] * 4) + "//" + "|".join(["_"] * 4)
-            parts_first: List[str] = []
-            parts_last: List[str] = []
-            for i in range(1, 9):
-                cp = getattr(self.cue_points, f'cue_point_{i}', None)
-                if cp:
-                    val = cp.get_time_without_ms() if hasattr(cp, 'get_time_without_ms') else (cp.time or '')
-                    segment = val if val else '_'
-                else:
-                    segment = '_'
-                if i <= 4:
-                    parts_first.append(segment)
-                else:
-                    parts_last.append(segment)
-            return "|".join(parts_first) + "//" + "|".join(parts_last)
-        except AttributeError:
-            return "|".join(["_"] * 4) + "//" + "|".join(["_"] * 4)
+        by_slot = self.get_cue_points_by_slot()
+        segments = [
+            (by_slot[i].get_time_without_ms() or '_') if i in by_slot else '_'
+            for i in range(1, 9)
+        ]
+        return "|".join(segments[:4]) + "//" + "|".join(segments[4:])
 
 
 class Playlist(models.Model):
@@ -294,15 +260,18 @@ class Config(models.Model):
 
 class CuePoint(models.Model):
     """
-    Model to store individual cue points with their position, type and comment
+    Cue point d'une track, rattaché à un slot 1..8 (RCueN / Traktor HOTCUE N-1)
     """
+    track = models.ForeignKey(Track, on_delete=models.CASCADE, related_name='cue_points')
+    slot = models.PositiveSmallIntegerField(help_text="Slot 1-8 (RCueN, Traktor HOTCUE = slot - 1)")
+
     time = models.CharField(max_length=20, null=True, blank=True)
     # Precise Traktor milliseconds with up to 6 fractional digits
     time_ms = models.DecimalField(max_digits=16, decimal_places=6, null=True, blank=True)
     len_ms = models.DecimalField(max_digits=16, decimal_places=6, null=True, blank=True)
     type = models.CharField(max_length=50, blank=True, null=True, help_text="Type of cue point")
     comment = models.TextField(max_length=200, blank=True, null=True, help_text="Comment for this cue point")
-    
+
     # Nouveaux champs pour supporter les loops et types Traktor
     end_time = models.CharField(max_length=20, null=True, blank=True)
     duration = models.FloatField(null=True, blank=True)
@@ -310,14 +279,17 @@ class CuePoint(models.Model):
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    
+
     class Meta:
         verbose_name = "Cue Point"
         verbose_name_plural = "Cue Points"
-        ordering = ['time']
-    
+        ordering = ['slot']
+        constraints = [
+            models.UniqueConstraint(fields=['track', 'slot'], name='unique_cuepoint_track_slot'),
+        ]
+
     def __str__(self) -> str:
-        return f"CuePoint({self.time})"
+        return f"CuePoint(slot={self.slot}, {self.time})"
 
     def get_time_without_ms(self) -> str:
         """
@@ -341,38 +313,3 @@ class CuePoint(models.Model):
         return ""
 
 
-class TrackCuePoints(models.Model):
-    """
-    Model to store 8 cue points for each track
-    Uses track.id as primary key
-    """
-    track = models.OneToOneField(Track, on_delete=models.CASCADE, primary_key=True, related_name='cue_points')
-    
-    # 8 cue points for each track
-    cue_point_1 = models.ForeignKey(CuePoint, on_delete=models.SET_NULL, null=True, blank=True, related_name='track_cue_1')
-    cue_point_2 = models.ForeignKey(CuePoint, on_delete=models.SET_NULL, null=True, blank=True, related_name='track_cue_2')
-    cue_point_3 = models.ForeignKey(CuePoint, on_delete=models.SET_NULL, null=True, blank=True, related_name='track_cue_3')
-    cue_point_4 = models.ForeignKey(CuePoint, on_delete=models.SET_NULL, null=True, blank=True, related_name='track_cue_4')
-    cue_point_5 = models.ForeignKey(CuePoint, on_delete=models.SET_NULL, null=True, blank=True, related_name='track_cue_5')
-    cue_point_6 = models.ForeignKey(CuePoint, on_delete=models.SET_NULL, null=True, blank=True, related_name='track_cue_6')
-    cue_point_7 = models.ForeignKey(CuePoint, on_delete=models.SET_NULL, null=True, blank=True, related_name='track_cue_7')
-    cue_point_8 = models.ForeignKey(CuePoint, on_delete=models.SET_NULL, null=True, blank=True, related_name='track_cue_8')
-    
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-    
-    class Meta:
-        verbose_name = "Track Cue Points"
-        verbose_name_plural = "Track Cue Points"
-    
-    def __str__(self) -> str:
-        return f"Cue Points for {self.track.title}"
-    
-    def get_cue_points_list(self):
-        """Return a list of all non-null cue points"""
-        cue_points = []
-        for i in range(1, 9):
-            cue_point = getattr(self, f'cue_point_{i}')
-            if cue_point:
-                cue_points.append(cue_point)
-        return cue_points

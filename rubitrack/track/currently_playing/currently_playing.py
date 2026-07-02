@@ -29,58 +29,40 @@ BLANK_TEMPLATE = 'track/blank.html'
 
 def get_cue_points_times_for_track(track, slots: int = 8):
     """Return a list of cue point times indexed by slot number (1..slots).
-    Each position i reflects cue_point_i (1-based). Missing or empty -> '-'.
+    Each position i reflects slot i (1-based). Missing or empty -> '-'.
     """
     result = ['-'] * slots
     if not track:
         return result
-    try:
-        if hasattr(track, 'cue_points') and track.cue_points:
-            # Access each numbered attribute directly to keep alignment
-            for i in range(1, slots + 1):
-                cp = getattr(track.cue_points, f'cue_point_{i}', None)
-                if cp:
-                    time_val = getattr(cp, 'time', None)
-                    result[i - 1] = time_val if time_val else '-'
-    except AttributeError:
-        pass
+    for cp in track.cue_points.all():
+        if 1 <= cp.slot <= slots:
+            result[cp.slot - 1] = cp.time or '-'
     return result
 
-# New structured helper
+
 def get_cue_points_slots_for_track(track, slots: int = 8):
     """Return list of dicts [{'slot':i,'time':..., 'exists':bool}] for slots 1..n"""
+    by_slot = {cp.slot: cp for cp in track.cue_points.all()} if track else {}
     slots_list = []
-    if not track or not hasattr(track, 'cue_points') or not track.cue_points:
-        return [{'slot': i, 'time': '-', 'exists': False} for i in range(1, slots + 1)]
     for i in range(1, slots + 1):
-        cp = getattr(track.cue_points, f'cue_point_{i}', None)
+        cp = by_slot.get(i)
         if cp:
-            time_val = getattr(cp, 'time', None) or '-'
-            slots_list.append({'slot': i, 'time': time_val, 'exists': True})
+            slots_list.append({'slot': i, 'time': cp.time or '-', 'exists': True})
         else:
             slots_list.append({'slot': i, 'time': '-', 'exists': False})
     return slots_list
 
-# Non-regressive helper to get cue points times without milliseconds
-# Does not change existing behavior; safe to call where display without ms is needed
 
 def get_cue_points_times_for_track_no_ms(track, slots: int = 8):
     """Return a list of cue point times (without milliseconds) indexed by slot number (1..slots).
-    Each position i reflects cue_point_i (1-based). Missing or empty -> '-'.
+    Each position i reflects slot i (1-based). Missing or empty -> '-'.
     """
     result = ['-'] * slots
     if not track:
         return result
-    try:
-        if hasattr(track, 'cue_points') and track.cue_points:
-            for i in range(1, slots + 1):
-                cp = getattr(track.cue_points, f'cue_point_{i}', None)
-                if cp:
-                    # Prefer model helper if available, fallback to raw time
-                    time_val = cp.get_time_without_ms() if hasattr(cp, 'get_time_without_ms') else (cp.time or '-')
-                    result[i - 1] = time_val if time_val else '-'
-    except AttributeError:
-        pass
+    for cp in track.cue_points.all():
+        if 1 <= cp.slot <= slots:
+            result[cp.slot - 1] = cp.get_time_without_ms() or '-'
     return result
 
 @login_required
@@ -483,38 +465,33 @@ def ajax_cue_points(request):
     Endpoint AJAX pour récupérer les cue points d'une track
     """
     from django.http import JsonResponse
-    from ..models import TrackCuePoints
-    
+
     track_id = request.GET.get('track_id')
     if not track_id:
         return JsonResponse({'error': 'track_id required'}, status=400)
-    
+
     try:
         track = Track.objects.get(id=track_id)
-        track_cue_points = TrackCuePoints.objects.get(track=track)
-        
+
         # Construire la liste des cue points actifs
-        cue_points_data = []
-        for i in range(1, 9):
-            cue_point = getattr(track_cue_points, f'cue_point_{i}')
-            if cue_point:
-                cue_points_data.append({
-                    'number': i,
-                    'time': cue_point.time if cue_point.time is not None else '-',
-                    'type': cue_point.type or '',
-                    'comment': cue_point.comment or ''
-                })
-        
+        cue_points_data = [
+            {
+                'number': cue_point.slot,
+                'time': cue_point.time if cue_point.time is not None else '-',
+                'type': cue_point.type or '',
+                'comment': cue_point.comment or ''
+            }
+            for cue_point in track.cue_points.all()
+        ]
+
         return JsonResponse({
             'success': True,
             'cue_points': cue_points_data,
             'compact_text': track.get_track_cue_points_text()
         })
-        
+
     except Track.DoesNotExist:
         return JsonResponse({'error': 'Track not found'}, status=404)
-    except TrackCuePoints.DoesNotExist:
-        return JsonResponse({'success': True, 'cue_points': [], 'compact_text': ''})
     except Exception as e:
         logger.exception('Erreur API cue points')
         return JsonResponse({'error': str(e)}, status=500)

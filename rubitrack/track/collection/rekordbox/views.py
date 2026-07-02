@@ -146,16 +146,15 @@ def cue_points_stats_api(request) -> JsonResponse:
     API pour obtenir les statistiques des cue points
     """
     try:
-        from track.models import Track, TrackCuePoints
+        from track.models import CuePoint, Track
 
         total_tracks = Track.objects.count()
-        tracks_with_cue_points = Track.objects.filter(cue_points__isnull=False).count()
+        tracks_with_cue_points = Track.objects.filter(cue_points__isnull=False).distinct().count()
 
         # Compte des cue points par position
         cue_points_count = {}
         for i in range(1, 9):
-            count = TrackCuePoints.objects.exclude(**{f'cue_point_{i}__isnull': True}).count()
-            cue_points_count[f'cue_point_{i}'] = count
+            cue_points_count[f'cue_point_{i}'] = CuePoint.objects.filter(slot=i).count()
 
         return JsonResponse({
             'success': True,

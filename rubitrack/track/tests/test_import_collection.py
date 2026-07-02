@@ -68,41 +68,31 @@ class TestImportTracks:
 class TestImportCuePoints:
     def test_cue_slots_mapping(self, imported):
         strobe = Track.objects.get(title="Strobe")
-        cps = strobe.cue_points
+        by_slot = strobe.get_cue_points_by_slot()
+        # Seuls les slots 1, 2, 5, 6 sont occupés
+        assert set(by_slot) == {1, 2, 5, 6}
         # HOTCUE=0 (grid) -> slot 1
-        assert cps.cue_point_1 is not None
-        assert cps.cue_point_1.time_ms == Decimal("61.250000")
-        assert cps.cue_point_1.traktor_type == "4"
+        assert by_slot[1].time_ms == Decimal("61.250000")
+        assert by_slot[1].traktor_type == "4"
         # HOTCUE=1 -> slot 2 ; le doublon HOTCUE=1 est ignoré (first-wins)
-        assert cps.cue_point_2 is not None
-        assert cps.cue_point_2.time_ms == Decimal("30000.500000")
+        assert by_slot[2].time_ms == Decimal("30000.500000")
         # HOTCUE=4 (loop TYPE=5) -> slot 5 avec durée
-        assert cps.cue_point_5 is not None
-        assert cps.cue_point_5.len_ms == Decimal("15000.000000")
-        assert cps.cue_point_5.traktor_type == "5"
+        assert by_slot[5].len_ms == Decimal("15000.000000")
+        assert by_slot[5].traktor_type == "5"
         # HOTCUE=5 (grid TYPE=4) -> slot 6
-        assert cps.cue_point_6 is not None
-        assert cps.cue_point_6.traktor_type == "4"
-        # Slots vides
-        assert cps.cue_point_3 is None
-        assert cps.cue_point_4 is None
-        assert cps.cue_point_7 is None
-        assert cps.cue_point_8 is None
+        assert by_slot[6].traktor_type == "4"
 
     def test_track_without_cues_has_no_cue_points(self, imported):
         track = Track.objects.get(title="No Cues Here")
-        assert not hasattr(track, "cue_points")
+        assert not track.cue_points.exists()
 
     def test_reimport_updates_cue_points_in_place(self, imported, user):
         strobe = Track.objects.get(title="Strobe")
-        original_ids = {
-            i: getattr(strobe.cue_points, f"cue_point_{i}").id
-            for i in (1, 2, 5, 6)
-        }
+        original_ids = {slot: cp.id for slot, cp in strobe.get_cue_points_by_slot().items()}
         handle_uploaded_file(str(TRAKTOR_NML), user)
         strobe.refresh_from_db()
-        for i, original_id in original_ids.items():
-            assert getattr(strobe.cue_points, f"cue_point_{i}").id == original_id
+        new_ids = {slot: cp.id for slot, cp in strobe.get_cue_points_by_slot().items()}
+        assert new_ids == original_ids
         # Pas de CuePoint orphelins accumulés
         assert CuePoint.objects.count() == 5  # 4 Strobe + 1 Opus
 

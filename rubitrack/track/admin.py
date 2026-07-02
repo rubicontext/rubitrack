@@ -3,7 +3,7 @@ from django.contrib import admin
 
 
 # Register your models here.
-from .models import Artist, Track, Genre, Playlist, TransitionType, Transition, CurrentlyPlaying, Collection, Config, CuePoint, TrackCuePoints
+from .models import Artist, Track, Genre, Playlist, TransitionType, Transition, CurrentlyPlaying, Collection, Config, CuePoint
 
 
 from django import forms
@@ -214,15 +214,15 @@ class ConfigAdmin(admin.ModelAdmin):
 @admin.register(CuePoint)
 class CuePointAdmin(admin.ModelAdmin):
     """Admin interface for CuePoint model"""
-    
-    list_display = ['__str__', 'time', 'type', 'comment', 'created_at']
-    list_filter = ['type', 'created_at']
-    search_fields = ['time', 'type', 'comment']
-    ordering = ['time']
-    
+
+    list_display = ['track', 'slot', 'time', 'type', 'comment', 'created_at']
+    list_filter = ['slot', 'type', 'created_at']
+    search_fields = ['track__title', 'track__artist__name', 'time', 'type', 'comment']
+    ordering = ['track__title', 'slot']
+
     fieldsets = (
         ('Cue Point Details', {
-            'fields': ('time', 'type', 'comment'),
+            'fields': ('track', 'slot', 'time', 'type', 'comment'),
             'description': 'Informations du point de repère'
         }),
         ('Métadonnées', {
@@ -231,55 +231,5 @@ class CuePointAdmin(admin.ModelAdmin):
             'description': 'Informations de suivi'
         }),
     )
-    
+
     readonly_fields = ['created_at', 'updated_at']
-
-
-class CuePointInline(admin.TabularInline):
-    """Inline for editing cue points in TrackCuePoints admin"""
-    model = CuePoint
-    extra = 0
-    max_num = 8
-    fields = ('time', 'type', 'comment')
-    verbose_name = "Cue Point"
-    verbose_name_plural = "Cue Points"
-
-
-@admin.register(TrackCuePoints)
-class TrackCuePointsAdmin(admin.ModelAdmin):
-    """Admin interface for TrackCuePoints model"""
-    
-    list_display = ['track', 'get_cue_points_count', 'updated_at']
-    list_filter = ['created_at', 'updated_at']
-    search_fields = ['track__title', 'track__artist__name']
-    ordering = ['track__title']
-    
-    fieldsets = (
-        ('Track Information', {
-            'fields': ('track',),
-            'description': 'Piste associée'
-        }),
-        ('Cue Points', {
-            'fields': (
-                ('cue_point_1', 'cue_point_2'),
-                ('cue_point_3', 'cue_point_4'),
-                ('cue_point_5', 'cue_point_6'),
-                ('cue_point_7', 'cue_point_8'),
-            ),
-            'description': '8 points de repère pour cette piste'
-        }),
-        ('Métadonnées', {
-            'fields': ('created_at', 'updated_at'),
-            'classes': ('collapse',),
-            'description': 'Informations de suivi'
-        }),
-    )
-    
-    readonly_fields = ['created_at', 'updated_at']
-    
-    def get_cue_points_count(self, obj):
-        """Count how many cue points are set for this track"""
-        count = len(obj.get_cue_points_list())
-        return f"{count}/8 cue points"
-    
-    get_cue_points_count.short_description = "Cue Points Count"

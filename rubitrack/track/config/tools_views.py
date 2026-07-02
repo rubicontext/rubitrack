@@ -9,7 +9,7 @@ from django.contrib import messages
 from django.db import transaction
 from django.db.models import Q, Count
 
-from ..models import Track, CuePoint, TrackCuePoints
+from ..models import Track, CuePoint
 from ..musical_key.musical_key_utils import extract_musical_key_from_title
 
 
@@ -200,15 +200,19 @@ def cue_points_overview(request):
     """
     # Statistiques générales
     total_tracks = Track.objects.count()
-    tracks_with_cue_points = TrackCuePoints.objects.count()
+    tracks_with_cue_points = Track.objects.filter(cue_points__isnull=False).distinct().count()
     total_cue_points = CuePoint.objects.count()
-    
-    # Tracks avec cue points avec détails
+
+    # Tracks avec cue points avec détails (limité à 50 pour l'affichage)
     tracks_with_cue_points_details = []
-    for track_cue_points in TrackCuePoints.objects.select_related('track', 'track__artist').all()[:50]:  # Limiter à 50 pour l'affichage
-        cue_points_list = track_cue_points.get_cue_points_list()
+    tracks_qs = (
+        Track.objects.filter(cue_points__isnull=False)
+        .distinct().select_related('artist').prefetch_related('cue_points')[:50]
+    )
+    for track in tracks_qs:
+        cue_points_list = list(track.cue_points.all())
         tracks_with_cue_points_details.append({
-            'track': track_cue_points.track,
+            'track': track,
             'cue_points_count': len(cue_points_list),
             'cue_points': cue_points_list[:3]  # Afficher seulement les 3 premiers
         })
@@ -229,10 +233,9 @@ def cue_points_overview(request):
 
 @login_required
 def delete_all_cue_points(request):
-    """Delete all cue points and TrackCuePoints associations."""
+    """Delete all cue points."""
     if request.method == 'POST':
         CuePoint.objects.all().delete()
-        TrackCuePoints.objects.all().delete()
         messages.success(request, "All cue points deleted.")
         return redirect('tools')
     return render(request, 'track/tools/confirm_delete_all_cue_points.html')

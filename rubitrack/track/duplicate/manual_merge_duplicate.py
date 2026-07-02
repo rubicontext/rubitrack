@@ -1,5 +1,5 @@
 from django.shortcuts import render, redirect
-from ..models import Track, Transition, CurrentlyPlaying, Playlist, TrackCuePoints
+from ..models import Track, Transition, CurrentlyPlaying, Playlist
 from django import forms
 import ast
 import logging
@@ -42,27 +42,12 @@ def merge_duplicate_tracks(track_a_id: int, track_b_id: int):
     for t in Transition.objects.filter(track_destination=track_b):
         Transition.objects.get_or_create(track_source=t.track_source, track_destination=track_a, defaults={"comment": t.comment})
     
-    # Merge cue points
-    cue_a = TrackCuePoints.objects.filter(track=track_a).first()
-    cue_b = TrackCuePoints.objects.filter(track=track_b).first()
-    if not cue_a and cue_b:
-        # Move cue points object to A
-        cue_b.track = track_a
-        cue_b.save()
-        cue_a = cue_b
-    elif cue_a and cue_b:
-        # If A empty (all slots null) and B has data, copy slot by slot
-        slots_a = [getattr(cue_a, f"cue_point_{i}") for i in range(1,9)]
-        slots_b = [getattr(cue_b, f"cue_point_{i}") for i in range(1,9)]
-        if all(s is None for s in slots_a) and any(s is not None for s in slots_b):
-            for i in range(1,9):
-                setattr(cue_a, f"cue_point_{i}", getattr(cue_b, f"cue_point_{i}"))
-            cue_a.save()
-        # Delete B cue points container afterwards
-        cue_b.delete()
-    elif cue_b:
-        # we already handled the move when A had none; if still here just delete B's cue points
-        cue_b.delete()
+    # Merge cue points: A garde les siens; ceux de B ne sont repris que si A n'en a pas
+    if track_b.cue_points.exists():
+        if track_a.cue_points.exists():
+            track_b.cue_points.all().delete()
+        else:
+            track_b.cue_points.update(track=track_a)
     
     # Remplacer B par A dans CurrentlyPlaying
     CurrentlyPlaying.objects.filter(track__title=track_b.title.strip(), track__artist=track_b.artist).update(track=track_a)
