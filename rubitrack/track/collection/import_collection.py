@@ -141,6 +141,7 @@ def handle_uploaded_file(file, user):
         lastPlayedDate = get_last_played_date_from_info(info)
         musicalKey = get_musical_key_from_info(info)
         bitrate = get_bit_rate_from_info(info)
+        playtime = get_playtime_from_info(info)
         bpm = get_bpm_from_info(current_entry)
         ranking = get_ranking_from_xml_info(info)
         genre = get_genre_db_from_genre_name(genreName, genres_by_name)
@@ -170,6 +171,7 @@ def handle_uploaded_file(file, user):
         track.musical_key = determined_key
             
         track.bitrate = bitrate
+        track.playtime = playtime
         track.bpm = bpm
         track.audio_id = audio_id
         track.file_name = file_name
@@ -227,6 +229,17 @@ def get_bit_rate_from_info(info):
     else:
         bitrate = 0
     return bitrate
+
+
+def get_playtime_from_info(info):
+    """Durée en secondes: PLAYTIME_FLOAT prioritaire, sinon PLAYTIME (entier)."""
+    for attr in ('PLAYTIME_FLOAT', 'PLAYTIME'):
+        if attr in info[0].attributes:
+            try:
+                return float(info[0].attributes[attr].value)
+            except (ValueError, TypeError):
+                continue
+    return None
 
 
 def get_musical_key_from_info(info):

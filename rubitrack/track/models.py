@@ -31,13 +31,14 @@ class Track(models.Model):
     file_name = models.CharField(max_length=200, blank=True, null=True)
     comment = models.CharField(max_length=500, blank=True, null=True)
     comment2 = models.CharField(max_length=500, blank=True, null=True)
-    position = models.PositiveIntegerField(default=0, blank=False, null=False)
+    position = models.PositiveIntegerField(default=0, blank=False, null=False, db_index=True)
     bitrate = models.IntegerField(blank=True, null=True)
     playcount = models.IntegerField(blank=True, null=True)
     energy = models.IntegerField(blank=True, null=True)
-    audio_id = models.CharField(max_length=2000, blank=True, null=True)
+    playtime = models.FloatField(blank=True, null=True, help_text="Durée en secondes (PLAYTIME Traktor)")
+    audio_id = models.CharField(max_length=2000, blank=True, null=True, db_index=True)
     location_dir = models.CharField(max_length=2000, blank=True, null=True)
-    file_path = models.CharField(max_length=2000, blank=True, null=True)
+    file_path = models.CharField(max_length=2000, blank=True, null=True, db_index=True)
 
     # all dates
     date_collection_created = models.DateTimeField('date added to collection', auto_now_add=True, blank=True, null=True)
@@ -251,11 +252,24 @@ class Config(models.Model):
     def __str__(self):
         return f"Config updated on {self.updated_at.strftime('%Y-%m-%d %H:%M:%S')}"
     
+    # Cache process-level: la config est lue partout, une requête par appel est inutile.
+    # Invalidé à chaque save() ; app mono-utilisateur, la staleness inter-process est acceptable.
+    _config_cache = None
+
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        type(self)._config_cache = None
+
     @classmethod
     def get_config(cls):
-        """Get the current configuration, create one if it doesn't exist"""
-        config, _ = cls.objects.get_or_create(pk=1)
-        return config
+        """Get the current configuration (cached), create one if it doesn't exist"""
+        if cls._config_cache is None:
+            cls._config_cache, _ = cls.objects.get_or_create(pk=1)
+        return cls._config_cache
+
+    @classmethod
+    def clear_cache(cls):
+        cls._config_cache = None
 
 
 class CuePoint(models.Model):
