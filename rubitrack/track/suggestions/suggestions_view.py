@@ -1,5 +1,4 @@
 from django.http import JsonResponse
-from django.views.decorators.csrf import csrf_exempt
 from ..models import Track
 import json
 
@@ -61,7 +60,6 @@ def get_suggestions_for_track(track_id, bpm_range_percent=10, sort_by='playcount
     return list(suggestions)  # Limitation appliquée après tri dans la vue AJAX
 
 
-@csrf_exempt
 def ajax_suggestions(request):
     """Vue AJAX pour obtenir des suggestions filtrées"""
     if request.method == 'POST':

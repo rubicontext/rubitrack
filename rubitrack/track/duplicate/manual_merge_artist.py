@@ -1,5 +1,4 @@
 from django.shortcuts import render, redirect
-from django.views.decorators.csrf import csrf_exempt
 from ..models import Track, Artist
 from django import forms
 
@@ -36,7 +35,6 @@ def merge_duplicate_artists(artist_a_id: int, artist_b_id: int):
     artist_b.delete()
     print(f"Deleted artist '{artist_b.name}'")
 
-@csrf_exempt
 def manual_merge_artist(request):
     manual_merge_form = ManualMergeArtistForm()
     if request.method == "POST":

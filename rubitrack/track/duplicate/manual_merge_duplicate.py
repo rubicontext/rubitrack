@@ -1,5 +1,4 @@
 from django.shortcuts import render, redirect
-from django.views.decorators.csrf import csrf_exempt
 from ..models import Track, Transition, CurrentlyPlaying, Playlist, TrackCuePoints
 from django import forms
 import ast
@@ -89,7 +88,6 @@ def merge_duplicate_tracks(track_a_id: int, track_b_id: int):
     # Supprimer la track B
     track_b.delete()
 
-@csrf_exempt
 def manual_merge_duplicate(request):
     manual_merge_form = ManualMergeForm()
     if request.method == "POST":
