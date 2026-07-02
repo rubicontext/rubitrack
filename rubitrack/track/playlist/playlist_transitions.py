@@ -4,6 +4,7 @@ import string
 from django.shortcuts import render
 from django.conf import settings
 from django.contrib.auth.decorators import login_required
+from django.http import JsonResponse
 
 from track.currently_playing.transition import create_transition
 
@@ -49,7 +50,7 @@ def display_playlist_transitions(request, PlaylistId):
     else:
         playlistTransitions = get_transitions_from_playlist(currentPlaylist)
         playlistTracks = get_ordered_tracks_from_playlist(currentPlaylist)
-        
+
         # Add waveform URLs to transitions
         transitions_with_waveforms = []
         for transition in playlistTransitions:
@@ -58,7 +59,7 @@ def display_playlist_transitions(request, PlaylistId):
                 'transition': transition,
                 'waveform_url': waveform_url
             })
-        
+
         logger.info('All transitions for playlist :  %s', currentPlaylist)
         return render(
             request,
@@ -71,7 +72,7 @@ def display_playlist_transitions(request, PlaylistId):
                 'transitions_with_waveforms': transitions_with_waveforms,
             },
         )
-    
+
 
 def get_transitions_from_playlist(current_playlist: Playlist):
     if not current_playlist:
@@ -89,7 +90,7 @@ def get_transitions_from_playlist(current_playlist: Playlist):
         current_transition_qs = Transition.objects.filter(track_source_id=track_source_id,
                                                        track_destination_id=track_destination_id)
         if not current_transition_qs:
-            current_transition = create_transition(track_source_id, 
+            current_transition = create_transition(track_source_id,
                                        track_destination_id,
                                        PLAYLIST_TRANSITION_AUTO_GENERATED + current_playlist.name)
             if current_transition:  # Seulement ajouter si la transition a été créée avec succès
@@ -146,7 +147,7 @@ def get_order_rank(playlist_name:str) -> int:
         return 195
     elif playlist_name.startswith('2021'):
         return 196
-    
+
     if is_name_parsable_for_numeric_indexing(playlist_name):
         return 999
 
@@ -163,23 +164,23 @@ def is_name_parsable_for_numeric_indexing(playlist_name):
 
 def delete_playlist_transitions(request):
     logger.info('DELETE playlist transitions....')
-    playlistId = request.GET['playlistId']
-    all_playlist_transitions = get_transitions_from_playlist(Playlist.objects.get(id=playlistId))
+    playlist_id = request.GET['playlistId']
+    all_playlist_transitions = get_transitions_from_playlist(Playlist.objects.get(id=playlist_id))
+    deleted = 0
     for current_transition in all_playlist_transitions:
-        logger.info('COMMENT :  %s', current_transition.comment)
         if PLAYLIST_TRANSITION_AUTO_GENERATED in current_transition.comment:
             current_transition.delete()
-            logger.info('Transition DELETED  %s %s %s', current_transition.track_source.title, '/', current_transition.track_destination.title)
-
-    #TODO a date on ne renvoit rien, page non mise à jour car sinon on va re générer ces transitions..
-    return None
+            deleted += 1
+            logger.info('Transition DELETED  %s / %s', current_transition.track_source.title, current_transition.track_destination.title)
+    # Pas de rafraîchissement de page: réafficher la playlist regénérerait ces transitions
+    return JsonResponse({'success': True, 'deleted': deleted})
 
 
 def delete_all_generated_transitions(request):
     logger.info('DELETE ALL generated transitions....')
-    all_genrated_transitions = Transition.objects.filter(comment__contains=PLAYLIST_TRANSITION_AUTO_GENERATED)
-    all_genrated_transitions.delete()
-    return None
+    all_generated_transitions = Transition.objects.filter(comment__contains=PLAYLIST_TRANSITION_AUTO_GENERATED)
+    deleted, _ = all_generated_transitions.delete()
+    return JsonResponse({'success': True, 'deleted': deleted})
 
 
 def get_playlists_by_track_id(track_id: int) -> list:

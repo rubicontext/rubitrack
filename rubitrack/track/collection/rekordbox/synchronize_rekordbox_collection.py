@@ -34,18 +34,18 @@ class RekordboxCollectionSynchronizer:
     """
     Service simple pour synchroniser uniquement les cue points entre Rubitrack et Rekordbox
     """
-    
+
     def __init__(self) -> None:
         self.tree: Optional[ET.ElementTree] = None
         self.root: Optional[ET.Element] = None
-    
+
     def load_rekordbox_file(self, file_path: str) -> bool:
         """
         Charge le fichier XML Rekordbox
-        
+
         Args:
             file_path (str): Chemin vers le fichier collection.xml
-            
+
         Returns:
             bool: True si succès, False sinon
         """
@@ -57,14 +57,14 @@ class RekordboxCollectionSynchronizer:
         except (ET.ParseError, OSError) as e:
             logger.error(f"Erreur chargement fichier: {e}")
             return False
-    
+
     def save_rekordbox_file(self, output_path: str) -> bool:
         """
         Sauvegarde le fichier XML Rekordbox modifié
-        
+
         Args:
             output_path (str): Chemin de sortie
-            
+
         Returns:
             bool: True si succès, False sinon
         """
@@ -72,10 +72,10 @@ class RekordboxCollectionSynchronizer:
             # Conversion en string XML avec formatage
             rough_string = ET.tostring(self.root, encoding='utf-8')
             reparsed = minidom.parseString(rough_string)
-            
+
             # Formatage avec indentation
             pretty_xml = reparsed.toprettyxml(indent="  ", encoding=None)
-            
+
             # Suppression de la ligne XML générée par minidom et nettoyage
             lines = pretty_xml.split('\n')
             # Garder la première ligne <?xml... mais supprimer les lignes vides en trop
@@ -83,18 +83,18 @@ class RekordboxCollectionSynchronizer:
             for line in lines[1:]:
                 if line.strip():  # Garder seulement les lignes non vides
                     clean_lines.append(line)
-            
+
             pretty_xml = '\n'.join(clean_lines)
-            
+
             with open(output_path, 'w', encoding='utf-8') as f:
                 f.write(pretty_xml)
-            
+
             logger.info(f"Fichier sauvegardé: {output_path}")
             return True
         except OSError as e:
             logger.error(f"Erreur sauvegarde: {e}")
             return False
-    
+
     def seconds_to_rekordbox_position(self, seconds: Union[float, Decimal]) -> str:
         """Retourne la position Rekordbox en secondes avec 3 décimales (ex: 33.000), arrondie correctement."""
         try:
@@ -102,7 +102,7 @@ class RekordboxCollectionSynchronizer:
             return f"{d.quantize(Decimal('0.000'), rounding=ROUND_HALF_UP)}"
         except (InvalidOperation, ValueError, TypeError):
             return "0.000"
-    
+
     def _normalize_text(self, s: str) -> str:
         """
         Normalize titles/artists to base forms:
@@ -157,7 +157,7 @@ class RekordboxCollectionSynchronizer:
         # Supprimer tous les éléments POSITION_MARK (cue points)
         for position_mark in track_element.findall('POSITION_MARK'):
             track_element.remove(position_mark)
-    
+
     def add_cue_point_to_track(
         self,
         track_element: ET.Element,
@@ -199,14 +199,14 @@ class RekordboxCollectionSynchronizer:
             position_mark.set('Green', '235')
             position_mark.set('Blue', '80')
             logger.debug("Add HOT POSITION_MARK: start=%s num=%s", start_value, str(num_value))
-    
+
     def remove_system_generated_cue_points(self, track_element: ET.Element) -> None:
         """
         Supprime uniquement les cue points générés par le système (nommage 'RCueX').
         - Supprime TOUT POSITION_MARK dont le Name commence par 'RCue' (Type 0 ou 4)
         - Préserve tous les autres cue points manuels
         - Nettoie aussi les anciens hot cues nommés 'A','B','C' (legacy) en Type 0
-        
+
         Args:
             track_element (ET.Element): Élément TRACK
         """
@@ -224,11 +224,11 @@ class RekordboxCollectionSynchronizer:
         """
         Vérifie si un slot de hot cue (Type 0 ou Type 4 avec Num) est déjà occupé.
         Prend en compte les boucles (Type 4) auxquelles un Num a été attribué.
-        
+
         Args:
             track_element: Élément TRACK
             num: Numéro du slot (0, 1, 2 pour les hot cues)
-            
+
         Returns:
             bool: True si le slot est occupé, False sinon
         """
@@ -237,7 +237,7 @@ class RekordboxCollectionSynchronizer:
             if t in ('0', '4') and pm.get('Num') == str(num):
                 return True
         return False
-    
+
     def _has_existing_cue_near_start(self, track_element: ET.Element, start_seconds: float, diff_ms: int) -> bool:
         """Retourne True si un POSITION_MARK non-RCue existe à +/- diff_ms autour de start_seconds.
         Les marqueurs nommés 'RCue*' ne bloquent pas l'ajout en add_only.
@@ -262,7 +262,7 @@ class RekordboxCollectionSynchronizer:
             if (target - s_dec).copy_abs() <= delta:
                 return True
         return False
-    
+
     def synchronize_rekordbox_collection(
         self,
         input_file: str,

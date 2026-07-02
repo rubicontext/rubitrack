@@ -23,17 +23,17 @@ def merge_duplicate_artists(artist_a_id: int, artist_b_id: int):
     """
     artist_a = Artist.objects.get(id=artist_a_id)
     artist_b = Artist.objects.get(id=artist_b_id)
-    
+
     logger.info(f"Merging artist '{artist_b.name}' into '{artist_a.name}'")
-    
+
     # Get all tracks from artist B
     tracks_b = Track.objects.filter(artist=artist_b)
-    
+
     # Reassign all tracks from artist B to artist A
     for track in tracks_b:
         track.artist = artist_a
         track.save()
-    
+
     # Delete artist B (tracks are now reassigned, so this should be safe)
     artist_b.delete()
     logger.info(f"Deleted artist '{artist_b.name}'")
@@ -45,13 +45,13 @@ def manual_merge_artist(request):
         if form.is_valid():
             artist_a = form.cleaned_data["artist_a"]
             artist_b = form.cleaned_data["artist_b"]
-            
+
             # Safety check: prevent merging an artist with itself
             if artist_a.id == artist_b.id:
                 form.add_error(None, "Cannot merge an artist with itself")
                 return render(request, 'track/duplicates/manual_merge_artist.html', {'manual_merge_form': form})
-            
+
             merge_duplicate_artists(artist_a.id, artist_b.id)
             return redirect("manual_merge_artist")
-    
+
     return render(request, 'track/duplicates/manual_merge_artist.html', {'manual_merge_form': manual_merge_form})

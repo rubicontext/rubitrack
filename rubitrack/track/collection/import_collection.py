@@ -164,12 +164,12 @@ def handle_uploaded_file(file, user):
         track.ranking = ranking
         track.playcount = playcount
         track.date_last_played = lastPlayedDate
-        
+
         # Utilisation de la méthode normalize pour déterminer la clé musicale
         # Priorité : champ KEY -> nom de fichier
         determined_key = normalize_musical_key_notation(musicalKey) if musicalKey else extract_musical_key_from_filename(file_name)
         track.musical_key = determined_key
-            
+
         track.bitrate = bitrate
         track.playtime = playtime
         track.bpm = bpm
@@ -355,13 +355,13 @@ def get_ranking_from_xml_info(info) -> int:
     if 'RANKING' not in info[0].attributes:
         return 0  # Retourner 0 au lieu de None
     rankingTraktor = info[0].attributes['RANKING'].value
-    
+
     # Convertir en entier pour comparaison
     try:
         ranking_int = int(rankingTraktor)
     except (ValueError, TypeError):
         return 0
-        
+
     if ranking_int == 255:
         ranking = 5
     elif ranking_int == 204:
@@ -409,7 +409,7 @@ def extract_and_save_cue_points(current_entry, track):
         seen_slots.add(slot)
 
         traktor_type = cue_xml.getAttribute('TYPE') if cue_xml.hasAttribute('TYPE') else ''
-        
+
         # START (toujours millisecondes)
         if not cue_xml.hasAttribute('START'):
             continue
@@ -422,10 +422,10 @@ def extract_and_save_cue_points(current_entry, track):
             time_formatted = f"{minutes}:{seconds_part:06.3f}"
         except (InvalidOperation, ValueError):
             continue
-        
+
         # NAME
         name = cue_xml.getAttribute('NAME') if cue_xml.hasAttribute('NAME') else ''
-        
+
         # LEN (toujours millisecondes)
         duration_seconds = None
         end_time_formatted = None
@@ -443,7 +443,7 @@ def extract_and_save_cue_points(current_entry, track):
                     end_time_formatted = f"{end_minutes}:{end_seconds_part:06.3f}"
             except (InvalidOperation, ValueError):
                 len_ms_dec = None
-        
+
         comment = name
         if traktor_type and traktor_type != name:
             comment = f"{comment} (Type: {traktor_type})" if comment else f"Type: {traktor_type}"

@@ -79,10 +79,10 @@ class Track(models.Model):
         """
         if not self.musical_key:
             return '#cccccc'
-        
+
         # Import local pour éviter la circularité
         from .templatetags.musical_key_filters import get_musical_key_info
-        
+
         key_info = get_musical_key_info(self.musical_key)
         if not key_info:
             return '#cccccc'
@@ -232,47 +232,47 @@ class Config(models.Model):
     Configuration model to store application settings in database
     This replaces the static constants.py values with dynamic database values
     """
-    
+
     # Refresh intervals (in milliseconds)
     refresh_interval_currently_playing_ms = models.IntegerField(default=10000, help_text="Refresh interval for currently playing page (milliseconds)")
     refresh_interval_history_editing_ms = models.IntegerField(default=30000, help_text="Refresh interval for history editing page (milliseconds)")
-    
+
     # Icecast and playlist settings
     rubi_icecast_playlist_file = models.CharField(max_length=500, default='/var/log/icecast2/playlist.log', help_text="Path to Icecast playlist log file")
     max_playlist_history_size = models.IntegerField(default=10, help_text="Maximum number of tracks in playlist history")
     max_suggestions_auto_size = models.IntegerField(default=20, help_text="Maximum number of automatic suggestions")
-    
+
     # Suggestions settings (History Editing defaults)
     default_bpm_range_suggestions = models.IntegerField(default=3, help_text="Default BPM range for suggestions slider (%)")
     default_musical_key_distance = models.IntegerField(default=3, help_text="Default musical key distance for suggestions slider")
     default_ranking_min = models.IntegerField(default=3, help_text="Default minimum ranking for suggestions slider")
-    
+
     # Currently Playing specific suggestion params
     currently_bpm_range_suggestions = models.IntegerField(default=3, help_text="BPM range (%) for currently playing suggestions")
     currently_musical_key_distance = models.IntegerField(default=4, help_text="Musical key max distance for currently playing suggestions")
     currently_ranking_min = models.IntegerField(default=1, help_text="Minimum ranking for currently playing suggestions")
-    
+
     # UI Configuration
     max_title_length = models.IntegerField(default=20, help_text="Maximum title length for display")
     max_artist_name_length = models.IntegerField(default=20, help_text="Maximum artist name length for display")
-    
+
     # Database settings
     default_bpm = models.FloatField(default=120.0, help_text="Default BPM value for new tracks")
     default_genre = models.CharField(max_length=50, default="Unknown", help_text="Default genre for new tracks")
-    
+
     # API settings
     max_suggestions = models.IntegerField(default=10, help_text="Maximum number of suggestions returned by API")
     max_playlist_history = models.IntegerField(default=50, help_text="Maximum number of tracks in playlist history")
-    
+
     # File upload settings
     max_upload_size_mb = models.IntegerField(default=10, help_text="Maximum file upload size in MB")
-    
+
     # Transition settings
     default_comment_size = models.IntegerField(default=60, help_text="Default size for transition comments")
     transition_animation_duration_ms = models.IntegerField(
         default=300, help_text="Duration of transition animations (milliseconds)"
     )
-    
+
     # Playlist settings
     default_playlist_favourites = models.CharField(
         max_length=500,
@@ -288,14 +288,14 @@ class Config(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     updated_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
-    
+
     class Meta:
         verbose_name = "Configuration"
         verbose_name_plural = "Configurations"
-    
+
     def __str__(self):
         return f"Config updated on {self.updated_at.strftime('%Y-%m-%d %H:%M:%S')}"
-    
+
     # Cache process-level: la config est lue partout, une requête par appel est inutile.
     # Invalidé à chaque save() ; app mono-utilisateur, la staleness inter-process est acceptable.
     _config_cache = None

@@ -8,7 +8,7 @@ def create_transition(trackSourceId, trackDestinationId, comment):
     try:
         track_source = Track.objects.get(id=trackSourceId)
         track_destination = Track.objects.get(id=trackDestinationId)
-        
+
         transition = Transition()
         transition.track_source = track_source
         transition.track_destination = track_destination

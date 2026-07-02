@@ -22,27 +22,27 @@ def tools_index(request):
     total_tracks = Track.objects.count()
     tracks_with_keys = Track.objects.exclude(Q(musical_key__isnull=True) | Q(musical_key='')).count()
     tracks_without_keys = total_tracks - tracks_with_keys
-    
+
     # Estimation des clés potentielles dans les titres
     tracks_with_potential_keys = 0
     sample_tracks = Track.objects.all()[:1000]  # Échantillon pour éviter la surcharge
     for track in sample_tracks:
         if track.title and extract_musical_key_from_title(track.title):
             tracks_with_potential_keys += 1
-    
+
     # Extrapolation sur toute la collection
     if sample_tracks.count() > 0:
         potential_keys_in_titles = int((tracks_with_potential_keys / sample_tracks.count()) * total_tracks)
     else:
         potential_keys_in_titles = 0
-    
+
     context = {
         'total_tracks': total_tracks,
         'tracks_with_keys': tracks_with_keys,
         'tracks_without_keys': tracks_without_keys,
         'potential_keys_in_titles': potential_keys_in_titles,
     }
-    
+
     return render(request, 'track/tools/tools_index.html', context)
 
 
@@ -55,14 +55,14 @@ def cleanup_musical_keys(request):
     results = None
     overwrite_existing = request.POST.get('overwrite_existing', False)
     dry_run = request.POST.get('dry_run', False)
-    
+
     if request.method == 'POST':
         results = process_musical_keys_cleanup(overwrite_existing, dry_run)
-        
+
         # Messages utilisateur
         if dry_run:
             messages.info(
-                request, 
+                request,
                 f"Mode test : {results['extracted_keys']} clés musicales détectées dans les titres. "
                 f"{results['would_update']} tracks seraient mises à jour."
             )
@@ -77,13 +77,13 @@ def cleanup_musical_keys(request):
                     request,
                     "Aucune track n'a été mise à jour. Vérifiez vos options de nettoyage."
                 )
-    
+
     context = {
         'results': results,
         'overwrite_existing': overwrite_existing,
         'dry_run': dry_run,
     }
-    
+
     return render(request, 'track/tools/cleanup_musical_keys.html', context)
 
 
@@ -93,50 +93,50 @@ def process_musical_keys_cleanup(overwrite_existing, dry_run):
     Fonction séparée pour réduire la complexité cognitive.
     """
     start_time = time.time()
-    
+
     # Configuration du traitement
     overwrite_existing = bool(overwrite_existing)
     dry_run = bool(dry_run)
-    
+
     # Requête de base
     tracks_query = Track.objects.all()
     if not overwrite_existing:
         tracks_query = tracks_query.filter(Q(musical_key__isnull=True) | Q(musical_key=''))
-    
+
     total_tracks = tracks_query.count()
     updated_tracks = 0
     extracted_keys = 0
     skipped_tracks = 0
     would_update = 0
     examples = []
-    
+
     # Traitement par batch
     batch_size = 100
-    
+
     with transaction.atomic():
         for i in range(0, total_tracks, batch_size):
             batch_tracks = tracks_query[i:i+batch_size]
-            
+
             for track in batch_tracks:
                 result = process_single_track(track, overwrite_existing, dry_run)
-                
+
                 # Accumulation des statistiques
                 if result['extracted_key']:
                     extracted_keys += 1
-                    
+
                 if result['action'] == 'updated':
                     updated_tracks += 1
                 elif result['action'] == 'would_update':
                     would_update += 1
                 else:
                     skipped_tracks += 1
-                
+
                 # Ajouter aux exemples (limité à 10)
                 if len(examples) < 10:
                     examples.append(result)
-    
+
     processing_time = time.time() - start_time
-    
+
     return {
         'total_tracks': total_tracks,
         'updated_tracks': updated_tracks,
@@ -153,10 +153,10 @@ def process_single_track(track, overwrite_existing, dry_run):
     Traite une seule track pour l'extraction de clé musicale.
     """
     old_key = track.musical_key
-    
+
     # Extraire la clé depuis le titre
     extracted_key = extract_musical_key_from_title(track.title) if track.title else None
-    
+
     if not extracted_key:
         return {
             'title': track.title,
@@ -165,17 +165,17 @@ def process_single_track(track, overwrite_existing, dry_run):
             'new_key': old_key,
             'action': 'skipped'
         }
-    
+
     # Décider si on met à jour
     should_update = overwrite_existing or not old_key or old_key.strip() == ''
-    
+
     if should_update:
         action = 'would_update' if dry_run else 'updated'
-        
+
         if not dry_run:
             track.musical_key = extracted_key
             track.save(update_fields=['musical_key'])
-        
+
         return {
             'title': track.title,
             'extracted_key': extracted_key,
@@ -216,10 +216,10 @@ def cue_points_overview(request):
             'cue_points_count': len(cue_points_list),
             'cue_points': cue_points_list[:3]  # Afficher seulement les 3 premiers
         })
-    
+
     # Statistiques par type de cue point
     cue_point_types = CuePoint.objects.values('type').annotate(count=Count('type')).order_by('-count')
-    
+
     context = {
         'total_tracks': total_tracks,
         'tracks_with_cue_points': tracks_with_cue_points,
@@ -227,7 +227,7 @@ def cue_points_overview(request):
         'tracks_with_cue_points_details': tracks_with_cue_points_details,
         'cue_point_types': cue_point_types,
     }
-    
+
     return render(request, 'track/tools/cue_points_overview.html', context)
 
 

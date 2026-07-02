@@ -16,7 +16,7 @@ class ManualMergeForm(forms.Form):
 def merge_duplicate_tracks(track_a_id: int, track_b_id: int):
     track_a = Track.objects.get(id=track_a_id)
     track_b = Track.objects.get(id=track_b_id)
-    
+
     # Si A n'a pas de commentaire mais B en a un, copier le commentaire de B vers A
     if track_b.comment and track_b.comment.strip() and (not track_a.comment or not track_a.comment.strip()):
         track_a.comment = track_b.comment
@@ -34,23 +34,23 @@ def merge_duplicate_tracks(track_a_id: int, track_b_id: int):
         logger.info(f"📁 file_path copié de B vers A: '{track_a.file_path}'")
 
     track_a.save()
-    
+
     # Copier toutes les transitions de B vers A
     for t in Transition.objects.filter(track_source=track_b):
         Transition.objects.get_or_create(track_source=track_a, track_destination=t.track_destination, defaults={"comment": t.comment})
     for t in Transition.objects.filter(track_destination=track_b):
         Transition.objects.get_or_create(track_source=t.track_source, track_destination=track_a, defaults={"comment": t.comment})
-    
+
     # Merge cue points: A garde les siens; ceux de B ne sont repris que si A n'en a pas
     if track_b.cue_points.exists():
         if track_a.cue_points.exists():
             track_b.cue_points.all().delete()
         else:
             track_b.cue_points.update(track=track_a)
-    
+
     # Remplacer B par A dans CurrentlyPlaying
     CurrentlyPlaying.objects.filter(track__title=track_b.title.strip(), track__artist=track_b.artist).update(track=track_a)
-    
+
     # Mettre à jour les playlists: B remplacé par A à la même position
     # (si la playlist contient déjà A, l'entrée de B est simplement supprimée)
     for entry in PlaylistTrack.objects.filter(track=track_b):

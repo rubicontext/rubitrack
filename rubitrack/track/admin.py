@@ -111,23 +111,23 @@ class CustomPlaylistAdmin(admin.ModelAdmin):
     # list_display = ['name', 'id']
     search_fields = ['name']
     ordering = ['rank', '-id']  # Si même rank, trier par ID décroissant
-    
+
     class Media:
         css = {
             'all': ('/static/css/playlist_admin.css',)
         }
         js = ('/static/js/playlist_admin.js',)
-    
+
     def favourite_star(self, obj):
         """Display a clickable star to toggle favourite status"""
         from .models import Config
         config = Config.get_config()
         favourite_ids = [x.strip() for x in config.default_playlist_favourites.split(';') if x.strip()]
         is_favourite = str(obj.id) in favourite_ids
-        
+
         star_icon = '★' if is_favourite else '☆'
         star_class = 'favourite-star-filled' if is_favourite else 'favourite-star-empty'
-        
+
         return format_html(
             '<span class="favourite-star {}" data-playlist-id="{}" style="cursor: pointer; font-size: 20px; color: {};" title="Click to toggle favourite">{}</span>',
             star_class,
@@ -135,7 +135,7 @@ class CustomPlaylistAdmin(admin.ModelAdmin):
             '#FFD700' if is_favourite else '#ccc',
             star_icon
         )
-    
+
     favourite_star.short_description = '⭐'
     favourite_star.allow_tags = True
 
@@ -146,7 +146,7 @@ class CustomPlaylistAdmin(admin.ModelAdmin):
             label=obj.name
         )
     playlist_transitions.description = 'Playlist Transitions'
-    
+
     def playlist_name_link(self, obj):
         return format_html(
             "<a href='/admin/track/playlist/{}/change/'>{}</a>",
@@ -162,10 +162,10 @@ admin.site.register(Playlist, CustomPlaylistAdmin)
 @admin.register(Config)
 class ConfigAdmin(admin.ModelAdmin):
     """Admin interface for Config model"""
-    
+
     list_display = ['__str__', 'updated_at', 'updated_by']
     readonly_fields = ['created_at', 'updated_at']
-    
+
     fieldsets = (
         ('Refresh Intervals', {
             'fields': ('refresh_interval_currently_playing_ms', 'refresh_interval_history_editing_ms'),
@@ -197,15 +197,15 @@ class ConfigAdmin(admin.ModelAdmin):
             'description': 'Informations de suivi'
         }),
     )
-    
+
     def save_model(self, request, obj, form, change):
         obj.updated_by = request.user
         super().save_model(request, obj, form, change)
-        
+
     def has_add_permission(self, request):
         # Only allow one config instance
         return not Config.objects.exists()
-    
+
     def has_delete_permission(self, request, obj=None):
         # Don't allow deletion of config
         return False

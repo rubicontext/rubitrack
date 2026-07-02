@@ -42,7 +42,7 @@ def keys_are_equivalent(key_a: str, key_b: str) -> bool:
 def find_duplicate_tracks():
     tracks = Track.objects.all().order_by('title').reverse()
     duplicates = []
-    
+
     # Détection classique : titres identiques après strip (espace en début/fin)
     for track in tracks:
         title_a = track.title.strip()

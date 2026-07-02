@@ -13,11 +13,11 @@ class ManualTransitionForm(forms.Form):
 def manual_transition(request):
     tracks = Track.objects.all().order_by('title','artist__name')
     message = None
-    
+
     # Récupérer les paramètres GET pour pré-sélectionner les tracks
     preselected_source = request.GET.get('track_source')
     preselected_destination = request.GET.get('track_destination')
-    
+
     if request.method == "POST":
         # Vérifier si c'est une copie de transitions
         if 'copy_all' in request.POST:
@@ -25,14 +25,14 @@ def manual_transition(request):
             dest_track_id = int(request.POST.get("copy_dest_id"))
             source_track = Track.objects.get(id=source_track_id)
             dest_track = Track.objects.get(id=dest_track_id)
-            
+
             # Copier toutes les transitions sortantes (track source)
             outgoing_transitions = Transition.objects.filter(track_source=source_track)
             copied_count = 0
             for trans in outgoing_transitions:
                 # Vérifier si la transition n'existe pas déjà
                 if not Transition.objects.filter(
-                    track_source=dest_track, 
+                    track_source=dest_track,
                     track_destination=trans.track_destination
                 ).exists():
                     Transition.objects.create(
@@ -43,13 +43,13 @@ def manual_transition(request):
                         transition_type=trans.transition_type
                     )
                     copied_count += 1
-            
+
             # Copier toutes les transitions entrantes (track destination)
             incoming_transitions = Transition.objects.filter(track_destination=source_track)
             for trans in incoming_transitions:
                 # Vérifier si la transition n'existe pas déjà
                 if not Transition.objects.filter(
-                    track_source=trans.track_source, 
+                    track_source=trans.track_source,
                     track_destination=dest_track
                 ).exists():
                     Transition.objects.create(
@@ -60,7 +60,7 @@ def manual_transition(request):
                         transition_type=trans.transition_type
                     )
                     copied_count += 1
-            
+
             message = f"✓ {copied_count} transitions copiées de '{source_track.title}' vers '{dest_track.title}'"
         else:
             # Code existant pour créer une seule transition
@@ -70,7 +70,7 @@ def manual_transition(request):
             comment = request.POST.get("comment", "")
             track1 = Track.objects.get(id=track1_id)
             track2 = Track.objects.get(id=track2_id)
-            
+
             # Déterminer source et destination selon la direction
             if direction == "right":
                 source_track = track1
@@ -78,14 +78,14 @@ def manual_transition(request):
             else:
                 source_track = track2
                 dest_track = track1
-            
+
             # Vérifier si la transition existe déjà
             if Transition.objects.filter(track_source=source_track, track_destination=dest_track).exists():
                 message = f"error:Transition already exists: {source_track.title} → {dest_track.title}"
             else:
                 Transition.objects.create(track_source=source_track, track_destination=dest_track, comment=comment)
                 message = f"Transition enregistrée : {source_track.title} → {dest_track.title}"
-    
+
     return render(request, 'track/currently_playing/manual_transition.html', {
         'tracks': tracks,
         'message': message,

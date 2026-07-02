@@ -19,8 +19,8 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements-dev.txt
 
-      - name: Ruff (imports inutilisés, erreurs)
-        run: ruff check --select F --exclude "track/migrations" rubitrack/
+      - name: Ruff (imports inutilisés, erreurs, espaces parasites)
+        run: ruff check --select F,W291,W292,W293 --exclude "track/migrations" rubitrack/
 
       - name: Pytest (SQLite en mémoire via settings_test)
         working-directory: rubitrack

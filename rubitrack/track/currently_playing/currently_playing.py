@@ -87,7 +87,7 @@ def display_currently_playing(request):
         list_track_suggestions = get_list_track_suggestions_auto(current_track)
         # Ajout : playlists contenant la track
         playlists_with_track = get_playlists_by_track_id(current_track.id)
-        
+
         # Prépare une liste de 8 time cue points (centralisé)
         cue_points_times = get_cue_points_times_for_track_no_ms(current_track)
         cue_points_slots = get_cue_points_slots_for_track(current_track)
@@ -138,7 +138,7 @@ def display_history_editing(request, track_id):
         cue_points_times = get_cue_points_times_for_track_no_ms(current_track)
         cue_points_slots = get_cue_points_slots_for_track(current_track)
         config = Config.get_config()
-        
+
         # Vérifier si une waveform existe pour cette track
         import os
         from django.conf import settings
@@ -147,7 +147,7 @@ def display_history_editing(request, track_id):
         waveform_url = None
         if os.path.exists(waveform_path):
             waveform_url = f"{settings.MEDIA_URL}waveforms/{waveform_filename}"
-        
+
         logger.info('Edit history for track : %s', current_track)
         return render(
             request,
@@ -387,10 +387,10 @@ def get_playing_track_list_history(with_refresh=True, remove_last=True, current_
     if with_refresh:
         refresh_currently_playing_from_log()
     current_playlist = CurrentlyPlaying.objects.order_by('date_played')
-    
+
     config = Config.get_config()
     max_history_size = config.max_playlist_history_size
-    
+
     if len(current_playlist) > max_history_size:
         current_playlist = current_playlist[len(current_playlist) - max_history_size : len(current_playlist)]
 
@@ -433,13 +433,13 @@ def get_all_currently_playing_data(request):
     current_track = get_currently_playing_track(with_refresh=True)
     if current_track is None:
         return render(request, BLANK_TEMPLATE)
-    
+
     playlist_history = get_playing_track_list_history(with_refresh=False)
     transitions_after = get_transitions_after(current_track)
     transitions_before = get_transitions_before(current_track)
     list_track_suggestions = get_list_track_suggestions_auto(current_track)
     playlists_with_track = get_playlists_by_track_id(current_track.id)
-    
+
     # Prépare une liste de 8 time cue points (centralisé)
     cue_points_times = get_cue_points_times_for_track_no_ms(current_track)
     cue_points_slots = get_cue_points_slots_for_track(current_track)

@@ -14,18 +14,18 @@ def is_similar_with_char_diff(str1: str, str2: str, max_diff: int = 1) -> bool:
     """
     if abs(len(str1) - len(str2)) > max_diff:
         return False
-    
+
     # Use dynamic programming to calculate edit distance
     def edit_distance(s1, s2):
         m, n = len(s1), len(s2)
         dp = [[0] * (n + 1) for _ in range(m + 1)]
-        
+
         # Initialize first row and column
         for i in range(m + 1):
             dp[i][0] = i
         for j in range(n + 1):
             dp[0][j] = j
-        
+
         # Fill the dp table
         for i in range(1, m + 1):
             for j in range(1, n + 1):
@@ -41,7 +41,7 @@ def is_similar_with_char_diff(str1: str, str2: str, max_diff: int = 1) -> bool:
         logger.info("Edit distance between '{}' and '{}' is {}".format(s1, s2, dp[m][n]))
 
         return dp[m][n]
-    
+
     return edit_distance(str1.lower().strip(), str2.lower().strip()) <= max_diff
 
 
@@ -67,7 +67,7 @@ def get_track_db_from_title_artist(track_title: str, artist_db: Artist):
     if len(track_list) > 1:
         logger.warning('WARNING DUPLICATE track : %s %s %s', track_title, "By artist :", artist_db.name)
         return track_list[0]
-    
+
 
     # happens with weird formatting in log file
     search_title = track_title[:-1]
@@ -91,7 +91,7 @@ def get_track_db_from_title_artist(track_title: str, artist_db: Artist):
     if len(track_list) > 0:
         logger.info('FOUND with strip : %s %s %s', search_title, " original:", track_title)
         return track_list[0]
-    
+
     # create new track, should only happen if no import of collection
     logger.warning('WARNING Created new track, : %s', track_title)
     track_db = Track()

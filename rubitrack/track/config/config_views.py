@@ -8,8 +8,32 @@ from ..models import Config
 class ConfigForm(ModelForm):
     class Meta:
         model = Config
-        exclude = ['created_at', 'updated_at', 'updated_by']
-        
+        # Liste explicite: un nouveau champ du modèle n'est pas exposé par accident
+        fields = [
+            'refresh_interval_currently_playing_ms',
+            'refresh_interval_history_editing_ms',
+            'rubi_icecast_playlist_file',
+            'max_playlist_history_size',
+            'max_suggestions_auto_size',
+            'default_bpm_range_suggestions',
+            'default_musical_key_distance',
+            'default_ranking_min',
+            'currently_bpm_range_suggestions',
+            'currently_musical_key_distance',
+            'currently_ranking_min',
+            'max_title_length',
+            'max_artist_name_length',
+            'default_bpm',
+            'default_genre',
+            'max_suggestions',
+            'max_playlist_history',
+            'max_upload_size_mb',
+            'default_comment_size',
+            'transition_animation_duration_ms',
+            'default_playlist_favourites',
+            'separator_track_id',
+        ]
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         for field_name, field in self.fields.items():
@@ -37,7 +61,7 @@ class ConfigForm(ModelForm):
 def config_view(request):
     """Configuration editing view"""
     config = Config.get_config()
-    
+
     if request.method == 'POST':
         form = ConfigForm(request.POST, instance=config)
         if form.is_valid():
@@ -50,7 +74,7 @@ def config_view(request):
             messages.error(request, 'Please correct the errors below.')
     else:
         form = ConfigForm(instance=config)
-    
+
     return render(request, 'track/config/config_form.html', {
         'form': form,
         'config': config,
