@@ -22,6 +22,7 @@
             <p>Uploadez votre fichier collection.xml Rekordbox pour y ajouter les cue points de Rubitrack.</p>
             
             <form id="sync-form" enctype="multipart/form-data">
+                {% csrf_token %}
                 <div class="form-group">
                     <label for="rekordbox_file">Fichier collection.xml Rekordbox :</label>
                     <input type="file" id="rekordbox_file" name="rekordbox_file" accept=".xml" required>
@@ -214,72 +215,56 @@ function syncCuePoints(modeFlag) {
     const formData = new FormData();
     formData.append('rekordbox_file', fileInput.files[0]);
     formData.append('mode', modeFlag);
-    
-    // Envoi de la requête
+
+    const csrfToken = document.querySelector('#sync-form [name=csrfmiddlewaretoken]').value;
+
+    // Envoi de la requête (succès = ZIP + stats dans le header X-Sync-Stats)
     fetch('/track/rekordbox/api/synchronize/', {
         method: 'POST',
+        headers: { 'X-CSRFToken': csrfToken },
         body: formData
     })
     .then(response => {
-        if (response.ok) {
-            return response.json().then(data => {
-                if (data.success) {
-                    // Téléchargement du fichier XML Rekordbox
-                    const xmlBlob = new Blob([data.xml_file.content], { type: data.xml_file.type });
-                    const xmlUrl = window.URL.createObjectURL(xmlBlob);
-                    const xmlLink = document.createElement('a');
-                    xmlLink.href = xmlUrl;
-                    xmlLink.download = data.xml_file.filename;
-                    document.body.appendChild(xmlLink);
-                    xmlLink.click();
-                    document.body.removeChild(xmlLink);
-                    window.URL.revokeObjectURL(xmlUrl);
-                    
-                    // Téléchargement du fichier des tracks non trouvées
-                    const txtBlob = new Blob([data.not_found_file.content], { type: data.not_found_file.type });
-                    const txtUrl = window.URL.createObjectURL(txtBlob);
-                    const txtLink = document.createElement('a');
-                    txtLink.href = txtUrl;
-                    txtLink.download = data.not_found_file.filename;
-                    document.body.appendChild(txtLink);
-                    txtLink.click();
-                    document.body.removeChild(txtLink);
-                    window.URL.revokeObjectURL(txtUrl);
-                    
-                    // Affichage des statistiques
-                    const stats = data.stats;
-                    let message = '<strong>Synchronisation réussie !</strong><br><br>';
-                    message += `Mode: <strong>${data.mode}</strong><br><br>`;
-                    message += `
-                        📊 <strong>Statistiques :</strong><br>
-                        • Tracks dans le fichier Rekordbox : <strong>${stats.total_tracks_in_rekordbox_file}</strong><br>
-                        • Tracks Rubitrack avec cue points : <strong>${stats.rubitrack_tracks_processed}</strong><br>
-                        • Tracks trouvées et correspondantes : <strong>${stats.tracks_found_and_matched}</strong><br>
-                        • Tracks mises à jour : <strong>${stats.tracks_updated_with_cue_points}</strong><br>
-                        • Cue points ajoutés : <strong>${stats.total_cue_points_added}</strong><br>
-                        • Tracks non trouvées : <strong>${stats.unmatched_count}</strong><br><br>
-                        📁 Deux fichiers ont été téléchargés :<br>
-                        • ${data.xml_file.filename}<br>
-                        • ${data.not_found_file.filename}
-                    `;
-                    
-                    showResult(true, message);
-                } else {
-                    throw new Error(data.error || 'Erreur lors de la synchronisation');
-                }
-            });
-        } else {
-            return response.json().then(data => {
-                throw new Error(data.error || 'Erreur lors de la synchronisation');
-            }).catch(jsonError => {
-                throw new Error(`Erreur HTTP ${response.status}: ${response.statusText}`);
-            });
+        if (!response.ok) {
+            return response.json()
+                .then(data => { throw new Error(data.error || 'Erreur lors de la synchronisation'); })
+                .catch(jsonError => {
+                    throw new Error(jsonError.message || `Erreur HTTP ${response.status}: ${response.statusText}`);
+                });
         }
-    })
-    .then(data => {
-        if (data && data.success === false) {
-            throw new Error(data.error);
-        }
+
+        const stats = JSON.parse(response.headers.get('X-Sync-Stats'));
+        const disposition = response.headers.get('Content-Disposition') || '';
+        const filenameMatch = disposition.match(/filename="(.+)"/);
+        const zipFilename = filenameMatch ? filenameMatch[1] : 'rekordbox_sync.zip';
+
+        return response.blob().then(blob => {
+            // Téléchargement du ZIP (collection XML + tracks non trouvées)
+            const zipUrl = window.URL.createObjectURL(blob);
+            const zipLink = document.createElement('a');
+            zipLink.href = zipUrl;
+            zipLink.download = zipFilename;
+            document.body.appendChild(zipLink);
+            zipLink.click();
+            document.body.removeChild(zipLink);
+            window.URL.revokeObjectURL(zipUrl);
+
+            // Affichage des statistiques
+            let message = '<strong>Synchronisation réussie !</strong><br><br>';
+            message += `Mode: <strong>${stats.mode}</strong><br><br>`;
+            message += `
+                📊 <strong>Statistiques :</strong><br>
+                • Tracks dans le fichier Rekordbox : <strong>${stats.total_tracks_in_rekordbox_file}</strong><br>
+                • Tracks Rubitrack avec cue points : <strong>${stats.rubitrack_tracks_processed}</strong><br>
+                • Tracks trouvées et correspondantes : <strong>${stats.tracks_found_and_matched}</strong><br>
+                • Tracks mises à jour : <strong>${stats.tracks_updated_with_cue_points}</strong><br>
+                • Cue points ajoutés : <strong>${stats.total_cue_points_added}</strong><br>
+                • Tracks non trouvées : <strong>${stats.unmatched_count}</strong><br><br>
+                📁 Fichier téléchargé : ${zipFilename}<br>
+                (contient la collection XML et la liste des tracks non trouvées)
+            `;
+            showResult(true, message);
+        });
     })
     .catch(error => {
         showResult(false, error.message);

@@ -44,7 +44,7 @@ class RekordboxCollectionSynchronizer:
             self.root = self.tree.getroot()
             logger.info(f"Fichier Rekordbox chargé: {file_path}")
             return True
-        except Exception as e:
+        except (ET.ParseError, OSError) as e:
             logger.error(f"Erreur chargement fichier: {e}")
             return False
     
@@ -81,7 +81,7 @@ class RekordboxCollectionSynchronizer:
             
             logger.info(f"Fichier sauvegardé: {output_path}")
             return True
-        except Exception as e:
+        except OSError as e:
             logger.error(f"Erreur sauvegarde: {e}")
             return False
     
@@ -285,6 +285,13 @@ class RekordboxCollectionSynchronizer:
             return {
                 'success': False,
                 'error': 'Impossible de charger le fichier Rekordbox'
+            }
+
+        # Validation: un export Rekordbox a pour racine DJ_PLAYLISTS
+        if self.root.tag != 'DJ_PLAYLISTS':
+            return {
+                'success': False,
+                'error': f"Fichier XML invalide: racine '{self.root.tag}' au lieu de DJ_PLAYLISTS (pas un export Rekordbox)"
             }
 
         stats = self._initialize_stats()

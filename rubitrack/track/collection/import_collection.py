@@ -1,11 +1,11 @@
 import datetime
-from xml.dom.minicompat import NodeList
+from collections import defaultdict
 from xml.dom.minidom import Element
 import pytz
 import re
 import unicodedata
 from decimal import Decimal, InvalidOperation
-from typing import Optional, Set
+from typing import Dict, Optional, Set, Tuple
 
 from django import forms
 from django.db import transaction
@@ -13,7 +13,7 @@ from django.shortcuts import render
 
 from track.playlist.playlist_transitions import get_order_rank
 from ..models import Playlist, Track, Artist, Genre, Collection, CuePoint, TrackCuePoints
-from ..musical_key.musical_key_utils import extract_musical_key_from_filename, get_conflicting_musical_keys, normalize_musical_key_notation
+from ..musical_key.musical_key_utils import extract_musical_key_from_filename, normalize_musical_key_notation
 from ..duplicate.display_duplicate import keys_are_equivalent
 
 from django.contrib.auth.decorators import login_required
@@ -30,6 +30,63 @@ class UploadCollectionForm(forms.Form):
     file = forms.FileField()
 
 
+class TrackImportIndex:
+    """
+    Index en mémoire des tracks existantes pour éviter les requêtes par ENTRY
+    (l'import faisait plusieurs requêtes DB pour chaque morceau du fichier).
+    """
+
+    def __init__(self):
+        all_tracks = list(Track.objects.all())
+        self.by_artist_title: Dict[Tuple[int, str], Track] = {
+            (t.artist_id, t.title): t for t in all_tracks
+        }
+        self.by_artist: Dict[int, list] = defaultdict(list)
+        for t in all_tracks:
+            self.by_artist[t.artist_id].append(t)
+        self.by_audio_id: Dict[str, Track] = {t.audio_id: t for t in all_tracks if t.audio_id}
+
+    def find(self, artist: Artist, title: str, audio_id: Optional[str]) -> Optional[Track]:
+        """Retrouve une track existante, dans l'ordre de priorité historique:
+        1. artist + titre exact
+        1b. titre strippé ou enharmoniquement équivalent (Bbm ~ A#m) chez le même artiste
+        2. audio_id
+        """
+        track = self.by_artist_title.get((artist.id, title))
+        if track:
+            return track
+
+        title_stripped = title.strip()
+        import_parts = title_stripped.split(' - ')
+        for existing_track in self.by_artist[artist.id]:
+            existing_stripped = existing_track.title.strip()
+            if existing_stripped == title_stripped:
+                print(f"FOUND by stripped title: '{existing_track.title}' == '{title}'")
+                return existing_track
+            # e.g. "Song - A#m - 6" should match "Song - Bbm - 6"
+            existing_parts = existing_stripped.split(' - ')
+            if (len(existing_parts) >= 2 and len(import_parts) >= 2
+                    and existing_parts[0] == import_parts[0]
+                    and keys_are_equivalent(existing_parts[-2], import_parts[-2])):
+                print(f"FOUND by enharmonic key: '{existing_track.title}' ~ '{title}'")
+                return existing_track
+
+        if audio_id:
+            track = self.by_audio_id.get(audio_id)
+            if track:
+                track.title = title
+                return track
+        return None
+
+    def register(self, track: Track) -> None:
+        """Ajoute/actualise une track (nouvelle ou re-titrée) dans les index."""
+        self.by_artist_title[(track.artist_id, track.title)] = track
+        if track not in self.by_artist[track.artist_id]:
+            self.by_artist[track.artist_id].append(track)
+        if track.audio_id:
+            self.by_audio_id[track.audio_id] = track
+
+
 @transaction.atomic
 def handle_uploaded_file(file, user):
 
@@ -38,12 +95,17 @@ def handle_uploaded_file(file, user):
     entry_list = collection[0].getElementsByTagName('ENTRY')
     userCollection = get_default_collection_for_user(user)
 
+    # Caches en mémoire: une requête par table au lieu de plusieurs par ENTRY
+    artists_by_name = {a.name: a for a in Artist.objects.all()}
+    genres_by_name = {g.name: g for g in Genre.objects.all()}
+    track_index = TrackImportIndex()
+    imported_tracks = []
+
     cptNewTracks = 0
     cptExistingTracks = 0
     # Evite les doublons d'ENTRY pour le même morceau (first-wins)
     processed_keys: Set[str] = set()
     for current_entry in entry_list:
-        # for current_entry in entry_list[0:10]:
 
         # sample auto imported must be ignored
         info = current_entry.getElementsByTagName('INFO')
@@ -70,8 +132,7 @@ def handle_uploaded_file(file, user):
             continue
         processed_keys.add(dedup_key)
 
-
-        artist = get_artist_from_entry(current_entry)
+        artist = get_artist_db_from_artist_name(artist_name_key, artists_by_name)
         genreName = get_genre_from_info(info)
         comment = get_comment_from_info(info)
         comment2 = get_rating_from_info(info)
@@ -81,53 +142,17 @@ def handle_uploaded_file(file, user):
         bitrate = get_bit_rate_from_info(info)
         bpm = get_bpm_from_info(current_entry)
         ranking = get_ranking_from_xml_info(info)
-        genre = get_genre_db_from_genre_name(genreName)
+        genre = get_genre_db_from_genre_name(genreName, genres_by_name)
 
         # Check if TRACK exists or insert it
-        # 1 find by artist and title (exact match)
-        trackList = Track.objects.filter(title=title, artist=artist)
-        if len(trackList) > 0:
-            trackDb = trackList[0]
-            track = trackDb
+        track = track_index.find(artist, title, audio_id)
+        if track:
             cptExistingTracks = cptExistingTracks + 1
         else:
-            # 1b find by stripped title (handles leading/trailing spaces)
-            # or by enharmonically equivalent title (e.g. "Song - Bbm - 6" vs "Song - A#m - 6")
-            title_stripped = title.strip()
-            found_stripped = None
-            for existing_track in Track.objects.filter(artist=artist):
-                existing_stripped = existing_track.title.strip()
-                if existing_stripped == title_stripped:
-                    found_stripped = existing_track
-                    break
-                # Check enharmonic equivalence in title
-                # e.g. "Song - A#m - 6" should match "Song - Bbm - 6"
-                existing_parts = existing_stripped.split(' - ')
-                import_parts = title_stripped.split(' - ')
-                if (len(existing_parts) >= 2 and len(import_parts) >= 2
-                        and existing_parts[0] == import_parts[0]
-                        and keys_are_equivalent(existing_parts[-2], import_parts[-2])):
-                    found_stripped = existing_track
-                    print(f"FOUND by enharmonic key: '{existing_track.title}' ~ '{title}'")
-                    break
-            if found_stripped:
-                track = found_stripped
-                cptExistingTracks = cptExistingTracks + 1
-                print(f"FOUND by stripped/enharmonic title: '{found_stripped.title}' == '{title}'")
-            else:
-                # 2 find by audio ID
-                trackList = Track.objects.filter(audio_id=audio_id)
-                if len(trackList) > 0:
-                    trackDb = trackList[0]
-                    track = trackDb
-                    track.title = title
-                    cptExistingTracks = cptExistingTracks + 1
-                # 3 create it!
-                else:
-                    track = Track()
-                    track.title = title
-                    cptNewTracks = cptNewTracks + 1
-                    print(f"NEW TRACK created: '{title}' - artist='{artist.name if artist else '?'}' - audio_id='{audio_id}'")
+            track = Track()
+            track.title = title
+            cptNewTracks = cptNewTracks + 1
+            print(f"NEW TRACK created: '{title}' - artist='{artist.name if artist else '?'}' - audio_id='{audio_id}'")
 
         # update track infos
         track.artist = artist
@@ -151,10 +176,15 @@ def handle_uploaded_file(file, user):
         track.file_path = file_path
 
         track.save()
-        add_track_to_user_collection(userCollection, track)
-        
+        track_index.register(track)
+        imported_tracks.append(track)
+
         # Extract and save cue points
         extract_and_save_cue_points(current_entry, track)
+
+    # Rattachement à la collection utilisateur en une seule passe (add est idempotent)
+    if imported_tracks:
+        userCollection.tracks.add(*imported_tracks)
 
     import_playlist_from_xml_doc(xmldoc, userCollection)
 
@@ -171,12 +201,6 @@ def get_audio_id_from_entry(current_entry):
     else:
         print('WARNING no audio_id tag for entry : ', get_title_from_entry(current_entry))
         return None
-
-
-def get_artist_from_entry(current_entry):
-    artistName = get_artist_name_from_entry(current_entry)
-    artist = get_artist_db_from_artist_name(artistName)
-    return artist
 
 
 def get_artist_name_from_entry(current_entry):
@@ -260,30 +284,21 @@ def get_genre_from_info(info):
     return genreName
 
 
-def get_artist_db_from_artist_name(artistName):
-    try:
-        ArtistDb = Artist.objects.get(name=artistName)
-        artist = ArtistDb
-    except Artist.DoesNotExist:
-        artist = Artist()
-        artist.name = artistName
-        artist.save()
-
+def get_artist_db_from_artist_name(artistName: str, artists_by_name: Dict[str, Artist]) -> Artist:
+    artist = artists_by_name.get(artistName)
+    if artist is None:
+        artist = Artist.objects.create(name=artistName)
+        artists_by_name[artistName] = artist
     return artist
 
 
-def get_genre_db_from_genre_name(genreName):
-    if genreName is not None:
-        try:
-            GenreDb = Genre.objects.get(name=genreName)
-            genre = GenreDb
-        except Genre.DoesNotExist:
-            genre = Genre()
-            genre.name = genreName
-            genre.save()
-    else:
-        genre = None
-
+def get_genre_db_from_genre_name(genreName: Optional[str], genres_by_name: Dict[str, Genre]) -> Optional[Genre]:
+    if genreName is None:
+        return None
+    genre = genres_by_name.get(genreName)
+    if genre is None:
+        genre = Genre.objects.create(name=genreName)
+        genres_by_name[genreName] = genre
     return genre
 
 
@@ -319,13 +334,6 @@ def get_default_collection_for_user(currentUser):
     else:
         collection = collectionList[0]
     return collection
-
-
-def add_track_to_user_collection(collection: Collection, track: Track) -> bool:
-    if not collection.tracks.filter(pk=track.pk).exists():
-        collection.tracks.add(track)
-        return True
-    return False
 
 
 def get_ranking_from_xml_info(info) -> int:
@@ -485,7 +493,11 @@ def import_playlist_from_xml_doc(xmldoc: Element, user_collection: Collection) -
     track_found_count = 0
     track_not_found_count = 0
 
-    # for current_playlist in playlist_list[0:10]:
+    # Index en mémoire file_path -> track (une seule requête pour toutes les playlists)
+    tracks_by_file_path: Dict[str, Track] = {}
+    for t in Track.objects.exclude(file_path__isnull=True).exclude(file_path=''):
+        tracks_by_file_path.setdefault(t.file_path, t)
+
     for current_playlist in playlist_list:
 
         # NODE TYPE
@@ -510,21 +522,23 @@ def import_playlist_from_xml_doc(xmldoc: Element, user_collection: Collection) -
 
         # option 3, we check for equality in track ids list and order?
 
+        found_tracks = []
         for current_entry in playlist_entry_list:
             for key in current_entry.getElementsByTagName('PRIMARYKEY'):
                 file_path = key.attributes['KEY'].value
 
-                trackList = Track.objects.filter(file_path=file_path)
-                if len(trackList) == 0:
+                track = tracks_by_file_path.get(file_path)
+                if track is None:
                     track_not_found_count = track_not_found_count + 1
                     print('WARNING - Track not found for file_path: ', file_path)
                     continue
 
-                track = trackList[0]
                 track_found_count = track_found_count + 1
                 track_ids.append(track.id)
-                playlist.tracks.add(track)
+                found_tracks.append(track)
 
+        if found_tracks:
+            playlist.tracks.add(*found_tracks)
         playlist.track_ids = track_ids
         playlist.save()
 
