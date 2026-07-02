@@ -10,19 +10,17 @@
 <a href="/track/currently_playing"><div class="green_flashy">Now Playing</div></a> - <a href="/track/import_collection">Import Collection</a> - <a href="{% url 'playlist_list' %}"><div class="green_flashy">Playlists</div></a> - <a href="/track/tools">Tools</a> - <a href="/track/manual_transition"><div class="green_flashy">Transitions</div></a>
 
 <link rel="shortcut icon" href="{% static 'favicon.png' %}'/"/>
-<link href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet"/>
-<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.0/css/bootstrap.min.css">
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
-    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.0/js/bootstrap.min.js"></script>
-
-
 {% endblock %}
 
 {% block nav-global %}{% endblock %}
 
 {% block extrahead %}
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
-    
+    {# Assets vendorisés en local : la page doit fonctionner sans internet (cabine) #}
+    <link href="{% static 'vendor/font-awesome/css/font-awesome.min.css' %}" rel="stylesheet"/>
+    <link rel="stylesheet" href="{% static 'vendor/bootstrap/css/bootstrap.min.css' %}">
+    <script src="{% static 'vendor/jquery/jquery-3.5.1.min.js' %}"></script>
+    <script src="{% static 'vendor/bootstrap/js/bootstrap.min.js' %}"></script>
+
     <style>
         a, a:link, a:visited {
             color:#283C4F;

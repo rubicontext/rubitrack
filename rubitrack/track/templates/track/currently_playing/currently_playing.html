@@ -2,12 +2,11 @@
 {% load admin_urls %}
 {% load static %}
 {% load musical_key_filters %}
-<link rel="stylesheet" href="http://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.min.css">
-<link rel="stylesheet" href="{% static 'css/rubitrack.css' %}">
- 
+
 {% block title %}On Air - Rubitrack{% endblock title %}
-  
+
   {% block content %}
+  {% csrf_token %}
 
   {% if currentTrack %}
 
@@ -33,10 +32,10 @@
 </style>
 
 
-  <div class="blue_subtitle_small">Transitions - What to play along this track?</div>
-  <a href="{% url 'admin:track_customtracktransition_change' currentTrack.id %}" target="_blank">
-                <b><i class="fa fa-edit"></i> Edit Transitions Info</b>
-          </a>  
+  <h2 class="section-title">Transitions - What to play along this track?
+  <a href="{% url 'admin:track_customtracktransition_change' currentTrack.id %}" target="_blank" class="section-title-action">
+                <i class="fa fa-edit"></i> Edit Transitions Info
+          </a></h2>
 
 
   <div id="transitionsAllTableDiv">
@@ -44,7 +43,7 @@
     </div>
 
 
-  <div class="blue_subtitle_small">Tracklist History </div>
+  <h2 class="section-title">Tracklist History</h2>
   <div id="tablePlaylistHistory">
     <table id="_appendHere" class="table table-striped table-condensed">
       <tr>
@@ -89,19 +88,55 @@
     </table>
   </div>
 
-        <div class="blue_subtitle_small">Suggestions from our algorithm <span id="suggestionsCountLabel">({{ listTrackSuggestions|length }})</span></div>
+        <h2 class="section-title">Suggestions from our algorithm <span id="suggestionsCountLabel">({{ listTrackSuggestions|length }})</span>
+          <span class="section-title-criteria" title="Critères actifs (modifiables dans la Config)">BPM ±{{ suggestionsBpmPercent }}% &middot; clé &le;{{ suggestionsKeyDistance }} &middot; &starf;&ge;{{ suggestionsRankingMin }} &middot; genre dans le commentaire</span>
+        </h2>
         <div id="tableSuggestionAuto">
           {% include 'track/currently_playing/suggestions_block_static.html' %}
         </div>
 
 
 
+<div id="rubi-toast"></div>
+
 <script>
     // Configuration - Temps de refresh en millisecondes (depuis constants.py)
     const REFRESH_INTERVAL_MS = parseInt('{{ refreshInterval|default:10000 }}', 10) || 10000;
-    
+    const CSRF_TOKEN = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+    // Feedback visuel unique pour toutes les actions (succès vert / échec rouge)
+    function showToast(message, ok) {
+        var toast = $('#rubi-toast');
+        toast.text(message)
+             .css('background-color', ok === false ? '#d9534f' : '#28a745')
+             .addClass('visible');
+        clearTimeout(window.__toastTimer);
+        window.__toastTimer = setTimeout(function() { toast.removeClass('visible'); }, 2500);
+    }
+
+    function postAction(url, data, onSuccess, successMessage) {
+        $.ajax({
+            url: url,
+            method: 'POST',
+            data: data,
+            headers: {'X-CSRFToken': CSRF_TOKEN},
+            success: function(response) {
+                if (onSuccess) { onSuccess(response); }
+                if (successMessage) { showToast(successMessage, true); }
+            },
+            error: function() {
+                showToast("Échec de l'action — réessayer", false);
+            }
+        });
+    }
+
     var append_increment = 0;
     setInterval(function() {
+        // Ne pas rafraîchir si l'onglet est caché ou si l'utilisateur est en train de taper
+        if (document.hidden) { return; }
+        var active = document.activeElement;
+        if (active && active.matches && active.matches('input, textarea, select')) { return; }
+
         // Sauvegarder les valeurs des champs de commentaire avant le refresh
         var commentValues = {};
         $('.commentTransitionInput').each(function() {
@@ -164,43 +199,38 @@
 
     //ajax call to save transition with no refresh
     $(document).on("click", ".saveTransitionAjax", function(){
-      $.ajax({
-          url: '../add_new_transition?trackSourceId='+$(this).attr('trackSourceId')+'&trackDestinationId='+$(this).attr('trackDestinationId')+'&history=false',
-          success: function(data) {
-            $('#transitionsAllTableDiv').html(data); 
-            $('#'+$(this).attr('trackSourceId')).html('Transition savedac!');
-          }
-        });
-      
+      var sourceId = $(this).attr('trackSourceId');
+      postAction('../add_new_transition/',
+        {trackSourceId: sourceId, trackDestinationId: $(this).attr('trackDestinationId'), history: 'false'},
+        function(data) {
+          $('#transitionsAllTableDiv').html(data);
+          $('#' + sourceId).html('<i class="glyphicon glyphicon-ok icon-success"></i> Saved');
+        },
+        'Transition enregistrée');
     })
 
     //ajax call to DELETE transition with no refresh
     $(document).on("click", ".deleteTransition", function(){
-      $.ajax({
-          url: '../delete_transition?transitionDeleteId='+$(this).attr('transitionId')+'&history=false',
-          success: function(data) {
-            if(data) {
-              $('#transitionsAllTableDiv').html(data);
-            }
-                                 
-          }
-
-        });
-      
+      var trackLabel = $(this).closest('tr').find('td:first a').text().trim();
+      if (!confirm('Supprimer la transition' + (trackLabel ? ' vers "' + trackLabel + '"' : '') + ' ?')) {
+        return;
+      }
+      postAction('../delete_transition/',
+        {transitionDeleteId: $(this).attr('transitionId'), history: 'false'},
+        function(data) {
+          if (data) { $('#transitionsAllTableDiv').html(data); }
+        },
+        'Transition supprimée');
     })
 
     //ajax call to UPDATE comment on transition
     $(document).on("change", ".commentTransitionInput", function(){
-      $.ajax({
-          url: '../update_transition_comment?transitionUpdateId='+$(this).attr('transitionId')+'&newComment='+this.value+'&history=false',
-          success: function(data) {
-                                             
-          }
-
-        });
-      
+      postAction('../update_transition_comment/',
+        {transitionUpdateId: $(this).attr('transitionId'), newComment: this.value, history: 'false'},
+        null,
+        'Commentaire enregistré');
     })
- 
+
 
 </script>
 
@@ -210,12 +240,80 @@
 <div class='now_playing_track' id='currentlyPlayingTrackBlock'>
   <div class="row">
     <div class="track_big_blue" > Please start playing a track </div>
-    <div class="green_flashy">- Broadcasto your Mix to http://193.70.86.101/</div> 
+    <div class="green_flashy">- Broadcasto your Mix to http://193.70.86.101/</div>
     <div class="track_big_blue" >- Port 8059</div>
   </div>
 </div>
 
+{% endif %}
+
+{# Styles et init communs (historiquement coincés dans le else: ils ne s'appliquaient que sans track en cours) #}
 <style>
+    h2.section-title {
+        font-size: 20px;
+        font-weight: bold;
+        color: #283C4F;
+        margin: 22px 0 8px 0;
+        background: none;
+        padding: 0;
+    }
+    h2.section-title .section-title-action {
+        font-size: 13px;
+        font-weight: normal;
+        margin-left: 12px;
+    }
+    h2.section-title .section-title-criteria {
+        font-size: 12px;
+        font-weight: normal;
+        color: #888;
+        margin-left: 12px;
+    }
+
+    /* Toast de feedback des actions */
+    #rubi-toast {
+        position: fixed;
+        bottom: 24px;
+        right: 24px;
+        z-index: 9999;
+        padding: 10px 18px;
+        color: white;
+        font-size: 14px;
+        border-radius: 4px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.25s ease;
+    }
+    #rubi-toast.visible {
+        opacity: 1;
+    }
+
+    /* Bandeau des cue points */
+    .cue-strip-label {
+        color: #888;
+        font-size: 11px;
+        font-weight: bold;
+        margin-right: 6px;
+        vertical-align: middle;
+    }
+    .cue-strip-slot {
+        display: inline-block;
+        min-width: 52px;
+        text-align: center;
+        padding: 3px 4px;
+        margin-right: 2px;
+        font-size: 13px;
+        font-weight: bold;
+        border-radius: 3px;
+        color: #283C4F;
+    }
+    .cue-strip-slot .cue-strip-num {
+        color: #7a8a99;
+        font-weight: normal;
+        font-size: 10px;
+        margin-right: 2px;
+    }
+
     #transitionsAllTable {
         font-size: 14px;
     }
@@ -235,6 +333,11 @@
     .table-reduced-height .btn {
         padding: 2px 6px !important;
         font-size: 13px;
+    }
+    /* Action destructive: cible cliquable confortable, couleur danger */
+    .table-reduced-height .btn.deleteTransition {
+        padding: 7px 12px !important;
+        background-color: #d9534f !important;
     }
     .table-reduced-height ul.list-inline {
         margin-bottom: 0;
@@ -382,22 +485,6 @@
 });
 
 </script>
-
-<script>
-// Fallback coloring if external CSS not loaded
-(function(){
-  var test = window.getComputedStyle(document.createElement('i')).color;
-  // Force color if not applied (heuristic)
-  document.addEventListener('DOMContentLoaded', function(){
-    document.querySelectorAll('#transitionsAllTable i.fa-forward').forEach(el=>{el.style.color='#28a745';});
-    document.querySelectorAll('#transitionsAllTable i.fa-fast-forward').forEach(el=>{el.style.color='#dc3545';});
-  });
-})();
-</script>
-
-{% endif %}
-
-
 
  {% endblock content %}
 

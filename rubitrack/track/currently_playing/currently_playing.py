@@ -91,6 +91,8 @@ def display_currently_playing(request):
         # Prépare une liste de 8 time cue points (centralisé)
         cue_points_times = get_cue_points_times_for_track_no_ms(current_track)
         cue_points_slots = get_cue_points_slots_for_track(current_track)
+        # Critères des suggestions auto, affichés à côté du compteur
+        config = Config.get_config()
         return render(
             request,
             'track/currently_playing/currently_playing.html',
@@ -104,6 +106,9 @@ def display_currently_playing(request):
                 'refreshInterval': REFRESH_INTERVAL_CURRENTLY_PLAYING_MS,
                 'cue_points_times': cue_points_times,
                 'cue_points_slots': cue_points_slots,
+                'suggestionsBpmPercent': config.currently_bpm_range_suggestions,
+                'suggestionsKeyDistance': config.currently_musical_key_distance,
+                'suggestionsRankingMin': config.currently_ranking_min,
             },
         )
 

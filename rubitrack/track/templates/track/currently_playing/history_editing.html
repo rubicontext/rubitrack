@@ -8,7 +8,17 @@
 {% block title %}{{ currentTrack.title }} - History Editing{% endblock title %}
   
   {% block content %}
-
+  {% csrf_token %}
+  <div id="rubi-toast"></div>
+  <style>
+    #rubi-toast {
+        position: fixed; bottom: 24px; right: 24px; z-index: 9999;
+        padding: 10px 18px; color: white; font-size: 14px; border-radius: 4px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+        opacity: 0; pointer-events: none; transition: opacity 0.25s ease;
+    }
+    #rubi-toast.visible { opacity: 1; }
+  </style>
 
 <div class='now_playing_track' id='currentlyPlayingTrackBlock'>
   <input type="hidden" id="currentTrackId" name="currentTrackId" value="{{ currentTrack.id }}" />
@@ -109,46 +119,71 @@
         // Removed select2 initialization
     });
 
+    // Actions en POST + CSRF, avec feedback (même mécanique que la page Now Playing)
+    const CSRF_TOKEN_HISTORY = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+    function showToast(message, ok) {
+        var toast = $('#rubi-toast');
+        if (!toast.length) { return; }
+        toast.text(message)
+             .css('background-color', ok === false ? '#d9534f' : '#28a745')
+             .addClass('visible');
+        clearTimeout(window.__toastTimer);
+        window.__toastTimer = setTimeout(function() { toast.removeClass('visible'); }, 2500);
+    }
+
+    function postAction(url, data, onSuccess, successMessage) {
+        $.ajax({
+            url: url,
+            method: 'POST',
+            data: data,
+            headers: {'X-CSRFToken': CSRF_TOKEN_HISTORY},
+            success: function(response) {
+                if (onSuccess) { onSuccess(response); }
+                if (successMessage) { showToast(successMessage, true); }
+            },
+            error: function() {
+                showToast("Échec de l'action — réessayer", false);
+            }
+        });
+    }
+
     //ajax call to save transition with no refresh
     $(document).on("click", ".saveTransitionAjax", function(){
-      $.ajax({
-          url: '../add_new_transition?trackSourceId='+$(this).attr('trackSourceId')+'&trackDestinationId='+$(this).attr('trackDestinationId')
-          +'&history=true&currentTrackId='+$(this).attr('currentTrackId'),
-          success: function(data) {
-            $('#transitionsAllTableDiv').html(data); 
-            $('#'+$(this).attr('trackSourceId')).html('Transition saved!');
-          }
-        });
-      
+      var sourceId = $(this).attr('trackSourceId');
+      postAction('../add_new_transition/',
+        {trackSourceId: sourceId, trackDestinationId: $(this).attr('trackDestinationId'),
+         history: 'true', currentTrackId: $('#currentTrackId').val()},
+        function(data) {
+          $('#transitionsAllTableDiv').html(data);
+          $('#' + sourceId).html('<i class="glyphicon glyphicon-ok icon-success"></i> Saved');
+        },
+        'Transition enregistrée');
     })
 
     //ajax call to DELETE transition with no refresh
     $(document).on("click", ".deleteTransition", function(){
-      $.ajax({
-          url: '../delete_transition?transitionDeleteId='+$(this).attr('transitionId')+'&history=true&currentTrackId='+$('#currentTrackId').val(),
-          success: function(data) {
-            if(data) {
-              $('#transitionsAllTableDiv').html(data);
-            }
-                                 
-          }
-
-        });
-      
+      var trackLabel = $(this).closest('tr').find('td:first a').text().trim();
+      if (!confirm('Supprimer la transition' + (trackLabel ? ' vers "' + trackLabel + '"' : '') + ' ?')) {
+        return;
+      }
+      postAction('../delete_transition/',
+        {transitionDeleteId: $(this).attr('transitionId'), history: 'true', currentTrackId: $('#currentTrackId').val()},
+        function(data) {
+          if (data) { $('#transitionsAllTableDiv').html(data); }
+        },
+        'Transition supprimée');
     })
 
     //ajax call to UPDATE comment on transition
     $(document).on("change", ".commentTransitionInput", function(){
-      $.ajax({
-          url: '../update_transition_comment?transitionUpdateId='+$(this).attr('transitionId')+'&history=true&newComment='+this.value+'&currentTrackId='+$('#currentTrackId').val(),
-          success: function(data) {
-                                             
-          }
-
-        });
-      
+      postAction('../update_transition_comment/',
+        {transitionUpdateId: $(this).attr('transitionId'), newComment: this.value,
+         history: 'true', currentTrackId: $('#currentTrackId').val()},
+        null,
+        'Commentaire enregistré');
     })
-    
+
 </script>
 
 
