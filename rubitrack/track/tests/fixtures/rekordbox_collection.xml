@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <DJ_PLAYLISTS Version="1.0.0">
   <PRODUCT Name="rekordbox" Version="6.7.7" Company="AlphaTheta"/>
-  <COLLECTION Entries="5">
+  <COLLECTION Entries="6">
     <TRACK TrackID="1" Name="Strobe" Artist="Deadmau5" Kind="MP3 File" TotalTime="637"
            AverageBpm="128.00" Tonality="Am" Location="file://localhost/C:/Users/antoine/Music/strobe.mp3">
-      <TEMPO Inizio="0.061" Bpm="128.00" Metro="4/4" Battito="1"/>
+      <TEMPO Inizio="0.500" Bpm="127.50" Metro="4/4" Battito="1"/>
     </TRACK>
     <TRACK TrackID="2" Name="Totally Different Display Name" Artist="Someone Else" Kind="MP3 File" TotalTime="412"
            AverageBpm="126.00" Location="file://localhost/C:/Users/antoine/Music/opus.mp3">
@@ -21,6 +21,9 @@
     </TRACK>
     <TRACK TrackID="5" Name="OneShot Kick" Artist="" Kind="WAV File" TotalTime="2"
            Location="file://localhost/C:/Program%20Files/Pioneer/rekordbox/Sampler/OSC_SAMPLER/PRESET%20ONESHOT/kick.wav">
+    </TRACK>
+    <TRACK TrackID="6" Name="Duration Clash" Artist="Deadmau5" Kind="MP3 File" TotalTime="200"
+           Location="file://localhost/C:/Users/antoine/Music/duration_clash_rekordbox.mp3">
     </TRACK>
   </COLLECTION>
   <PLAYLISTS>

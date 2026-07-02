@@ -12,12 +12,15 @@ from typing import Dict, Iterable, Optional, Union
 from urllib.parse import unquote, urlparse
 from xml.dom import minidom
 
-from ...models import Track
+from ...models import Playlist, Track
 
 logger = logging.getLogger(__name__)
 
 # Ne pas dupliquer un cue si un marqueur existe déjà à une position très proche (en add_only)
 CUE_POINT_IDENTICAL_START_TIME_DIFF_MS = 100
+
+# Rejeter un match titre/artiste si les durées divergent de plus de N secondes
+DURATION_MISMATCH_TOLERANCE_SECONDS = 5
 
 
 class RekordboxCollectionSynchronizer:
@@ -257,10 +260,13 @@ class RekordboxCollectionSynchronizer:
         self,
         input_file: str,
         output_file: Optional[str] = None,
-        mode: str = 'overwrite'
+        mode: str = 'overwrite',
+        export_playlists: bool = True,
     ) -> dict:
         """
-        Synchronise les cue points de Rubitrack vers Rekordbox
+        Synchronise Rubitrack vers Rekordbox: cue points, beatgrid (ancre TEMPO),
+        métadonnées manquantes (Rating/Tonality/Comments/PlayCount/Genre) et
+        playlists (dossier 'Rubitrack' dans le nœud PLAYLISTS).
         Modes:
           overwrite : supprime tous les cue points existants puis ajoute tous les RCue1-8
           add_only  : supprime uniquement les cue points système générés (RCueX), préserve les cue points manuels,
@@ -270,6 +276,7 @@ class RekordboxCollectionSynchronizer:
             input_file (str): Fichier Rekordbox d'entrée
             output_file (str, optional): Fichier de sortie (si None, remplace l'original)
             mode (str, optional): Mode de synchronisation ('overwrite' ou 'add_only')
+            export_playlists (bool, optional): Exporte les playlists Rubitrack dans le XML
 
         Returns:
             dict: Statistiques de l'opération
@@ -301,7 +308,10 @@ class RekordboxCollectionSynchronizer:
         logger.info(f"Traitement de {stats['rubitrack_tracks_processed']} tracks Rubitrack avec cue points")
 
         rubitrack_lookup = self._build_rubitrack_lookup(rubitrack_tracks)
-        self._process_tracks(rubitrack_tracks, collection, stats, mode, rubitrack_lookup)
+        matched_track_keys = self._process_tracks(rubitrack_tracks, collection, stats, mode, rubitrack_lookup)
+
+        if export_playlists:
+            self._export_playlists(matched_track_keys, stats)
 
         if self.save_rekordbox_file(output_file):
             logger.info(
@@ -314,6 +324,54 @@ class RekordboxCollectionSynchronizer:
 
         return stats
 
+    def _export_playlists(self, matched_track_keys: Dict[int, str], stats: dict) -> None:
+        """Exporte les playlists Rubitrack dans le nœud PLAYLISTS du XML, sous un
+        dossier 'Rubitrack' (recréé à chaque sync: idempotent, ne touche pas aux
+        autres playlists Rekordbox). Seules les tracks matchées sont référencées
+        (TRACK Key = TrackID, KeyType 0)."""
+        playlists_node = self.root.find('PLAYLISTS')
+        if playlists_node is None:
+            playlists_node = ET.SubElement(self.root, 'PLAYLISTS')
+        root_node = None
+        for node in playlists_node.findall('NODE'):
+            if node.get('Name') == 'ROOT' or node.get('Type') == '0':
+                root_node = node
+                break
+        if root_node is None:
+            root_node = ET.SubElement(playlists_node, 'NODE', {'Type': '0', 'Name': 'ROOT', 'Count': '0'})
+
+        # Idempotence: retirer le dossier Rubitrack d'une sync précédente
+        for child in list(root_node.findall('NODE')):
+            if child.get('Name') == 'Rubitrack' and child.get('Type') == '0':
+                root_node.remove(child)
+
+        folder = ET.SubElement(root_node, 'NODE', {'Name': 'Rubitrack', 'Type': '0', 'Count': '0'})
+        exported = 0
+        for playlist in Playlist.objects.order_by('rank', '-id'):
+            keys = [
+                matched_track_keys[track_id]
+                for track_id in playlist.get_ordered_track_ids()
+                if track_id in matched_track_keys
+            ]
+            if not keys:
+                continue
+            playlist_node = ET.SubElement(folder, 'NODE', {
+                'Name': playlist.name,
+                'Type': '1',
+                'KeyType': '0',
+                'Entries': str(len(keys)),
+            })
+            for key in keys:
+                ET.SubElement(playlist_node, 'TRACK', {'Key': key})
+            exported += 1
+            stats['playlist_entries_exported'] += len(keys)
+
+        folder.set('Count', str(exported))
+        root_node.set('Count', str(len(root_node.findall('NODE'))))
+        stats['playlists_exported'] = exported
+        if exported:
+            logger.info("Playlists exportées vers Rekordbox: %s", exported)
+
     def _initialize_stats(self) -> dict:
         return {
             'success': True,
@@ -322,6 +380,10 @@ class RekordboxCollectionSynchronizer:
             'tracks_found_and_matched': 0,
             'tracks_updated_with_cue_points': 0,
             'total_cue_points_added': 0,
+            'beatgrids_written': 0,
+            'metadata_fields_filled': 0,
+            'playlists_exported': 0,
+            'playlist_entries_exported': 0,
             'unmatched_rekordbox_tracks': []
         }
 
@@ -354,7 +416,23 @@ class RekordboxCollectionSynchronizer:
                 lookup[path_key] = item
         return lookup
 
+    def _duration_mismatch(self, rubitrack_track, rekordbox_track) -> bool:
+        """True si les durées connues des deux côtés divergent au-delà de la
+        tolérance — garde-fou contre les faux matchs titre/artiste
+        (ex: radio edit vs extended mix)."""
+        playtime = rubitrack_track.playtime
+        total_time = rekordbox_track.get('TotalTime')
+        if not playtime or not total_time:
+            return False
+        try:
+            total_seconds = float(total_time)
+        except ValueError:
+            return False
+        return abs(float(playtime) - total_seconds) > DURATION_MISMATCH_TOLERANCE_SECONDS
+
     def _process_tracks(self, rubitrack_tracks, collection, stats, mode, rubitrack_lookup):
+        # rubitrack track id -> TrackID Rekordbox, pour l'export des playlists
+        matched_track_keys: Dict[int, str] = {}
         for rekordbox_track in collection.findall('TRACK'):
             # Dans un XML Rekordbox, la localisation est l'attribut Location
             # du TRACK (URI file://localhost/...), pas un élément enfant
@@ -366,12 +444,25 @@ class RekordboxCollectionSynchronizer:
             rb_artist = self._normalize_text(rekordbox_track.get('Artist', '')).lower()
             rb_title = self._normalize_text(rekordbox_track.get('Name', '')).lower()
             key = f"{rb_artist}|{rb_title}"
+            unmatched_reason = 'no_match'
             item = rubitrack_lookup.get(key)
+            if item and self._duration_mismatch(item['track'], rekordbox_track):
+                logger.info(
+                    "Match titre/artiste rejeté (durées divergentes): '%s' (%ss vs %ss)",
+                    rekordbox_track.get('Name', ''),
+                    rekordbox_track.get('TotalTime'),
+                    item['track'].playtime,
+                )
+                item = None
+                unmatched_reason = 'duration_mismatch'
             if not item and rb_path:
-                # Fallback: match par chemin de fichier
+                # Fallback: match par chemin de fichier (preuve forte, pas de garde-fou durée)
                 item = rubitrack_lookup.get(f"path|{rb_path}")
             if item:
                 stats['tracks_found_and_matched'] += 1
+                track_id_attr = rekordbox_track.get('TrackID')
+                if track_id_attr:
+                    matched_track_keys[item['track'].id] = track_id_attr
                 try:
                     self._update_track(rekordbox_track, item['track'], mode, stats)
                 except Exception as e:
@@ -379,8 +470,67 @@ class RekordboxCollectionSynchronizer:
             else:
                 stats['unmatched_rekordbox_tracks'].append({
                     'title': rekordbox_track.get('Name', '').strip(),
-                    'artist': rekordbox_track.get('Artist', '').strip()
+                    'artist': rekordbox_track.get('Artist', '').strip(),
+                    'location': rekordbox_track.get('Location', ''),
+                    'reason': unmatched_reason,
                 })
+        return matched_track_keys
+
+    def _sync_beatgrid(self, rekordbox_track, rubitrack_track, cue_points_by_slot, mode, stats):
+        """Écrit l'ancre de beatgrid Rekordbox (TEMPO Inizio/Bpm) depuis le cue
+        grid Traktor (traktor_type=4) et le BPM de la track.
+        - overwrite : remplace les TEMPO existants
+        - add_only  : n'écrit que si aucun TEMPO n'existe
+        Sans grid Traktor ou sans BPM, les TEMPO existants sont préservés."""
+        grid_cues = [
+            cp for cp in cue_points_by_slot.values()
+            if str(cp.traktor_type) == '4' and cp.time_ms is not None
+        ]
+        if not grid_cues or not rubitrack_track.bpm:
+            return
+        existing_tempos = rekordbox_track.findall('TEMPO')
+        if mode == 'add_only' and existing_tempos:
+            return
+        for tempo in existing_tempos:
+            rekordbox_track.remove(tempo)
+
+        anchor = min(grid_cues, key=lambda cp: cp.time_ms)
+        tempo = ET.Element('TEMPO')
+        tempo.set('Inizio', self.seconds_to_rekordbox_position(Decimal(str(anchor.time_ms)) / Decimal('1000')))
+        tempo.set('Bpm', f"{float(rubitrack_track.bpm):.2f}")
+        tempo.set('Metro', '4/4')
+        tempo.set('Battito', '1')
+        # Convention Rekordbox: TEMPO avant les POSITION_MARK
+        children = list(rekordbox_track)
+        insert_at = next(
+            (i for i, child in enumerate(children) if child.tag == 'POSITION_MARK'),
+            len(children),
+        )
+        rekordbox_track.insert(insert_at, tempo)
+        stats['beatgrids_written'] += 1
+
+    # Attributs Rekordbox complétés depuis Rubitrack quand ils sont vides
+    # (valeur '0' considérée comme vide pour Rating/PlayCount)
+    METADATA_EMPTY_VALUES = {'Rating': {'', '0'}, 'PlayCount': {'', '0'}}
+
+    def _fill_missing_metadata(self, rekordbox_track, rubitrack_track, stats):
+        """Complète les métadonnées Rekordbox manquantes depuis Rubitrack,
+        sans jamais écraser une valeur déjà présente."""
+        candidates = {
+            'Rating': str(rubitrack_track.ranking * 51) if rubitrack_track.ranking else None,
+            'Tonality': rubitrack_track.musical_key or None,
+            'Comments': rubitrack_track.comment or None,
+            'PlayCount': str(rubitrack_track.playcount) if rubitrack_track.playcount else None,
+            'Genre': rubitrack_track.genre.name if rubitrack_track.genre else None,
+        }
+        for attr, value in candidates.items():
+            if value is None:
+                continue
+            current = (rekordbox_track.get(attr) or '').strip()
+            empty_values = self.METADATA_EMPTY_VALUES.get(attr, {''})
+            if current in empty_values:
+                rekordbox_track.set(attr, value)
+                stats['metadata_fields_filled'] += 1
 
     def _update_track(self, rekordbox_track, rubitrack_track, mode, stats):
         if mode == 'overwrite':
@@ -390,6 +540,8 @@ class RekordboxCollectionSynchronizer:
             self.remove_system_generated_cue_points(rekordbox_track)
 
         cue_points_by_slot = {cp.slot: cp for cp in rubitrack_track.cue_points.all()}
+        self._sync_beatgrid(rekordbox_track, rubitrack_track, cue_points_by_slot, mode, stats)
+        self._fill_missing_metadata(rekordbox_track, rubitrack_track, stats)
         cue_points_added = 0
         # Ne PAS compacter: respecter les indices d'origine 1..8
         for i in range(1, 9):
@@ -498,27 +650,29 @@ class RekordboxCollectionSynchronizer:
 def synchronize_rekordbox_collection(
     input_file: str,
     output_file: Optional[str] = None,
-    mode: str = 'overwrite'
+    mode: str = 'overwrite',
+    export_playlists: bool = True,
 ) -> dict:
     """
-    Fonction utilitaire pour synchroniser les cue points vers Rekordbox
+    Fonction utilitaire pour synchroniser Rubitrack vers Rekordbox
+    (cue points, beatgrid, métadonnées manquantes, playlists)
 
     Args:
         input_file (str): Fichier collection.xml Rekordbox d'entrée
         output_file (str, optional): Fichier de sortie (si None, remplace l'original)
         mode (str, optional): Mode de synchronisation ('overwrite' ou 'add_only')
+        export_playlists (bool, optional): Exporte les playlists Rubitrack dans le XML
 
     Returns:
         dict: Statistiques de l'opération
-        
+
     Usage:
         from track.collection.rekordbox.synchronize_rekordbox_collection import synchronize_rekordbox_collection
-        
+
         stats = synchronize_rekordbox_collection(
             '/path/to/rekordbox_collection.xml',
             '/path/to/rekordbox_collection_updated.xml'
         )
-        print(f"Résultat: {stats}")
     """
     synchronizer = RekordboxCollectionSynchronizer()
-    return synchronizer.synchronize_rekordbox_collection(input_file, output_file, mode)
+    return synchronizer.synchronize_rekordbox_collection(input_file, output_file, mode, export_playlists)

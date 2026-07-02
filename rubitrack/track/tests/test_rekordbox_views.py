@@ -75,22 +75,24 @@ class TestSynchronizeApi:
 
         stats = json.loads(response["X-Sync-Stats"])
         assert stats["mode"] == "overwrite"
-        # 5 TRACK dans la fixture; base vide donc aucune matchée,
+        # 6 TRACK dans la fixture; base vide donc aucune matchée,
         # le sampler est exclu du décompte des non-trouvées
-        assert stats["total_tracks_in_rekordbox_file"] == 5
+        assert stats["total_tracks_in_rekordbox_file"] == 6
         assert stats["tracks_found_and_matched"] == 0
-        assert stats["unmatched_count"] == 4
+        assert stats["unmatched_count"] == 5
 
-        # Le ZIP contient le XML modifié (root DJ_PLAYLISTS) + la liste des non-trouvées
+        # Le ZIP contient le XML modifié (root DJ_PLAYLISTS) + le rapport CSV
         zf = zipfile.ZipFile(io.BytesIO(response.content))
         names = zf.namelist()
         assert len(names) == 2
         xml_name = next(n for n in names if n.endswith(".xml"))
-        txt_name = next(n for n in names if n.endswith(".txt"))
+        csv_name = next(n for n in names if n.endswith(".csv"))
         root = ET.fromstring(zf.read(xml_name))
         assert root.tag == "DJ_PLAYLISTS"
-        not_found = zf.read(txt_name).decode("utf-8")
+        not_found = zf.read(csv_name).decode("utf-8")
+        assert not_found.startswith("artist;title;location;reason")
         assert "Not In Rubitrack" in not_found
+        assert "no_match" in not_found
 
     def test_requires_staff(self, client, db, sync_url):
         response = client.post(sync_url, {})

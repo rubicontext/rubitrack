@@ -42,6 +42,16 @@ def populated_db(db):
     CuePoint.objects.create(track=manual, slot=2, time="0:45.450", time_ms=Decimal("45450"), traktor_type="0")
     # Slot 8 : position libre -> ajouté
     CuePoint.objects.create(track=manual, slot=8, time="3:30.000", time_ms=Decimal("210000"), traktor_type="0")
+
+    # Track homonyme du TRACK 6 Rekordbox (TotalTime=200) mais durée très
+    # différente et chemin différent -> le garde-fou durée doit rejeter le match
+    clash = Track.objects.create(
+        title="Duration Clash",
+        artist=artist,
+        playtime=100,
+        file_path="C:/:Users/:antoine/:Music/:duration_clash_traktor.mp3",
+    )
+    CuePoint.objects.create(track=clash, slot=1, time="0:05.000", time_ms=Decimal("5000"), traktor_type="0")
     return user
 
 
@@ -79,8 +89,17 @@ class TestMatching:
 
     def test_unmatched_tracks_reported(self, populated_db, tmp_path):
         stats, tree = run_sync(tmp_path, "overwrite")
-        unmatched_titles = {t["title"] for t in stats["unmatched_rekordbox_tracks"]}
-        assert unmatched_titles == {"Not In Rubitrack"}
+        unmatched = {t["title"]: t["reason"] for t in stats["unmatched_rekordbox_tracks"]}
+        assert unmatched == {
+            "Not In Rubitrack": "no_match",
+            "Duration Clash": "duration_mismatch",
+        }
+
+    def test_duration_mismatch_rejects_title_match(self, populated_db, tmp_path):
+        """TRACK 6 (200s) ne doit pas recevoir les cues de 'Duration Clash' (100s)."""
+        stats, tree = run_sync(tmp_path, "overwrite")
+        clash = get_track(tree, 6)
+        assert marks(clash) == []
 
     def test_sampler_content_skipped(self, populated_db, tmp_path):
         stats, tree = run_sync(tmp_path, "overwrite")
@@ -148,3 +167,99 @@ class TestCuePointExport:
         stats, tree = run_sync(tmp_path, "overwrite")
         assert stats["success"] is True
         assert tree.getroot().tag == "DJ_PLAYLISTS"
+
+
+@pytest.mark.django_db
+class TestBeatgridExport:
+    def test_overwrite_replaces_tempo_from_traktor_grid(self, populated_db, tmp_path):
+        """Strobe a un grid Traktor (slot 1, 61.25ms) et un BPM de 128:
+        le TEMPO existant (0.500/127.50) doit être remplacé."""
+        stats, tree = run_sync(tmp_path, "overwrite")
+        strobe = get_track(tree, 1)
+        tempos = strobe.findall("TEMPO")
+        assert len(tempos) == 1
+        assert tempos[0].get("Inizio") == "0.061"
+        assert tempos[0].get("Bpm") == "128.00"
+        assert stats["beatgrids_written"] >= 1
+
+    def test_add_only_preserves_existing_tempo(self, populated_db, tmp_path):
+        stats, tree = run_sync(tmp_path, "add_only")
+        strobe = get_track(tree, 1)
+        tempos = strobe.findall("TEMPO")
+        assert len(tempos) == 1
+        assert tempos[0].get("Inizio") == "0.500"
+
+    def test_track_without_traktor_grid_keeps_tempo(self, populated_db, tmp_path):
+        """Opus n'a pas de cue grid Traktor: son TEMPO Rekordbox est préservé."""
+        stats, tree = run_sync(tmp_path, "overwrite")
+        opus = get_track(tree, 2)
+        tempos = opus.findall("TEMPO")
+        assert len(tempos) == 1
+        assert tempos[0].get("Inizio") == "0.05"
+
+
+@pytest.mark.django_db
+class TestMetadataFill:
+    def test_missing_metadata_filled_from_rubitrack(self, populated_db, tmp_path):
+        """TRACK 2 (Opus) n'a ni Rating, ni Tonality, ni PlayCount: complétés."""
+        stats, tree = run_sync(tmp_path, "overwrite")
+        opus_rb = get_track(tree, 2)
+        opus_db = Track.objects.get(title="Opus - A#m - 6")
+        assert opus_rb.get("Rating") == "204"  # ranking 4 * 51
+        assert opus_rb.get("Tonality") == opus_db.musical_key
+        assert opus_rb.get("PlayCount") == "3"
+        assert stats["metadata_fields_filled"] >= 3
+
+    def test_existing_metadata_never_overwritten(self, populated_db, tmp_path):
+        """TRACK 1 (Strobe) a déjà Tonality='Am' dans le fichier: inchangé."""
+        stats, tree = run_sync(tmp_path, "overwrite")
+        strobe = get_track(tree, 1)
+        assert strobe.get("Tonality") == "Am"
+
+
+@pytest.mark.django_db
+class TestPlaylistExport:
+    def get_rubitrack_folder(self, tree):
+        root_node = tree.getroot().find("PLAYLISTS/NODE")
+        assert root_node is not None
+        for child in root_node.findall("NODE"):
+            if child.get("Name") == "Rubitrack":
+                return child
+        return None
+
+    def test_playlists_exported_under_rubitrack_folder(self, populated_db, tmp_path):
+        stats, tree = run_sync(tmp_path, "overwrite")
+        folder = self.get_rubitrack_folder(tree)
+        assert folder is not None
+        playlists = folder.findall("NODE")
+        assert [p.get("Name") for p in playlists] == ["My Test Set"]
+        playlist = playlists[0]
+        assert playlist.get("Type") == "1"
+        assert playlist.get("Entries") == "2"
+        # Ordre de la playlist: Strobe (TrackID 1) puis Opus (TrackID 2)
+        keys = [t.get("Key") for t in playlist.findall("TRACK")]
+        assert keys == ["1", "2"]
+        assert stats["playlists_exported"] == 1
+        assert stats["playlist_entries_exported"] == 2
+
+    def test_export_is_idempotent(self, populated_db, tmp_path):
+        """Resynchroniser un fichier déjà synchronisé ne duplique pas le dossier."""
+        output1 = tmp_path / "once.xml"
+        synchronize_rekordbox_collection(str(REKORDBOX_XML), str(output1), mode="overwrite")
+        output2 = tmp_path / "twice.xml"
+        synchronize_rekordbox_collection(str(output1), str(output2), mode="overwrite")
+        tree = ET.parse(output2)
+        root_node = tree.getroot().find("PLAYLISTS/NODE")
+        rubitrack_folders = [
+            n for n in root_node.findall("NODE") if n.get("Name") == "Rubitrack"
+        ]
+        assert len(rubitrack_folders) == 1
+
+    def test_export_playlists_can_be_disabled(self, populated_db, tmp_path):
+        output = tmp_path / "no_playlists.xml"
+        synchronize_rekordbox_collection(
+            str(REKORDBOX_XML), str(output), mode="overwrite", export_playlists=False
+        )
+        tree = ET.parse(output)
+        root_node = tree.getroot().find("PLAYLISTS/NODE")
+        assert all(n.get("Name") != "Rubitrack" for n in root_node.findall("NODE"))

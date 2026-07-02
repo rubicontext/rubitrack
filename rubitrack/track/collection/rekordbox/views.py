@@ -2,6 +2,7 @@
 Vues pour la synchronisation avec Rekordbox
 """
 
+import csv
 import io
 import json
 import logging
@@ -90,8 +91,8 @@ def synchronize_rekordbox_collection_api(request):
 
         current_date = datetime.now().strftime('%Y%m%d')
         xml_filename = f'rekordbox_collection_with_cues_{current_date}.xml'
-        not_found_filename = f'rekordbox_tracks_not_found_{current_date}.txt'
-        not_found_content = generate_not_found_file(stats['unmatched_rekordbox_tracks'])
+        not_found_filename = f'rekordbox_tracks_not_found_{current_date}.csv'
+        not_found_content = generate_not_found_csv(stats['unmatched_rekordbox_tracks'])
 
         # Construction du ZIP en mémoire (XML modifié + tracks non trouvées)
         zip_buffer = io.BytesIO()
@@ -110,6 +111,9 @@ def synchronize_rekordbox_collection_api(request):
             'tracks_found_and_matched': stats['tracks_found_and_matched'],
             'tracks_updated_with_cue_points': stats['tracks_updated_with_cue_points'],
             'total_cue_points_added': stats['total_cue_points_added'],
+            'beatgrids_written': stats['beatgrids_written'],
+            'metadata_fields_filled': stats['metadata_fields_filled'],
+            'playlists_exported': stats['playlists_exported'],
             'unmatched_count': len(stats['unmatched_rekordbox_tracks']),
         })
         return response
@@ -129,14 +133,20 @@ def synchronize_rekordbox_collection_api(request):
             os.unlink(output_file_path)
 
 
-def generate_not_found_file(unmatched_tracks: List[Dict[str, Any]]) -> str:
-    """Génère le contenu du fichier des tracks non trouvées"""
-    lines: List[str] = []
+def generate_not_found_csv(unmatched_tracks: List[Dict[str, Any]]) -> str:
+    """Génère le rapport CSV des tracks Rekordbox non synchronisées
+    (délimiteur ';' pour ouverture directe dans Excel FR)."""
+    buffer = io.StringIO()
+    writer = csv.writer(buffer, delimiter=';', lineterminator='\n')
+    writer.writerow(['artist', 'title', 'location', 'reason'])
     for t in unmatched_tracks:
-        title = t.get('title') or t.get('Name') or ''
-        artist = t.get('artist') or t.get('Artist') or ''
-        lines.append(f"{artist} - {title}")
-    return "\n".join(lines)
+        writer.writerow([
+            t.get('artist', ''),
+            t.get('title', ''),
+            t.get('location', ''),
+            t.get('reason', 'no_match'),
+        ])
+    return buffer.getvalue()
 
 
 @staff_member_required

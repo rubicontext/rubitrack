@@ -45,11 +45,13 @@ class TestImportTracks:
         assert float(strobe.bpm) == pytest.approx(128.0)
         assert strobe.ranking == 5  # RANKING=255
         assert strobe.playcount == 12
+        assert strobe.playtime == pytest.approx(637.0)  # PLAYTIME
         assert strobe.file_path == "C:/:Users/:antoine/:Music/:strobe.mp3"
         assert strobe.audio_id == "AUDIOID_STROBE_001"
 
         opus = Track.objects.get(title="Opus - A#m - 6")
         assert opus.ranking == 4  # RANKING=204
+        assert opus.playtime == pytest.approx(412.5)  # PLAYTIME_FLOAT prioritaire
 
     def test_tracks_added_to_user_collection(self, imported, user):
         collection = Collection.objects.get(user=user)
