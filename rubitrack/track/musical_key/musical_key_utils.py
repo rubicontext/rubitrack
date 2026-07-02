@@ -4,7 +4,7 @@ Supporte les conversions entre notation Camelot Wheel, Open Key et notation musi
 """
 
 import re
-from typing import Optional, Tuple
+from typing import Optional
 
 
 # Correspondance Camelot Wheel vers notation musicale traditionnelle
@@ -177,30 +177,6 @@ def extract_musical_key_from_title(title: str) -> Optional[str]:
     return extract_musical_key_from_filename(title)
 
 
-def get_conflicting_musical_keys(filename: str, db_musical_key: str) -> Tuple[Optional[str], Optional[str], bool]:
-    """
-    Compare la tonalité du nom de fichier avec celle en base de données.
-    
-    Args:
-        filename: Nom du fichier
-        db_musical_key: Tonalité stockée en base
-        
-    Returns:
-        Tuple (filename_key, db_key, has_conflict)
-    """
-    filename_key = extract_musical_key_from_filename(filename)
-    db_key = normalize_musical_key_notation(db_musical_key) if db_musical_key else None
-    
-    # Il y a conflit si les deux existent et sont différents
-    has_conflict = (
-        filename_key is not None and 
-        db_key is not None and 
-        filename_key != db_key
-    )
-    
-    return filename_key, db_key, has_conflict
-
-
 # Système de couleurs Traktor basé sur le Camelot Wheel
 CAMELOT_COLORS = {
     '1A': {'color_hex': '#b7e07e', 'color_name': 'Vert clair'},
@@ -300,49 +276,6 @@ TRAKTOR_KEY_ORDER = [
 
 # Index mapping pour un accès rapide
 TRAKTOR_KEY_INDEX = {key: index for index, key in enumerate(TRAKTOR_KEY_ORDER)}
-
-
-def get_musical_key_distance(key1: str, key2: str) -> int:
-    """
-    Calcule la distance entre deux clés musicales selon l'ordre Traktor/Camelot wheel.
-    
-    Args:
-        key1: Première clé musicale (ex: "Am", "C")
-        key2: Seconde clé musicale (ex: "Em", "G")
-        
-    Returns:
-        Distance entre les clés (0 = identiques, 1 = adjacentes, etc.)
-        Retourne 999 si une des clés n'est pas reconnue
-    """
-    if not key1 or not key2:
-        return 999
-        
-    # Normaliser les clés
-    normalized_key1 = normalize_musical_key_notation(key1)
-    normalized_key2 = normalize_musical_key_notation(key2)
-    
-    if not normalized_key1 or not normalized_key2:
-        return 999
-        
-    # Obtenir les indices dans l'ordre Traktor
-    index1 = TRAKTOR_KEY_INDEX.get(normalized_key1)
-    index2 = TRAKTOR_KEY_INDEX.get(normalized_key2)
-    
-    if index1 is None or index2 is None:
-        return 999
-        
-    # Calculer la distance absolue
-    return abs(index1 - index2)
-
-
-def get_traktor_key_order():
-    """
-    Retourne l'ordre des clés musicales selon Traktor (triées par couleur).
-    
-    Returns:
-        Liste des clés dans l'ordre Traktor/Camelot wheel
-    """
-    return TRAKTOR_KEY_ORDER.copy()
 
 
 def get_compatible_keys(base_key: str, max_distance: int = 1) -> list:

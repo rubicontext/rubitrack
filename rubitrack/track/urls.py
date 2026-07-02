@@ -1,6 +1,5 @@
 from django.urls import path
 
-from . import views
 from .collection import import_collection
 from .currently_playing.currently_playing import (
     display_currently_playing,
@@ -29,7 +28,7 @@ from .currently_playing.manual_transition import manual_transition
 from .currently_playing.save_waveform import save_waveform
 from .duplicate.manual_merge_duplicate import manual_merge_duplicate
 from .duplicate.manual_merge_artist import manual_merge_artist
-from .currently_playing.suggestions_block_view import ajax_suggestions, suggestions_block
+from .suggestions.suggestions_view import ajax_suggestions
 from .config.config_views import config_view, config_reset_view
 from .config.tools_views import tools_index, cleanup_musical_keys, cue_points_overview, delete_all_cue_points
 from .musical_key.views_import_musical_keys import import_musical_keys_view
@@ -41,7 +40,6 @@ from .collection.rekordbox.views import (
 
 from django.views.generic.base import RedirectView
 from django.contrib.staticfiles.storage import staticfiles_storage
-from django.views.generic.base import RedirectView
 from django.conf import settings
 from django.conf.urls.static import static
 
@@ -123,8 +121,6 @@ urlpatterns = [
     path('manual_merge_artist/', manual_merge_artist, name='manual_merge_artist'),
     # SUGGESTIONS
     path('ajax_suggestions/', ajax_suggestions, name='ajax_suggestions'),
-    path('suggestions_block/<int:track_id>/', suggestions_block, name='suggestions_block'),
-    path('test_suggestions/<int:track_id>/', suggestions_block, name='test_suggestions'),
     # CONFIGURATION
     path('config/', config_view, name='config'),
     path('config/reset/', config_reset_view, name='config_reset'),

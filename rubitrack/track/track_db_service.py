@@ -1,6 +1,4 @@
 from .models import Track, Artist, Transition, CurrentlyPlaying
-from datetime import datetime
-import pytz
 
 
 def is_similar_with_char_diff(str1: str, str2: str, max_diff: int = 1) -> bool:
@@ -42,29 +40,6 @@ def is_similar_with_char_diff(str1: str, str2: str, max_diff: int = 1) -> bool:
         return dp[m][n]
     
     return edit_distance(str1.lower().strip(), str2.lower().strip()) <= max_diff
-
-
-def get_similar_tracks(track_title: str, artist_db: Artist, max_diff: int = 1):
-    """
-    Get all tracks by the same artist that are similar to the given title,
-    with at most max_diff character differences.
-    
-    Args:
-        track_title: The title to search for
-        artist_db: The artist to search within
-        max_diff: Maximum number of character differences allowed (default: 1)
-    
-    Returns:
-        List of Track objects that are similar to the given title
-    """
-    similar_tracks = []
-    all_tracks = Track.objects.filter(artist=artist_db)
-    
-    for track in all_tracks:
-        if is_similar_with_char_diff(track_title, track.title, max_diff=max_diff):
-            similar_tracks.append(track)
-    
-    return similar_tracks
 
 
 def are_track_related(track_source, track_destination):

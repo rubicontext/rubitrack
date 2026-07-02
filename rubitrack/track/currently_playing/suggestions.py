@@ -1,13 +1,5 @@
 from track.models import Track, Config
 
-
-def get_suggestions_same_artist(track):
-    suggestions = None
-    if track is not None:
-        suggestions = Track.objects.filter(artist=track.artist)
-    return suggestions
-
-
 def get_list_track_suggestions_auto(track):
     """Return automatic suggestions based on currently_* config parameters"""
     if track is None or track.bpm is None:

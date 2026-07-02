@@ -1,6 +1,6 @@
 from django.shortcuts import render, redirect
 from django.views.decorators.csrf import csrf_exempt
-from ..models import Track, Artist, Transition, CurrentlyPlaying
+from ..models import Track, Artist
 from django import forms
 
 class ArtistChoiceField(forms.ModelChoiceField):

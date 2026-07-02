@@ -2,8 +2,6 @@ import datetime
 from collections import defaultdict
 from xml.dom.minidom import Element
 import pytz
-import re
-import unicodedata
 from decimal import Decimal, InvalidOperation
 from typing import Dict, Optional, Set, Tuple
 
@@ -463,24 +461,6 @@ def extract_and_save_cue_points(current_entry, track):
             setattr(track_cue_points, f'cue_point_{slot}', None)
 
     track_cue_points.save()
-
-
-def convert_milliseconds_to_time_format(milliseconds_str: str) -> str:
-    """
-    Convert milliseconds string to MM:SS.mmm format using Decimal (ROUND_HALF_UP)
-    Preserves millisecond precision (3 decimals).
-    """
-    try:
-        ms = Decimal(str(milliseconds_str))
-        if ms < 0:
-            ms = Decimal('0')
-        seconds = ms / Decimal('1000')
-        minutes = int(seconds // Decimal('60'))
-        seconds_part = seconds - Decimal(minutes) * Decimal('60')
-        # Format with 3 decimals, zero-padded seconds to 6 width including decimal part
-        return f"{minutes}:{seconds_part.quantize(Decimal('0.000')):06}"
-    except (InvalidOperation, ValueError, TypeError):
-        return "0:00.000"
 
 
 def import_playlist_from_xml_doc(xmldoc: Element, user_collection: Collection) -> None:

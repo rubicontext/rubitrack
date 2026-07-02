@@ -1,18 +1,13 @@
 from django.contrib import admin
 
-from django.db.models import F
 
-from track.playlist.playlist_transitions import get_order_rank
 
 # Register your models here.
 from .models import Artist, Track, Genre, Playlist, TransitionType, Transition, CurrentlyPlaying, Collection, Config, CuePoint, TrackCuePoints
 
 
-from django.forms import TextInput, Textarea
-from django.db import models
 from django import forms
 
-from django.utils.safestring import mark_safe
 from django.utils.html import format_html
 
 admin.site.register(Genre)

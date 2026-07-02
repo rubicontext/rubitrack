@@ -1,8 +1,6 @@
-import datetime
-from typing import List, Tuple
+from typing import List
 
 from django.db import models
-from django.utils import timezone
 from django.contrib.auth.models import User
 
 Ranking_CHOICES = ((1, 'Poor'), (2, 'Average'), (3, 'Good'), (4, 'Very Good'), (5, 'Excellent'))
@@ -374,48 +372,3 @@ class TrackCuePoints(models.Model):
             if cue_point:
                 cue_points.append(cue_point)
         return cue_points
-    
-    def get_cue_points(self):
-        """Return an array of 8 cue points (including None for empty slots)"""
-        cue_points = []
-        for i in range(1, 9):
-            cue_point = getattr(self, f'cue_point_{i}')
-            cue_points.append(cue_point)
-        return cue_points
-    
-    def get_cue_point_by_number(self, number):
-        """Get a specific cue point by number (1-8)"""
-        if 1 <= number <= 8:
-            return getattr(self, f'cue_point_{number}')
-        return None
-    
-    def set_cue_point_by_number(self, number, cue_point):
-        """Set a specific cue point by number (1-8)"""
-        if 1 <= number <= 8:
-            setattr(self, f'cue_point_{number}', cue_point)
-            return True
-        return False
-    
-    def get_cue_points_for_export(self):
-        """
-        Retourne les cue points sous forme de liste de tuples pour l'export
-        Format: [(num, time_seconds), ...]
-        """
-        cue_points_export = []
-        for i in range(1, 9):
-            cue_point = getattr(self, f'cue_point_{i}')
-            if cue_point:
-                cue_points_export.append((i, cue_point.time))
-        return cue_points_export
-
-    def get_cue_points_for_display_no_ms(self) -> List[Tuple[int, str]]:
-        """
-        Retourne les cue points sous forme de liste de tuples pour l'affichage sans millisecondes
-        Format: [(num, time_no_ms), ...]
-        """
-        result: List[Tuple[int, str]] = []
-        for i in range(1, 9):
-            cue_point = getattr(self, f'cue_point_{i}')
-            if cue_point:
-                result.append((i, cue_point.get_time_without_ms()))
-        return result

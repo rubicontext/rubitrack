@@ -1,5 +1,4 @@
 import ast
-from django.db import models
 from track.models import Track, Transition
 from track.playlist.playlist_transitions import get_playlists_by_track_id
 

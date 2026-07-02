@@ -5,7 +5,6 @@ import base64
 import os
 from django.http import JsonResponse
 from django.views.decorators.http import require_POST
-from django.views.decorators.csrf import csrf_exempt
 from django.conf import settings
 from ..models import Track
 import json
@@ -31,9 +30,9 @@ def save_waveform(request):
         if not track_id or not image_data:
             return JsonResponse({'success': False, 'error': 'Missing track_id or image_data'})
         
-        # Récupérer la track
+        # Vérifier que la track existe
         try:
-            track = Track.objects.get(id=track_id)
+            Track.objects.get(id=track_id)
         except Track.DoesNotExist:
             return JsonResponse({'success': False, 'error': 'Track not found'})
         

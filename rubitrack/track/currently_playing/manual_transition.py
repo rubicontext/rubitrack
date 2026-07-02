@@ -1,5 +1,5 @@
 from django import forms
-from django.shortcuts import render, redirect
+from django.shortcuts import render
 from ..models import Track, Transition
 
 # Vue pour la page de création manuelle de transition
