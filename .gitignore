@@ -3,3 +3,4 @@ __pycache__
 .approval_tests_temp
 .venv/
 .env
+rubitrack/preview_db.sqlite3

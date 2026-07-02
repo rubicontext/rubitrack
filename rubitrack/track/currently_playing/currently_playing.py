@@ -179,8 +179,13 @@ def get_currently_playing_track(with_refresh=True):
 def refresh_currently_playing_from_log():
     config = Config.get_config()
     path_to_playlist_log = config.rubi_icecast_playlist_file
-    file = open(path_to_playlist_log, 'r')
-    line_list = file.readlines()
+    # Log absent ou illisible (Icecast arrêté, autre machine): on lit la DB telle quelle
+    try:
+        with open(path_to_playlist_log, 'r') as file:
+            line_list = file.readlines()
+    except OSError:
+        logger.warning("Playlist log illisible (%s), lecture DB directe", path_to_playlist_log)
+        return False
     if len(line_list) < 1:
         logger.info("Nothing to scrap in playlist log")
         return False
