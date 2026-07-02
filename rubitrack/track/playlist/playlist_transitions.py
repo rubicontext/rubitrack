@@ -8,13 +8,17 @@ from django.contrib.auth.decorators import login_required
 
 from track.currently_playing.transition import create_transition
 
-from ..models import Track, Transition, Playlist
+from ..models import Config, Track, Transition, Playlist
 import logging
 
 logger = logging.getLogger(__name__)
 
 PLAYLIST_TRANSITION_AUTO_GENERATED = 'Generated from Playlist : '
-SEPARATOR_TRACK_ID = 14294
+
+
+def get_separator_track_id() -> int:
+    """ID de la track séparateur (configurable, propre à chaque instance)."""
+    return Config.get_config().separator_track_id
 
 
 def get_waveform_url_for_track(track):
@@ -80,9 +84,6 @@ def get_transitions_from_playlist(current_playlist: Playlist):
         track_source_id = track_ids[index_track_id]
         track_destination_id = track_ids[index_track_id+1]
 
-        # Skip transitions involving the separator track
-        # if track_source_id == SEPARATOR_TRACK_ID or track_destination_id == SEPARATOR_TRACK_ID:
-        #     continue
 
         current_transition_qs = Transition.objects.filter(track_source_id=track_source_id,
                                                        track_destination_id=track_destination_id)

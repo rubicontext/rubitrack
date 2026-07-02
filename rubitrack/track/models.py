@@ -268,7 +268,11 @@ class Config(models.Model):
         default="634;611;621;616;630",
         help_text="Default favourite playlist IDs (semicolon-separated)"
     )
-    
+    separator_track_id = models.IntegerField(
+        default=14294,
+        help_text="ID of the separator track used to split playlists (instance-specific)"
+    )
+
     # Metadata
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

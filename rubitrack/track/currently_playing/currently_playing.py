@@ -9,7 +9,7 @@ import pytz
 from .suggestions import get_list_track_suggestions_auto
 from ..suggestions.suggestions_view import get_suggestions_for_track
 from ..playlist.playlist_context import get_next_tracks_in_playlists
-from track.playlist.playlist_transitions import get_playlists_by_track_id, SEPARATOR_TRACK_ID
+from track.playlist.playlist_transitions import get_playlists_by_track_id, get_separator_track_id
 from ..constants import REFRESH_INTERVAL_CURRENTLY_PLAYING_MS
 
 from ..models import Track, Transition, CurrentlyPlaying, Config
@@ -433,12 +433,12 @@ def get_playing_track_list_history(with_refresh=True, remove_last=True, current_
 
 
 def get_transitions_after(track):
-    transitions = Transition.objects.filter(track_source=track).exclude(track_destination_id=SEPARATOR_TRACK_ID)
+    transitions = Transition.objects.filter(track_source=track).exclude(track_destination_id=get_separator_track_id())
     return transitions
 
 
 def get_transitions_before(track):
-    transitions = Transition.objects.filter(track_destination=track).exclude(track_source_id=SEPARATOR_TRACK_ID)
+    transitions = Transition.objects.filter(track_destination=track).exclude(track_source_id=get_separator_track_id())
     return transitions
 
 
