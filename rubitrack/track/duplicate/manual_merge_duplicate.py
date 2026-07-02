@@ -25,7 +25,7 @@ def merge_duplicate_tracks(track_a_id: int, track_b_id: int):
     # Cela évite qu'un prochain import recrée B comme une nouvelle track
     if track_b.audio_id and not track_a.audio_id:
         track_a.audio_id = track_b.audio_id
-        print(f"� audio_id copié de B vers A: '{track_a.audio_id}'")
+        print(f"🆔 audio_id copié de B vers A: '{track_a.audio_id}'")
 
     # Si A n'a pas de file_path mais B en a un, copier aussi
     if track_b.file_path and not track_a.file_path:

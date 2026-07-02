@@ -23,34 +23,38 @@ def main():
     Script principal pour synchroniser les cue points
     """
     if len(sys.argv) < 2:
-        print("Usage: python synchronize_rekordbox_collection.py <fichier_collection.xml> [fichier_sortie.xml]")
+        print("Usage: python synchronize_rekordbox_collection.py <fichier_collection.xml> [fichier_sortie.xml] [mode]")
+        print("Modes: overwrite (défaut) ou add_only")
         print("Exemples:")
         print("  python synchronize_rekordbox_collection.py /path/to/collection.xml")
-        print("  python synchronize_rekordbox_collection.py /path/to/collection.xml /path/to/collection_updated.xml")
+        print("  python synchronize_rekordbox_collection.py /path/to/collection.xml /path/to/collection_updated.xml add_only")
         sys.exit(1)
-    
+
     input_file = sys.argv[1]
     output_file = sys.argv[2] if len(sys.argv) > 2 else None
-    
+    mode = sys.argv[3] if len(sys.argv) > 3 else 'overwrite'
+
     if not os.path.exists(input_file):
         print(f"Erreur: Le fichier {input_file} n'existe pas")
         sys.exit(1)
-    
-    print(f"Synchronisation des cue points...")
+
+    print("Synchronisation des cue points...")
     print(f"Fichier d'entrée: {input_file}")
-    print(f"Fichier de sortie: {output_file or input_file} (remplace l'original)")
+    print(f"Fichier de sortie: {output_file or input_file + ' (remplace l original)'}")
+    print(f"Mode: {mode}")
     print()
-    
+
     # Synchronisation
-    stats = synchronize_rekordbox_collection(input_file, output_file)
-    
+    stats = synchronize_rekordbox_collection(input_file, output_file, mode=mode)
+
     # Affichage des résultats
     if stats['success']:
         print("✅ Synchronisation réussie!")
-        print(f"   - Tracks traitées: {stats['tracks_processed']}")
-        print(f"   - Tracks trouvées dans Rekordbox: {stats['tracks_found_in_rekordbox']}")
-        print(f"   - Tracks mises à jour: {stats['tracks_updated']}")
+        print(f"   - Tracks Rubitrack avec cue points: {stats['rubitrack_tracks_processed']}")
+        print(f"   - Tracks Rekordbox matchées: {stats['tracks_found_and_matched']}")
+        print(f"   - Tracks mises à jour: {stats['tracks_updated_with_cue_points']}")
         print(f"   - Cue points ajoutés: {stats['total_cue_points_added']}")
+        print(f"   - Tracks Rekordbox non trouvées: {len(stats['unmatched_rekordbox_tracks'])}")
     else:
         print("❌ Erreur lors de la synchronisation:")
         print(f"   {stats.get('error', 'Erreur inconnue')}")

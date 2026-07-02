@@ -3,16 +3,14 @@ Vues pour la synchronisation avec Rekordbox
 """
 
 from django.shortcuts import render
-from django.http import JsonResponse, HttpResponse
+from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
 from django.contrib.admin.views.decorators import staff_member_required
-from django.core.files.storage import default_storage
-from django.core.files.base import ContentFile
 from datetime import datetime
 import tempfile
 import os
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
 
 from .synchronize_rekordbox_collection import synchronize_rekordbox_collection
 
@@ -63,7 +61,6 @@ def synchronize_rekordbox_collection_api(request):
             stats = synchronize_rekordbox_collection(
                 temp_file_path,
                 output_file_path,
-                overwrite_existing=(mode == 'overwrite'),
                 mode=mode
             )
             
@@ -140,7 +137,7 @@ def generate_not_found_file(unmatched_tracks: List[Dict[str, Any]]) -> str:
 
 @staff_member_required
 @require_http_methods(["GET"])
-def cue_points_stats_api(request) -> JsonResponse:  # type: ignore[override]
+def cue_points_stats_api(request) -> JsonResponse:
     """
     API pour obtenir les statistiques des cue points
     """

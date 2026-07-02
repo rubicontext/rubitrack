@@ -3,24 +3,21 @@ Module simple pour synchroniser les cue points entre Rubitrack et Rekordbox
 Se concentre uniquement sur le remplacement des cue points, sans toucher aux autres données
 """
 
-import xml.etree.ElementTree as ET
-from xml.dom import minidom
-from ...models import Track
 import logging
-from typing import Dict, Iterable, Optional, Tuple, Union
+import re
+import unicodedata
+import xml.etree.ElementTree as ET
 from decimal import Decimal, ROUND_HALF_UP
+from typing import Dict, Iterable, Optional, Union
+from urllib.parse import unquote, urlparse
+from xml.dom import minidom
+
+from ...models import Track
 
 logger = logging.getLogger(__name__)
 
 # Ne pas dupliquer un cue si un marqueur existe déjà à une position très proche (en add_only)
 CUE_POINT_IDENTICAL_START_TIME_DIFF_MS = 100
-
-# Mise à jour des couleurs des hot cues 1, 2, 3 pour inclure les valeurs RGB
-HOT_CUE_COLORS = {
-    1: {"Red": "60", "Green": "235", "Blue": "80"},  # Vert
-    2: {"Red": "69", "Green": "172", "Blue": "219"},  # Bleu clair
-    3: {"Red": "60", "Green": "235", "Blue": "80"}   # Vert
-}
 
 
 class RekordboxCollectionSynchronizer:
@@ -88,18 +85,6 @@ class RekordboxCollectionSynchronizer:
             logger.error(f"Erreur sauvegarde: {e}")
             return False
     
-    def time_to_seconds(self, time_ms: float) -> float:
-        """
-        Convertit un temps en millisecondes (Traktor) en secondes (Rekordbox).
-        
-        Args:
-            time_ms (float): Temps en millisecondes (Traktor).
-        
-        Returns:
-            float: Temps en secondes (Rekordbox).
-        """
-        return time_ms / 1000
-
     def seconds_to_rekordbox_position(self, seconds: Union[float, Decimal]) -> str:
         """Retourne la position Rekordbox en secondes avec 3 décimales (ex: 33.000), arrondie correctement."""
         try:
@@ -116,8 +101,6 @@ class RekordboxCollectionSynchronizer:
         - Remove bracketed/parenthetical content
         - Unicode NFKC and collapse whitespace
         """
-        import re
-        import unicodedata
         s = (s or '').strip()
         s = unicodedata.normalize('NFKC', s)
         # remove key/rating suffix like ' - Am - 6'
@@ -144,7 +127,6 @@ class RekordboxCollectionSynchronizer:
         """Normalise l'attribut Location d'un TRACK Rekordbox
         ("file://localhost/C:/Program%20Files/x.mp3") vers la même forme
         comparable que _normalize_traktor_path ("c:/program files/x.mp3")."""
-        from urllib.parse import unquote, urlparse
         if not location:
             return ''
         if location.startswith('file://'):
@@ -154,66 +136,6 @@ class RekordboxCollectionSynchronizer:
                 path = path[1:]
             return path.lower()
         return unquote(location).lower()
-
-    def _rb_fields(self, track: ET.Element) -> Tuple[str, str]:
-        """Helper to fetch normalized Artist/Name from a Rekordbox TRACK."""
-        artist = self._normalize_text(track.get('Artist', ''))
-        title = self._normalize_text(track.get('Name', ''))
-        return artist, title
-
-    def find_track_element(self, artist_name: str, track_title: str) -> Optional[ET.Element]:
-        """
-        Trouve un élément TRACK dans la collection Rekordbox avec recherche intelligente
-        
-        Stratégie de recherche :
-        1. Match exact (artist + title)
-        2. Match avec normalisation des espaces (supprime espaces en trop)
-        3. Match avec artist sans espaces vs artist avec espaces en base
-        4. Fallback par file path ou Audio ID si présents
-        
-        Args:
-            artist_name (str): Nom de l'artiste
-            track_title (str): Titre de la track
-            
-        Returns:
-            ET.Element: Élément TRACK trouvé ou None
-        """
-        if not self.root:
-            return None
-        collection = self.root.find('.//COLLECTION')
-        if collection is None:
-            return None
-        artist_clean = self._normalize_text(artist_name or '')
-        title_clean = self._normalize_text(track_title or '')
-        # Étape 1: Match exact (normalized)
-        for track in collection.findall('TRACK'):
-            rb_artist, rb_title = self._rb_fields(track)
-            if rb_artist.lower() == artist_clean.lower() and rb_title.lower() == title_clean.lower():
-                return track
-        # Étape 2: Normalisation espaces multiples
-        artist_normalized = ' '.join(artist_clean.split())
-        title_normalized = ' '.join(title_clean.split())
-        for track in collection.findall('TRACK'):
-            rb_artist = ' '.join(self._normalize_text(track.get('Artist', '')).split())
-            rb_title = ' '.join(self._normalize_text(track.get('Name', '')).split())
-            if rb_artist.lower() == artist_normalized.lower() and rb_title.lower() == title_normalized.lower():
-                logger.debug("Match normalisé: '%s' / '%s'", rb_artist, rb_title)
-                return track
-        # Étape 3: Sans espaces côté artist
-        artist_no_spaces = artist_clean.replace(' ', '')
-        for track in collection.findall('TRACK'):
-            rb_artist, rb_title = self._rb_fields(track)
-            cond_artist = rb_artist.replace(' ', '').lower() == artist_no_spaces.lower()
-            cond_title = rb_title.lower() == title_clean.lower()
-            if cond_artist and cond_title:
-                logger.debug(
-                    "Match sans espaces: '%s' → '%s' (titre: %s)",
-                    rb_artist,
-                    artist_clean,
-                    track_title,
-                )
-                return track
-        return None
 
     def remove_existing_cue_points(self, track_element: ET.Element) -> None:
         """
@@ -226,36 +148,9 @@ class RekordboxCollectionSynchronizer:
         for position_mark in track_element.findall('POSITION_MARK'):
             track_element.remove(position_mark)
     
-    def remove_program_generated_cue_points(self, track_element: ET.Element, mode: str) -> None:
-        """
-        Supprime uniquement les cue points générés par le programme.
-        - RCue X (1..8) dans tous les modes
-        - A, B, C (slots 1..3) si en mode add_only (permet la mise à jour)
-        Conserve les autres (loops, memory cues, cues manuels).
-        
-        Args:
-            track_element (ET.Element): Élément TRACK
-            mode (str): Mode de synchronisation ('overwrite', 'preserve', 'add_only')
-        """
-        program_names = set()
-        for i in range(1, 9):
-            program_names.add(f"RCue{i}")          # new format
-            program_names.add(f"RCue {i}")        # legacy format with space
-        # legacy A,B,C hot cue names from previous version
-        program_names.update({'A', 'B', 'C'})
-        for pm in list(track_element.findall('POSITION_MARK')):
-            try:
-                if pm.get('Type') == '0':
-                    name = pm.get('Name', '')
-                    if name in program_names:
-                        track_element.remove(pm)
-            except Exception:
-                continue
-    
     def add_cue_point_to_track(
         self,
         track_element: ET.Element,
-        cue_number: int,
         time_seconds: float,
         name: str,
         num_value: int,
@@ -318,7 +213,7 @@ class RekordboxCollectionSynchronizer:
             except Exception:
                 continue
 
-    def _hot_cue_exists(self, track_element: ET.Element, num: int) -> bool:  # type: ignore[override]
+    def _hot_cue_exists(self, track_element: ET.Element, num: int) -> bool:
         """
         Vérifie si un slot de hot cue (Type 0 ou Type 4 avec Num) est déjà occupé.
         Prend en compte les boucles (Type 4) auxquelles un Num a été attribué.
@@ -333,17 +228,6 @@ class RekordboxCollectionSynchronizer:
         for pm in track_element.findall('POSITION_MARK'):
             t = pm.get('Type')
             if t in ('0', '4') and pm.get('Num') == str(num):
-                return True
-        return False
-    
-    def _memory_cue_at_start_exists(
-        self,  # type: ignore[override]
-        track_element: ET.Element,
-        start_seconds: float
-    ) -> bool:  # type: ignore[override]
-        target = self.seconds_to_rekordbox_position(start_seconds)
-        for pm in track_element.findall('POSITION_MARK'):
-            if pm.get('Start') == target:
                 return True
         return False
     
@@ -373,11 +257,10 @@ class RekordboxCollectionSynchronizer:
         return False
     
     def synchronize_rekordbox_collection(
-        self,  # type: ignore[override]
+        self,
         input_file: str,
         output_file: Optional[str] = None,
-        overwrite_existing: bool = True,
-        mode: Optional[str] = None
+        mode: str = 'overwrite'
     ) -> dict:
         """
         Synchronise les cue points de Rubitrack vers Rekordbox
@@ -385,13 +268,12 @@ class RekordboxCollectionSynchronizer:
           overwrite : supprime tous les cue points existants puis ajoute tous les RCue1-8
           add_only  : supprime uniquement les cue points système générés (RCueX), préserve les cue points manuels,
                      puis ajoute conditionnellement les nouveaux (slots libres pour 1-3, positions libres pour 4-8)
-        
+
         Args:
             input_file (str): Fichier Rekordbox d'entrée
             output_file (str, optional): Fichier de sortie (si None, remplace l'original)
-            overwrite_existing (bool, optional): Contrôle la suppression des cue points existants
-            mode (str, optional): Mode de synchronisation ('overwrite', 'add_only')
-            
+            mode (str, optional): Mode de synchronisation ('overwrite' ou 'add_only')
+
         Returns:
             dict: Statistiques de l'opération
         """
@@ -535,7 +417,6 @@ class RekordboxCollectionSynchronizer:
             base_num_value = (i - 1) if (i <= 3) else -1
 
             time_seconds_float = float(time_seconds_dec)
-            final_num_value = base_num_value
 
             if mode == 'add_only':
                 # Si un pad 0..2 est déjà occupé (Type 0 ou 4 avec Num), ne pas toucher: ne rien ajouter pour cet index
@@ -544,9 +425,6 @@ class RekordboxCollectionSynchronizer:
                 # Ne pas créer de doublon si un marqueur existe déjà très proche de la position
                 if self._has_existing_cue_near_start(rekordbox_track, time_seconds_float, CUE_POINT_IDENTICAL_START_TIME_DIFF_MS):
                     continue
-                if final_num_value != -1 and self._hot_cue_exists(rekordbox_track, final_num_value):
-                    final_num_value = -1
-                # Ne pas dédupliquer: conserver les existants
             # Calcul d'une éventuelle loop via LEN/duration
             end_seconds_dec: Optional[Decimal] = None
             len_ms_val = getattr(cue_point_obj, 'len_ms', None)
@@ -573,10 +451,9 @@ class RekordboxCollectionSynchronizer:
 
             self.add_cue_point_to_track(
                 rekordbox_track,
-                i,
                 time_seconds_float,
                 name,
-                final_num_value,
+                base_num_value,
                 float(end_seconds_dec) if end_seconds_dec is not None else None,
                 force_loop=force_loop,
             )
@@ -617,18 +494,16 @@ class RekordboxCollectionSynchronizer:
 def synchronize_rekordbox_collection(
     input_file: str,
     output_file: Optional[str] = None,
-    overwrite_existing: bool = True,
-    mode: Optional[str] = None
+    mode: str = 'overwrite'
 ) -> dict:
     """
     Fonction utilitaire pour synchroniser les cue points vers Rekordbox
-    
+
     Args:
         input_file (str): Fichier collection.xml Rekordbox d'entrée
         output_file (str, optional): Fichier de sortie (si None, remplace l'original)
-        overwrite_existing (bool, optional): Contrôle la suppression des cue points existants
-        mode (str, optional): Mode de synchronisation ('overwrite', 'preserve', 'add_only')
-        
+        mode (str, optional): Mode de synchronisation ('overwrite' ou 'add_only')
+
     Returns:
         dict: Statistiques de l'opération
         
@@ -642,4 +517,4 @@ def synchronize_rekordbox_collection(
         print(f"Résultat: {stats}")
     """
     synchronizer = RekordboxCollectionSynchronizer()
-    return synchronizer.synchronize_rekordbox_collection(input_file, output_file, overwrite_existing, mode)
+    return synchronizer.synchronize_rekordbox_collection(input_file, output_file, mode)
