@@ -75,11 +75,11 @@ class TestSynchronizeApi:
 
         stats = json.loads(response["X-Sync-Stats"])
         assert stats["mode"] == "overwrite"
-        # 6 TRACK dans la fixture; base vide donc aucune matchée,
+        # 7 TRACK dans la fixture; base vide donc aucune matchée,
         # le sampler est exclu du décompte des non-trouvées
-        assert stats["total_tracks_in_rekordbox_file"] == 6
+        assert stats["total_tracks_in_rekordbox_file"] == 7
         assert stats["tracks_found_and_matched"] == 0
-        assert stats["unmatched_count"] == 5
+        assert stats["unmatched_count"] == 6
 
         # Le ZIP contient le XML modifié (root DJ_PLAYLISTS) + le rapport CSV
         zf = zipfile.ZipFile(io.BytesIO(response.content))
@@ -90,7 +90,7 @@ class TestSynchronizeApi:
         root = ET.fromstring(zf.read(xml_name))
         assert root.tag == "DJ_PLAYLISTS"
         not_found = zf.read(csv_name).decode("utf-8")
-        assert not_found.startswith("artist;title;location;reason")
+        assert not_found.startswith("artist;title;location;reason;suggested_match;match_score")
         assert "Not In Rubitrack" in not_found
         assert "no_match" in not_found
 

@@ -114,6 +114,7 @@ def synchronize_rekordbox_collection_api(request):
             'beatgrids_written': stats['beatgrids_written'],
             'metadata_fields_filled': stats['metadata_fields_filled'],
             'playlists_exported': stats['playlists_exported'],
+            'fuzzy_candidates_found': stats['fuzzy_candidates_found'],
             'unmatched_count': len(stats['unmatched_rekordbox_tracks']),
         })
         return response
@@ -138,13 +139,15 @@ def generate_not_found_csv(unmatched_tracks: List[Dict[str, Any]]) -> str:
     (délimiteur ';' pour ouverture directe dans Excel FR)."""
     buffer = io.StringIO()
     writer = csv.writer(buffer, delimiter=';', lineterminator='\n')
-    writer.writerow(['artist', 'title', 'location', 'reason'])
+    writer.writerow(['artist', 'title', 'location', 'reason', 'suggested_match', 'match_score'])
     for t in unmatched_tracks:
         writer.writerow([
             t.get('artist', ''),
             t.get('title', ''),
             t.get('location', ''),
             t.get('reason', 'no_match'),
+            t.get('suggested_match', ''),
+            t.get('match_score', ''),
         ])
     return buffer.getvalue()
 

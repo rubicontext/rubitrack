@@ -93,6 +93,7 @@ class TestMatching:
         assert unmatched == {
             "Not In Rubitrack": "no_match",
             "Duration Clash": "duration_mismatch",
+            "Strobbe": "no_match",
         }
 
     def test_duration_mismatch_rejects_title_match(self, populated_db, tmp_path):
@@ -263,3 +264,35 @@ class TestPlaylistExport:
         tree = ET.parse(output)
         root_node = tree.getroot().find("PLAYLISTS/NODE")
         assert all(n.get("Name") != "Rubitrack" for n in root_node.findall("NODE"))
+
+
+@pytest.mark.django_db
+class TestFuzzySuggestions:
+    def get_unmatched(self, stats, title):
+        return next(t for t in stats["unmatched_rekordbox_tracks"] if t["title"] == title)
+
+    def test_typo_track_gets_suggestion_but_no_cues(self, populated_db, tmp_path):
+        """TRACK 7 'Strobbe' / 'Deadmaus' (typos): suggestion 'Strobe' dans le
+        rapport, mais AUCUN cue appliqué (à confirmer à la main)."""
+        stats, tree = run_sync(tmp_path, "overwrite")
+        entry = self.get_unmatched(stats, "Strobbe")
+        assert entry["suggested_match"] == "Deadmau5 - Strobe"
+        assert entry["match_score"] >= 85
+        assert stats["fuzzy_candidates_found"] == 1
+        # Rien n'est appliqué sur la track Rekordbox
+        strobbe = get_track(tree, 7)
+        assert marks(strobbe) == []
+        assert strobbe.findall("TEMPO") == []
+
+    def test_duration_guard_applies_to_suggestions(self, populated_db, tmp_path):
+        """'Duration Clash' a un homonyme parfait côté Rubitrack mais avec une
+        durée incompatible: pas de suggestion non plus."""
+        stats, tree = run_sync(tmp_path, "overwrite")
+        entry = self.get_unmatched(stats, "Duration Clash")
+        assert entry["suggested_match"] == ""
+
+    def test_unrelated_track_gets_no_suggestion(self, populated_db, tmp_path):
+        stats, tree = run_sync(tmp_path, "overwrite")
+        entry = self.get_unmatched(stats, "Not In Rubitrack")
+        assert entry["suggested_match"] == ""
+        assert entry["match_score"] == ""

@@ -12,6 +12,8 @@ from typing import Dict, Iterable, Optional, Union
 from urllib.parse import unquote, urlparse
 from xml.dom import minidom
 
+from rapidfuzz import fuzz, process as fuzz_process
+
 from ...models import Playlist, Track
 
 logger = logging.getLogger(__name__)
@@ -21,6 +23,11 @@ CUE_POINT_IDENTICAL_START_TIME_DIFF_MS = 100
 
 # Rejeter un match titre/artiste si les durées divergent de plus de N secondes
 DURATION_MISMATCH_TOLERANCE_SECONDS = 5
+
+# Score minimal (0-100) pour proposer un match approximatif dans le rapport.
+# Les suggestions ne sont JAMAIS appliquées au XML: elles sont à confirmer à la main.
+FUZZY_MATCH_MIN_SCORE = 85
+FUZZY_MATCH_CANDIDATES = 3
 
 
 class RekordboxCollectionSynchronizer:
@@ -384,6 +391,7 @@ class RekordboxCollectionSynchronizer:
             'metadata_fields_filled': 0,
             'playlists_exported': 0,
             'playlist_entries_exported': 0,
+            'fuzzy_candidates_found': 0,
             'unmatched_rekordbox_tracks': []
         }
 
@@ -430,9 +438,42 @@ class RekordboxCollectionSynchronizer:
             return False
         return abs(float(playtime) - total_seconds) > DURATION_MISMATCH_TOLERANCE_SECONDS
 
+    def _build_fuzzy_choices(self, rubitrack_tracks) -> Dict[str, Track]:
+        """Chaînes normalisées 'artist title' -> track, pour le fuzzy matching."""
+        choices: Dict[str, Track] = {}
+        for track in rubitrack_tracks:
+            artist_name = self._normalize_text(track.artist.name) if track.artist else ''
+            title = self._normalize_text(track.title)
+            choices.setdefault(f"{artist_name} {title}".lower().strip(), track)
+        return choices
+
+    def _find_fuzzy_suggestion(self, rb_artist: str, rb_title: str,
+                               rekordbox_track, fuzzy_choices: Dict[str, Track]):
+        """Cherche un candidat approximatif (suggestion pour le rapport, jamais
+        appliqué). Retourne (track, score) ou None. Les candidats dont la durée
+        diverge sont écartés (même garde-fou que le matching exact)."""
+        if not fuzzy_choices:
+            return None
+        query = f"{rb_artist} {rb_title}".strip()
+        if not query:
+            return None
+        results = fuzz_process.extract(
+            query,
+            fuzzy_choices.keys(),
+            scorer=fuzz.token_sort_ratio,
+            score_cutoff=FUZZY_MATCH_MIN_SCORE,
+            limit=FUZZY_MATCH_CANDIDATES,
+        )
+        for choice, score, _ in results:
+            candidate = fuzzy_choices[choice]
+            if not self._duration_mismatch(candidate, rekordbox_track):
+                return candidate, round(score)
+        return None
+
     def _process_tracks(self, rubitrack_tracks, collection, stats, mode, rubitrack_lookup):
         # rubitrack track id -> TrackID Rekordbox, pour l'export des playlists
         matched_track_keys: Dict[int, str] = {}
+        fuzzy_choices = self._build_fuzzy_choices(rubitrack_tracks)
         for rekordbox_track in collection.findall('TRACK'):
             # Dans un XML Rekordbox, la localisation est l'attribut Location
             # du TRACK (URI file://localhost/...), pas un élément enfant
@@ -468,12 +509,28 @@ class RekordboxCollectionSynchronizer:
                 except Exception as e:
                     logger.error(f"Erreur lors du traitement de {item['track'].title}: {e}")
             else:
-                stats['unmatched_rekordbox_tracks'].append({
+                entry = {
                     'title': rekordbox_track.get('Name', '').strip(),
                     'artist': rekordbox_track.get('Artist', '').strip(),
                     'location': rekordbox_track.get('Location', ''),
                     'reason': unmatched_reason,
-                })
+                    'suggested_match': '',
+                    'match_score': '',
+                }
+                suggestion = self._find_fuzzy_suggestion(
+                    rb_artist, rb_title, rekordbox_track, fuzzy_choices
+                )
+                if suggestion:
+                    candidate, score = suggestion
+                    artist_name = candidate.artist.name if candidate.artist else ''
+                    entry['suggested_match'] = f"{artist_name} - {candidate.title}".strip(' -')
+                    entry['match_score'] = score
+                    stats['fuzzy_candidates_found'] += 1
+                    logger.info(
+                        "Suggestion approximative: '%s - %s' ~ '%s' (score %s)",
+                        entry['artist'], entry['title'], entry['suggested_match'], score,
+                    )
+                stats['unmatched_rekordbox_tracks'].append(entry)
         return matched_track_keys
 
     def _sync_beatgrid(self, rekordbox_track, rubitrack_track, cue_points_by_slot, mode, stats):

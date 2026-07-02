@@ -262,7 +262,8 @@ function syncCuePoints(modeFlag) {
                 • Beatgrids écrits : <strong>${stats.beatgrids_written}</strong><br>
                 • Métadonnées complétées : <strong>${stats.metadata_fields_filled}</strong><br>
                 • Playlists exportées : <strong>${stats.playlists_exported}</strong><br>
-                • Tracks non trouvées : <strong>${stats.unmatched_count}</strong><br><br>
+                • Tracks non trouvées : <strong>${stats.unmatched_count}</strong>
+                (dont <strong>${stats.fuzzy_candidates_found}</strong> avec suggestion à confirmer dans le CSV)<br><br>
                 📁 Fichier téléchargé : ${zipFilename}<br>
                 (contient la collection XML et la liste des tracks non trouvées)
             `;
