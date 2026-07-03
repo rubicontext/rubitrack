@@ -146,6 +146,17 @@ MEDIA_URL = '/media/'
 
 LOGIN_URL = '/admin/login/'
 
+# Sentry (suivi des erreurs en prod): actif seulement si SENTRY_DSN est défini.
+# Créer un projet Django sur sentry.io et poser le DSN dans l'environnement uwsgi.
+SENTRY_DSN = os.environ.get('SENTRY_DSN', '')
+if SENTRY_DSN:
+    import sentry_sdk
+    sentry_sdk.init(
+        dsn=SENTRY_DSN,
+        traces_sample_rate=0,      # pas de tracing perf, erreurs uniquement
+        send_default_pii=False,
+    )
+
 # Logging: les modules applicatifs utilisent logging.getLogger(__name__)
 LOGGING = {
     'version': 1,

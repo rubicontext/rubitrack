@@ -1,0 +1,52 @@
+{% extends 'admin/base_site.html' %}
+{% block title %}Mes sets - Rubitrack{% endblock title %}
+{% block content %}
+
+<h1>Mes sets</h1>
+<p style="color:#888;">Sessions reconstituées depuis l'historique de lecture (coupure après 30 min sans morceau).</p>
+
+{% if not sets %}
+  <p>Aucun set dans l'historique pour l'instant.</p>
+{% endif %}
+
+{% for s in sets %}
+<div style="border:1px solid #ddd; border-radius:6px; margin:14px 0; padding:14px 18px; background:#fafafa;">
+  <h2 style="font-size:18px; color:#283C4F; margin:0 0 4px 0;">
+    {{ s.start|date:"D d/m/Y H:i" }} → {{ s.end|date:"H:i" }}
+    <span style="font-size:13px; color:#888; font-weight:normal;">
+      · {{ s.plays|length }} tracks · {{ s.duration_minutes }} min{% if s.avg_bpm %} · ~{{ s.avg_bpm }} bpm{% endif %}
+    </span>
+    <button type="button" onclick="copyTracklist(this)" data-set-index="{{ forloop.counter }}"
+            style="float:right; background:#283C4F; color:white; border:none; padding:4px 12px; border-radius:3px; font-size:12px; cursor:pointer;">
+      Copier la tracklist
+    </button>
+  </h2>
+
+  <textarea id="tracklist-{{ forloop.counter }}" readonly
+            style="position:absolute; left:-9999px;">{{ s.tracklist_text }}</textarea>
+
+  <table class="table table-condensed" style="margin:8px 0 0 0; font-size:13px;">
+    {% for play in s.plays %}
+    <tr>
+      <td style="color:#888; width:60px;">{{ play.date_played|date:"H:i" }}</td>
+      <td><a href="{% url 'history_editing_view' play.track.id %}">{{ play.track.title|slice:":50" }}</a></td>
+      <td style="color:#52d3aa;">{{ play.track.artist.name }}</td>
+      <td style="color:#888; width:70px;">{% if play.track.bpm %}{{ play.track.bpm|floatformat:0 }} bpm{% endif %}</td>
+    </tr>
+    {% endfor %}
+  </table>
+</div>
+{% endfor %}
+
+<script>
+function copyTracklist(btn) {
+  const textarea = document.getElementById('tracklist-' + btn.dataset.setIndex);
+  navigator.clipboard.writeText(textarea.value).then(function() {
+    const original = btn.textContent;
+    btn.textContent = 'Copié ✓';
+    setTimeout(function() { btn.textContent = original; }, 1500);
+  });
+}
+</script>
+
+{% endblock content %}

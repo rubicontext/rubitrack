@@ -29,6 +29,23 @@
             <a href="{% url 'duplicates' %}" class="rt-btn rt-btn-warning"><i class="fas fa-copy"></i> Manage Duplicates</a>
         </div>
 
+        <!-- Transitions auto-détectées -->
+        <div class="rt-card">
+            <div class="rt-card-icon bg-green"><i class="fas fa-random"></i></div>
+            <h3 class="rt-card-title">Transitions des sets</h3>
+            <p class="rt-card-desc">Détecte les enchaînements récurrents dans l'historique de lecture et les enregistre comme transitions.</p>
+            <ul class="rt-bullets">
+                <li>Analyse de l'historique Icecast</li>
+                <li>Enchaînements joués ≥ 2 fois</li>
+                <li>Marquées "auto-détectées"</li>
+            </ul>
+            <form method="post" action="{% url 'detect_transitions' %}" style="display:inline;">
+                {% csrf_token %}
+                <button type="submit" class="rt-btn rt-btn-green"><i class="fas fa-magic"></i> Détecter les transitions</button>
+            </form>
+            <a href="{% url 'sets_view' %}" class="rt-btn rt-btn-outline"><i class="fas fa-history"></i> Voir mes sets</a>
+        </div>
+
         <!-- Configuration (system) -->
         <div class="rt-card">
             <div class="rt-card-icon bg-cyan"><i class="fas fa-cog"></i></div>

@@ -37,7 +37,14 @@ from .duplicate.manual_merge_duplicate import manual_merge_duplicate
 from .duplicate.manual_merge_artist import manual_merge_artist
 from .suggestions.suggestions_view import ajax_suggestions
 from .config.config_views import config_view, config_reset_view
-from .config.tools_views import tools_index, cleanup_musical_keys, cue_points_overview, delete_all_cue_points
+from .config.tools_views import (
+    cleanup_musical_keys,
+    cue_points_overview,
+    delete_all_cue_points,
+    detect_transitions_view,
+    tools_index,
+)
+from .currently_playing.set_history import display_sets
 from .musical_key.views_import_musical_keys import import_musical_keys_view
 from .collection.rekordbox.views import (
     rekordbox_sync_view,
@@ -117,7 +124,6 @@ urlpatterns = [
         playlist_transitions.delete_all_generated_transitions,
         name='delete_all_generated_transitions_view',
     ),
-    path('tools/', tools_index, name='tools'),
     path('duplicates/', display_duplicates, name='duplicates'),
     path('manual_merge_track_batch/', manual_merge_track_batch, name='manual_merge_track_batch'),
     path('duplicates/scan/', scan_duplicates_view, name='scan_duplicates'),
@@ -135,6 +141,9 @@ urlpatterns = [
     path('config/reset/', config_reset_view, name='config_reset'),
     # TOOLS
     path('tools/', tools_index, name='tools'),
+    path('tools/detect_transitions/', detect_transitions_view, name='detect_transitions'),
+    # SETS (historique des sessions)
+    path('sets/', display_sets, name='sets_view'),
     path('tools/cleanup_musical_keys/', cleanup_musical_keys, name='cleanup_musical_keys'),
     path('tools/cue_points/', cue_points_overview, name='cue_points_overview'),
     path('tools/delete_all_cue_points/', delete_all_cue_points, name='delete_all_cue_points'),

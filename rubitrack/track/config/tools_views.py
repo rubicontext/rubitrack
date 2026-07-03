@@ -11,6 +11,21 @@ from django.db.models import Q, Count
 
 from ..models import Track, CuePoint
 from ..musical_key.musical_key_utils import extract_musical_key_from_title
+from ..currently_playing.auto_transitions import detect_transitions_from_history
+
+
+@login_required
+def detect_transitions_view(request):
+    """Détecte les transitions récurrentes dans l'historique de sets."""
+    if request.method == 'POST':
+        stats = detect_transitions_from_history()
+        messages.success(
+            request,
+            f"Détection terminée: {stats['created']} transitions créées "
+            f"({stats['recurring']} enchaînements récurrents, "
+            f"{stats['already_known']} déjà connus, {stats['pairs_seen']} paires analysées)."
+        )
+    return redirect('tools')
 
 
 @login_required

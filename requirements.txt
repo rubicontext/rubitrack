@@ -3,3 +3,4 @@ Django>=5.2,<6
 pytz>=2024.1
 psycopg2-binary>=2.9
 rapidfuzz>=3.0
+sentry-sdk>=2.0
