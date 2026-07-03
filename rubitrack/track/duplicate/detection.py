@@ -95,17 +95,27 @@ def scan_duplicates() -> dict:
         f"{t.artist.name if t.artist else ''} {normalize_title_base(t.title)}".strip().lower()
         for t in tracks
     ]
-    matrix = process.cdist(
-        strings, strings, scorer=fuzz.token_sort_ratio,
-        score_cutoff=FUZZY_MIN_SCORE, workers=-1,
-    )
     n = len(tracks)
-    for i in range(n):
-        row = matrix[i]
-        for j in range(i + 1, n):
-            score = int(row[j])
-            if score >= FUZZY_MIN_SCORE and _duration_compatible(tracks[i], tracks[j]):
-                add_pair(tracks[i], tracks[j], score, f'fuzzy:{score}')
+    try:
+        # Chemin rapide: matrice complète via numpy (process.cdist)
+        matrix = process.cdist(
+            strings, strings, scorer=fuzz.token_sort_ratio,
+            score_cutoff=FUZZY_MIN_SCORE, workers=-1,
+        )
+        for i in range(n):
+            row = matrix[i]
+            for j in range(i + 1, n):
+                score = int(row[j])
+                if score >= FUZZY_MIN_SCORE and _duration_compatible(tracks[i], tracks[j]):
+                    add_pair(tracks[i], tracks[j], score, f'fuzzy:{score}')
+    except ImportError:
+        # numpy absent: repli pur-python (plus lent mais fonctionnel)
+        logger.warning("numpy absent, fuzzy matching en mode dégradé (plus lent)")
+        for i in range(n):
+            for j in range(i + 1, n):
+                score = int(fuzz.token_sort_ratio(strings[i], strings[j]))
+                if score >= FUZZY_MIN_SCORE and _duration_compatible(tracks[i], tracks[j]):
+                    add_pair(tracks[i], tracks[j], score, f'fuzzy:{score}')
 
     # --- Upsert en respectant la mémoire (dismissed/merged intouchables)
     existing = {
