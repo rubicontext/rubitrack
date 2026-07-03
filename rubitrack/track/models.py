@@ -371,3 +371,57 @@ class CuePoint(models.Model):
         return ""
 
 
+class DuplicateCandidate(models.Model):
+    """
+    Paire de tracks suspectée d'être un doublon, produite par le scan.
+    Persistant: un candidat écarté (dismissed) n'est plus jamais reproposé.
+    Convention: track_a.id < track_b.id (ordre canonique, unicité de la paire).
+    """
+    STATUS_PENDING = 'pending'
+    STATUS_MERGED = 'merged'
+    STATUS_DISMISSED = 'dismissed'
+    STATUS_CHOICES = (
+        (STATUS_PENDING, 'À traiter'),
+        (STATUS_MERGED, 'Fusionné'),
+        (STATUS_DISMISSED, 'Pas un doublon'),
+    )
+
+    track_a = models.ForeignKey(Track, on_delete=models.CASCADE, related_name='duplicate_as_a')
+    track_b = models.ForeignKey(Track, on_delete=models.CASCADE, related_name='duplicate_as_b')
+    score = models.PositiveSmallIntegerField(help_text="0-100, 100 = certitude (audio_id/file_path)")
+    reasons = models.JSONField(default=list, help_text="Raisons du match, ex: ['same_audio_id', 'fuzzy:93']")
+    # REGLE ABSOLUE (Antoine 2026-07-03): si les deux tracks ont des cue points,
+    # JAMAIS d'auto-merge — signalement visible + comparaison des 8 slots A/B.
+    cue_conflict = models.BooleanField(default=False, help_text="Les DEUX tracks ont des cue points")
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default=STATUS_PENDING)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-score', 'id']
+        constraints = [
+            models.UniqueConstraint(fields=['track_a', 'track_b'], name='unique_duplicate_pair'),
+        ]
+        indexes = [
+            models.Index(fields=['status', '-score'], name='track_dupcand_status_idx'),
+        ]
+
+    def __str__(self):
+        return f"Dup[{self.score}] #{self.track_a_id} ~ #{self.track_b_id} ({self.status})"
+
+
+class MergeLog(models.Model):
+    """Trace de chaque fusion: snapshot JSON de la track supprimée (audit / undo de dernier recours)."""
+    survivor = models.ForeignKey(Track, on_delete=models.SET_NULL, null=True, related_name='merge_logs')
+    deleted_track_id = models.IntegerField()
+    deleted_snapshot = models.JSONField(help_text="Champs de la track supprimée + cues + ids transitions/playlists")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"Merge #{self.deleted_track_id} -> #{self.survivor_id} ({self.created_at:%Y-%m-%d %H:%M})"
+
+

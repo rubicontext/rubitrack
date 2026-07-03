@@ -4,3 +4,5 @@ __pycache__
 .venv/
 .env
 rubitrack/preview_db.sqlite3
+backups/
+track_claude.md

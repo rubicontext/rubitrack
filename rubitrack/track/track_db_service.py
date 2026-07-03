@@ -1,4 +1,5 @@
 from .models import Track, Artist, Transition, CurrentlyPlaying
+from .duplicate.detection import normalize_title_base
 import logging
 
 logger = logging.getLogger(__name__)
@@ -91,6 +92,16 @@ def get_track_db_from_title_artist(track_title: str, artist_db: Artist):
     if len(track_list) > 0:
         logger.info('FOUND with strip : %s %s %s', search_title, " original:", track_title)
         return track_list[0]
+
+    # titre-base identique (suffixe " - Clé - Note" retiré): la clé/note a changé
+    # dans Traktor mais c'est la même track (ex: "Back To Black - Gm - 5" ~ "- Am - 6").
+    # C'était LA fabrique de doublons du log Icecast pendant les sets.
+    title_base = normalize_title_base(track_title)
+    if title_base:
+        for track in all_tracks:
+            if normalize_title_base(track.title) == title_base:
+                logger.info('FOUND by title base: %s ~ %s', track.title, track_title)
+                return track
 
     # create new track, should only happen if no import of collection
     logger.warning('WARNING Created new track, : %s', track_title)

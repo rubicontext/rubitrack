@@ -23,7 +23,14 @@ from .playlist import playlist_transitions, playlist_favourite
 from .playlist.toggle_favourite import toggle_playlist_favourite
 from .playlist.playlist_list_view import playlist_list_view
 from .navigation_view import navigation_view
-from .duplicate.display_duplicate import display_duplicates, manual_merge_track_batch, merge_tracks, bulk_merge_tracks
+from .duplicate.display_duplicate import (
+    auto_merge_certain,
+    dismiss_candidate,
+    display_duplicates,
+    manual_merge_track_batch,
+    merge_candidate,
+    scan_duplicates_view,
+)
 from .currently_playing.manual_transition import manual_transition
 from .currently_playing.save_waveform import save_waveform
 from .duplicate.manual_merge_duplicate import manual_merge_duplicate
@@ -113,8 +120,10 @@ urlpatterns = [
     path('tools/', tools_index, name='tools'),
     path('duplicates/', display_duplicates, name='duplicates'),
     path('manual_merge_track_batch/', manual_merge_track_batch, name='manual_merge_track_batch'),
-    path('merge_tracks/', merge_tracks, name='merge_tracks'),
-    path('bulk_merge_tracks/', bulk_merge_tracks, name='bulk_merge_tracks'),
+    path('duplicates/scan/', scan_duplicates_view, name='scan_duplicates'),
+    path('duplicates/merge/', merge_candidate, name='merge_candidate'),
+    path('duplicates/dismiss/', dismiss_candidate, name='dismiss_candidate'),
+    path('duplicates/auto_merge_certain/', auto_merge_certain, name='auto_merge_certain'),
     path('manual_transition/', manual_transition, name='manual_transition'),
     path('save_waveform/', save_waveform, name='save_waveform'),
     path('manual_merge_track/', manual_merge_duplicate, name='manual_merge_track'),

@@ -1,100 +1,140 @@
 {% extends 'admin/base_site.html' %}
-{% block title %}Batch Merge Tracks{% endblock title %}
+{% block title %}Doublons - Rubitrack{% endblock title %}
 {% block content %}
-<h1>Batch Merge Tracks</h1>
-<p>Review and merge duplicate tracks found in your collection.</p>
 
-<form id="bulk-merge-form" method="post" action="{% url 'bulk_merge_tracks' %}">
+<h1>Gestion des doublons</h1>
+
+{% if messages %}
+  {% for message in messages %}
+    <div class="alert alert-{{ message.tags|default:'info' }}" style="padding:10px 14px; margin:8px 0; border-radius:4px; background:#d4edda; color:#155724;">{{ message }}</div>
+  {% endfor %}
+{% endif %}
+
+<div style="margin:16px 0; display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
+  <form method="post" action="{% url 'scan_duplicates' %}">{% csrf_token %}
+    <button type="submit" class="btn btn-primary" style="background:#283C4F; color:white; border:none; padding:8px 18px;">
+      <i class="fa fa-search"></i> Scanner la collection
+    </button>
+  </form>
+  {% if auto_mergeable_count %}
+  <form method="post" action="{% url 'auto_merge_certain' %}"
+        onsubmit="return confirm('Fusionner automatiquement {{ auto_mergeable_count }} paires certaines (audio identique, sans conflit de cues) ?');">
     {% csrf_token %}
+    <button type="submit" class="btn btn-success" style="background:#28a745; color:white; border:none; padding:8px 18px;">
+      <i class="fa fa-magic"></i> Auto-merge des {{ auto_mergeable_count }} paires certaines
+    </button>
+  </form>
+  {% endif %}
+  <a href="{% url 'manual_merge_track' %}" class="btn" style="background:#6c757d; color:white; padding:8px 14px;">Merge manuel libre</a>
+  <a href="{% url 'manual_merge_artist' %}" class="btn" style="background:#ffc107; color:black; padding:8px 14px;">Merge artistes</a>
+  <span style="color:#888; font-size:12px;">{{ dismissed_count }} paires écartées définitivement (mémorisées)</span>
+</div>
 
-    <!-- Action buttons at the top -->
-    <div style="margin-top:20px; text-align:center;">
-        <button type="button" id="bulk-merge-btn" onclick="bulkMerge()" class="btn btn-success" style="background-color:#28a745; color:white; border:none; margin-right:10px;">
-            Merge selected (0)
-        </button>
-        <a href="{% url 'manual_merge_track' %}" class="btn btn-danger" style="margin-right:10px;">Merge 2 tracks manually</a>
-        <a href="{% url 'manual_merge_artist' %}" class="btn btn-warning" style="background-color:#ffc107; color:black; border:none;">Merge 2 artists manually</a>
-        <a href="{% url 'duplicates' %}" class="btn btn-secondary" style="background-color:#6c757d; color:white; border:none;">← Back to Menu</a>
-    </div>
+<h2 style="font-size:20px; color:#283C4F;">Candidats ({{ candidates|length }})</h2>
 
-    <br>
+{% if not candidates %}
+  <p>Aucun candidat en attente — lance un scan pour analyser la collection.</p>
+{% endif %}
 
-    <table class="table table-striped">
-        <thead>
-            <tr>
-                <th style="text-align:left;">
-                    <input type="checkbox" id="select-all" onclick="toggleSelectAll(this)"> Select
-                </th>
-                <th style="text-align:left;">Artist</th>
-                <th style="text-align:left;">Title A (long)</th>
-                <th style="text-align:left;">Title B (short)</th>
-                <th>Individual Action</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for track_a, track_b in duplicates %}
-            <tr>
-                <td style="text-align:left;">
-                    <input type="checkbox" name="merge_pairs" value="{{ track_a.id }},{{ track_b.id }}" class="merge-checkbox">
-                </td>
-                <td style="text-align:left;">{{ track_a.artist.name }}</td>
-                <td style="text-align:left;">{{ track_a.title }}</td>
-                <td style="text-align:left;">{{ track_b.title }}</td>
-                <td>
-                    <form method="post" action="{% url 'merge_tracks' %}" style="display: inline;">
-                        {% csrf_token %}
-                        <input type="hidden" name="track_a_id" value="{{ track_a.id }}" />
-                        <input type="hidden" name="track_b_id" value="{{ track_b.id }}" />
-                        <button type="submit" class="btn btn-primary" style="background-color:#283C4F; color:white; border:none;">Merge</button>
-                    </form>
-                </td>
-            </tr>
-            {% empty %}
-            <tr>
-                <td colspan="5" class="text-center">No duplicates found!</td>
-            </tr>
+<table class="table table-striped table-condensed">
+  <thead>
+    <tr>
+      <th>Score</th>
+      <th>Raisons</th>
+      <th>Track A</th>
+      <th>Track B</th>
+      <th>Cues</th>
+      <th style="min-width:260px;">Actions</th>
+    </tr>
+  </thead>
+  <tbody>
+  {% for item in candidates %}
+    {% with c=item.candidate %}
+    <tr {% if c.cue_conflict %}style="background:#fff3cd;"{% endif %}>
+      <td><b>{{ c.score }}</b></td>
+      <td>
+        {% for reason in c.reasons %}
+          <span style="display:inline-block; background:#e2e6ea; border-radius:3px; padding:1px 7px; font-size:11px; margin:1px;">{{ reason }}</span>
+        {% endfor %}
+        {% if c.cue_conflict %}
+          <br><span style="display:inline-block; background:#dc3545; color:white; border-radius:3px; padding:2px 8px; font-size:11px; font-weight:bold; margin-top:3px;">
+            ⚠ CUES DES DEUX CÔTÉS — merge manuel uniquement
+          </span>
+        {% endif %}
+      </td>
+      <td>
+        <a href="{% url 'history_editing_view' c.track_a.id %}">{{ c.track_a.title|slice:":45" }}</a><br>
+        <span style="color:#52d3aa;">{{ c.track_a.artist.name }}</span>
+        <span style="color:#888; font-size:11px;">#{{ c.track_a.id }} · ▶{{ c.track_a.playcount|default:0 }}{% if c.track_a.playtime %} · {{ c.track_a.playtime|floatformat:0 }}s{% endif %}</span>
+        {% if item.suggested_survivor.id == c.track_a.id %}<span title="Survivant suggéré" style="color:#28a745; font-weight:bold;"> ★</span>{% endif %}
+      </td>
+      <td>
+        <a href="{% url 'history_editing_view' c.track_b.id %}">{{ c.track_b.title|slice:":45" }}</a><br>
+        <span style="color:#52d3aa;">{{ c.track_b.artist.name }}</span>
+        <span style="color:#888; font-size:11px;">#{{ c.track_b.id }} · ▶{{ c.track_b.playcount|default:0 }}{% if c.track_b.playtime %} · {{ c.track_b.playtime|floatformat:0 }}s{% endif %}</span>
+        {% if item.suggested_survivor.id == c.track_b.id %}<span title="Survivant suggéré" style="color:#28a745; font-weight:bold;"> ★</span>{% endif %}
+      </td>
+      <td style="white-space:nowrap;">A:{{ item.cues_a }} / B:{{ item.cues_b }}</td>
+      <td>
+        <form method="post" action="{% url 'merge_candidate' %}" style="display:inline;"
+              onsubmit="return confirm('Garder A (#{{ c.track_a.id }}) et supprimer B (#{{ c.track_b.id }}) ?');">
+          {% csrf_token %}
+          <input type="hidden" name="candidate_id" value="{{ c.id }}">
+          <input type="hidden" name="survivor_id" value="{{ c.track_a.id }}">
+          <button type="submit" class="btn btn-sm" style="background:#28a745; color:white; border:none; padding:4px 10px;">Garder A</button>
+        </form>
+        <form method="post" action="{% url 'merge_candidate' %}" style="display:inline;"
+              onsubmit="return confirm('Garder B (#{{ c.track_b.id }}) et supprimer A (#{{ c.track_a.id }}) ?');">
+          {% csrf_token %}
+          <input type="hidden" name="candidate_id" value="{{ c.id }}">
+          <input type="hidden" name="survivor_id" value="{{ c.track_b.id }}">
+          <button type="submit" class="btn btn-sm" style="background:#17a2b8; color:white; border:none; padding:4px 10px;">Garder B</button>
+        </form>
+        <form method="post" action="{% url 'dismiss_candidate' %}" style="display:inline;">
+          {% csrf_token %}
+          <input type="hidden" name="candidate_id" value="{{ c.id }}">
+          <button type="submit" class="btn btn-sm" style="background:#6c757d; color:white; border:none; padding:4px 10px;">Pas un doublon</button>
+        </form>
+      </td>
+    </tr>
+    {% if c.cue_conflict %}
+    <tr style="background:#fffbea;">
+      <td></td>
+      <td colspan="5">
+        <table style="font-size:12px; border-collapse:collapse;">
+          <tr>
+            <td style="padding:2px 8px; color:#888;">Slot</td>
+            {% for slot, time_a, time_b in item.cue_slots %}<td style="padding:2px 8px; text-align:center; color:#888;">{{ slot }}</td>{% endfor %}
+          </tr>
+          <tr>
+            <td style="padding:2px 8px; font-weight:bold;">A #{{ c.track_a.id }}</td>
+            {% for slot, time_a, time_b in item.cue_slots %}
+              <td style="padding:2px 8px; text-align:center; {% if time_a %}background:#c6f7e2; font-weight:bold;{% endif %}">{{ time_a|default:"—" }}</td>
             {% endfor %}
-        </tbody>
-    </table>
-    
-</form>
+          </tr>
+          <tr>
+            <td style="padding:2px 8px; font-weight:bold;">B #{{ c.track_b.id }}</td>
+            {% for slot, time_a, time_b in item.cue_slots %}
+              <td style="padding:2px 8px; text-align:center; {% if time_b %}background:#c6dbff; font-weight:bold;{% endif %}">{{ time_b|default:"—" }}</td>
+            {% endfor %}
+          </tr>
+        </table>
+      </td>
+    </tr>
+    {% endif %}
+    {% endwith %}
+  {% endfor %}
+  </tbody>
+</table>
 
-<script>
-function toggleSelectAll(selectAllCheckbox) {
-    const checkboxes = document.querySelectorAll('.merge-checkbox');
-    checkboxes.forEach(checkbox => {
-        checkbox.checked = selectAllCheckbox.checked;
-    });
-    updateBulkMergeButton();
-}
+{% if duplicate_artists %}
+<h2 style="font-size:20px; color:#283C4F;">Artistes dupliqués ({{ duplicate_artists|length }} groupes)</h2>
+<p style="color:#888;">Mêmes noms à la casse/espaces près — à fusionner via <a href="{% url 'manual_merge_artist' %}">Merge artistes</a>.</p>
+<ul>
+  {% for group in duplicate_artists %}
+    <li>{% for artist in group %}<b>{{ artist.name }}</b> (#{{ artist.id }}){% if not forloop.last %} · {% endif %}{% endfor %}</li>
+  {% endfor %}
+</ul>
+{% endif %}
 
-function updateBulkMergeButton() {
-    const checkedBoxes = document.querySelectorAll('.merge-checkbox:checked');
-    const bulkBtn = document.getElementById('bulk-merge-btn');
-    const count = checkedBoxes.length;
-    bulkBtn.textContent = `Merge selected (${count})`;
-    bulkBtn.disabled = count === 0;
-}
-
-function bulkMerge() {
-    const checkedBoxes = document.querySelectorAll('.merge-checkbox:checked');
-    if (checkedBoxes.length === 0) {
-        alert('Please select at least one pair to merge.');
-        return;
-    }
-    
-    if (confirm(`Are you sure you want to merge ${checkedBoxes.length} pair(s) of tracks?`)) {
-        document.getElementById('bulk-merge-form').submit();
-    }
-}
-
-// Add event listeners to update button
-document.addEventListener('DOMContentLoaded', function() {
-    const checkboxes = document.querySelectorAll('.merge-checkbox');
-    checkboxes.forEach(checkbox => {
-        checkbox.addEventListener('change', updateBulkMergeButton);
-    });
-    updateBulkMergeButton(); // Initialize button
-});
-</script>
-{% endblock %}
+{% endblock content %}

@@ -12,6 +12,7 @@ from django.shortcuts import render
 from track.playlist.playlist_transitions import get_order_rank
 from ..models import Playlist, Track, Artist, Genre, Collection, CuePoint
 from ..musical_key.musical_key_utils import extract_musical_key_from_filename, normalize_musical_key_notation
+from ..duplicate.detection import normalize_title_base
 from ..duplicate.display_duplicate import keys_are_equivalent
 
 from django.contrib.auth.decorators import login_required
@@ -51,6 +52,8 @@ class TrackImportIndex:
         """Retrouve une track existante, dans l'ordre de priorité historique:
         1. artist + titre exact
         1b. titre strippé ou enharmoniquement équivalent (Bbm ~ A#m) chez le même artiste
+        1c. titre-base identique (suffixe " - Clé - Note" retiré): quand la clé ou la
+            note change dans Traktor, le titre change mais c'est la même track
         2. audio_id
         """
         track = self.by_artist_title.get((artist.id, title))
@@ -59,6 +62,7 @@ class TrackImportIndex:
 
         title_stripped = title.strip()
         import_parts = title_stripped.split(' - ')
+        import_base = normalize_title_base(title)
         for existing_track in self.by_artist[artist.id]:
             existing_stripped = existing_track.title.strip()
             if existing_stripped == title_stripped:
@@ -70,6 +74,11 @@ class TrackImportIndex:
                     and existing_parts[0] == import_parts[0]
                     and keys_are_equivalent(existing_parts[-2], import_parts[-2])):
                 logger.info(f"FOUND by enharmonic key: '{existing_track.title}' ~ '{title}'")
+                return existing_track
+            # e.g. "Song - Gm - 5" should match "Song - Am - 6" (retag/réanalyse)
+            if import_base and normalize_title_base(existing_track.title) == import_base:
+                logger.info(f"FOUND by title base: '{existing_track.title}' ~ '{title}'")
+                existing_track.title = title  # garder le titre le plus récent
                 return existing_track
 
         if audio_id:
@@ -301,7 +310,14 @@ def get_genre_from_info(info):
 def get_artist_db_from_artist_name(artistName: str, artists_by_name: Dict[str, Artist]) -> Artist:
     artist = artists_by_name.get(artistName)
     if artist is None:
-        artist = Artist.objects.create(name=artistName)
+        # Canonicalisation: réutiliser une fiche existante à la casse/espaces près
+        # (évite la fragmentation "Popof"/"POPOF"/"Popof " qui aggrave les doublons)
+        canonical = artistName.strip().lower()
+        for existing_name, existing_artist in artists_by_name.items():
+            if existing_name.strip().lower() == canonical:
+                artists_by_name[artistName] = existing_artist
+                return existing_artist
+        artist = Artist.objects.create(name=artistName.strip())
         artists_by_name[artistName] = artist
     return artist
 
