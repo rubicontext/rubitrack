@@ -127,14 +127,38 @@
   </tbody>
 </table>
 
-{% if duplicate_artists %}
-<h2 style="font-size:20px; color:#283C4F;">Artistes dupliqués ({{ duplicate_artists|length }} groupes)</h2>
-<p style="color:#888;">Mêmes noms à la casse/espaces près — à fusionner via <a href="{% url 'manual_merge_artist' %}">Merge artistes</a>.</p>
-<ul>
-  {% for group in duplicate_artists %}
-    <li>{% for artist in group %}<b>{{ artist.name }}</b> (#{{ artist.id }}){% if not forloop.last %} · {% endif %}{% endfor %}</li>
-  {% endfor %}
-</ul>
+{% if artist_groups %}
+<h2 style="font-size:20px; color:#283C4F;">Artistes dupliqués ({{ artist_groups|length }} groupes)</h2>
+<p style="color:#888;">Mêmes noms à la casse/espaces près. Coche les groupes à fusionner : chacun est fusionné vers l'artiste <b>survivant</b> (celui qui a le plus de tracks). Merge manuel fin : <a href="{% url 'manual_merge_artist' %}">ici</a>.</p>
+
+<form method="post" action="{% url 'merge_artist_groups' %}"
+      onsubmit="return confirm('Fusionner les groupes d\'artistes sélectionnés ? (irréversible)');">
+  {% csrf_token %}
+  <div style="margin:8px 0;">
+    <label style="cursor:pointer;"><input type="checkbox" id="artist-select-all" checked onclick="document.querySelectorAll('.artist-group-cb').forEach(c=>c.checked=this.checked);"> <b>Tout sélectionner</b></label>
+    <button type="submit" class="btn btn-success" style="background:#28a745; color:white; border:none; padding:6px 16px; margin-left:16px;">
+      <i class="fa fa-object-group"></i> Fusionner les groupes sélectionnés
+    </button>
+  </div>
+  <table class="table table-striped table-condensed">
+    <thead>
+      <tr><th style="width:30px;"></th><th>Survivant (gardé)</th><th>Fusionnés dedans (supprimés)</th></tr>
+    </thead>
+    <tbody>
+      {% for group in artist_groups %}
+      <tr>
+        <td><input type="checkbox" name="survivor_ids" value="{{ group.survivor.id }}" class="artist-group-cb" checked></td>
+        <td><b>{{ group.survivor.name }}</b> <span style="color:#888; font-size:12px;">#{{ group.survivor.id }} · {{ group.survivor.track_count }} tracks</span></td>
+        <td>
+          {% for loser in group.losers %}
+            <span style="color:#b8860b;">{{ loser.name }}</span> <span style="color:#aaa; font-size:11px;">#{{ loser.id }} · {{ loser.track_count }}t</span>{% if not forloop.last %} · {% endif %}
+          {% endfor %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</form>
 {% endif %}
 
 {% endblock content %}

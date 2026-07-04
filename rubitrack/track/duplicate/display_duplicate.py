@@ -5,7 +5,7 @@ from django.shortcuts import render, redirect
 from django.views.decorators.http import require_POST
 
 from ..models import DuplicateCandidate, Track
-from .detection import find_duplicate_artists, scan_duplicates, suggest_survivor
+from .detection import scan_duplicates, suggest_survivor
 from .manual_merge_duplicate import merge_duplicate_tracks
 
 logger = logging.getLogger(__name__)
@@ -76,6 +76,31 @@ def _candidate_context(candidate: DuplicateCandidate) -> dict:
     return ctx
 
 
+def _artist_groups_with_survivor():
+    """Groupes d'artistes dupliqués (casse/espaces) avec survivant suggéré
+    (celui qui a le plus de tracks, à égalité le plus ancien id)."""
+    from collections import defaultdict
+
+    from django.db.models import Count
+
+    from ..models import Artist
+    groups = defaultdict(list)
+    for artist in Artist.objects.annotate(track_count=Count('track')):
+        groups[artist.name.strip().lower()].append(artist)
+
+    result = []
+    for members in groups.values():
+        if len(members) < 2:
+            continue
+        survivor = max(members, key=lambda a: (a.track_count, -a.id))
+        result.append({
+            'survivor': survivor,
+            'losers': [a for a in members if a.id != survivor.id],
+            'total_tracks': sum(a.track_count for a in members),
+        })
+    return sorted(result, key=lambda g: g['survivor'].name.lower())
+
+
 def display_duplicates(request):
     # Fonction pour le menu principal des duplicatas
     return render(request, 'track/duplicates/duplicates.html')
@@ -96,8 +121,30 @@ def manual_merge_track_batch(request):
         'auto_mergeable_count': len(auto_mergeable),
         'dismissed_count': DuplicateCandidate.objects.filter(
             status=DuplicateCandidate.STATUS_DISMISSED).count(),
-        'duplicate_artists': find_duplicate_artists(),
+        'artist_groups': _artist_groups_with_survivor(),
     })
+
+
+@require_POST
+def merge_artist_groups(request):
+    """Fusion groupée des artistes dupliqués sélectionnés (cases cochées).
+    Chaque groupe est fusionné vers son survivant (artiste au plus de tracks)."""
+    from .manual_merge_artist import merge_duplicate_artists
+    selected = {int(x) for x in request.POST.getlist('survivor_ids')}
+    merged_groups = merged_artists = 0
+    for group in _artist_groups_with_survivor():
+        survivor = group['survivor']
+        if survivor.id not in selected:
+            continue
+        for loser in group['losers']:
+            merge_duplicate_artists(survivor.id, loser.id)
+            merged_artists += 1
+        merged_groups += 1
+    messages.success(
+        request,
+        f"{merged_groups} groupe(s) d'artistes fusionné(s), {merged_artists} doublon(s) supprimé(s)."
+    )
+    return redirect("manual_merge_track_batch")
 
 
 @require_POST

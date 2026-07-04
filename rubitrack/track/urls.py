@@ -28,6 +28,7 @@ from .duplicate.display_duplicate import (
     dismiss_candidate,
     display_duplicates,
     manual_merge_track_batch,
+    merge_artist_groups,
     merge_candidate,
     scan_duplicates_view,
 )
@@ -130,6 +131,7 @@ urlpatterns = [
     path('duplicates/merge/', merge_candidate, name='merge_candidate'),
     path('duplicates/dismiss/', dismiss_candidate, name='dismiss_candidate'),
     path('duplicates/auto_merge_certain/', auto_merge_certain, name='auto_merge_certain'),
+    path('duplicates/merge_artist_groups/', merge_artist_groups, name='merge_artist_groups'),
     path('manual_transition/', manual_transition, name='manual_transition'),
     path('save_waveform/', save_waveform, name='save_waveform'),
     path('manual_merge_track/', manual_merge_duplicate, name='manual_merge_track'),

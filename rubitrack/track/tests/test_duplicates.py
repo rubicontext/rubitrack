@@ -233,3 +233,40 @@ class TestPrevention:
         found = get_track_db_from_title_artist("Back To Black - Cm - 3", d['artist'])
         assert found.id in (d['t1'].id, d['t2'].id)
         assert Track.objects.filter(title__startswith="Back To Black").count() == 2
+
+
+@pytest.mark.django_db
+class TestBulkArtistMerge:
+    def test_groups_detected_with_survivor(self, admin_client_logged):
+        from track.duplicate.display_duplicate import _artist_groups_with_survivor
+        a1 = Artist.objects.create(name="Popof")
+        a2 = Artist.objects.create(name="POPOF")
+        a3 = Artist.objects.create(name="popof ")
+        # a1 a le plus de tracks -> survivant
+        for i in range(3):
+            Track.objects.create(title=f"T{i}", artist=a1)
+        Track.objects.create(title="U", artist=a2)
+        groups = _artist_groups_with_survivor()
+        popof = [g for g in groups if g['survivor'].name.strip().lower() == 'popof'][0]
+        assert popof['survivor'].id == a1.id
+        assert {a.id for a in popof['losers']} == {a2.id, a3.id}
+
+    def test_bulk_merge_selected_groups(self, admin_client_logged):
+        a1 = Artist.objects.create(name="Vitalic")
+        a2 = Artist.objects.create(name="VITALIC")
+        Track.objects.create(title="Poney", artist=a1)
+        t2 = Track.objects.create(title="Birds", artist=a2)
+        resp = admin_client_logged.post(reverse("merge_artist_groups"),
+                                        {"survivor_ids": [a1.id]})
+        assert resp.status_code == 302
+        assert not Artist.objects.filter(id=a2.id).exists()   # loser supprimé
+        t2.refresh_from_db()
+        assert t2.artist_id == a1.id                          # track réaffectée
+
+    def test_unchecked_group_not_merged(self, admin_client_logged):
+        a1 = Artist.objects.create(name="Kavinsky")
+        a2 = Artist.objects.create(name="KAVINSKY")
+        Track.objects.create(title="Nightcall", artist=a1)
+        # on ne coche pas ce groupe
+        admin_client_logged.post(reverse("merge_artist_groups"), {"survivor_ids": []})
+        assert Artist.objects.filter(id=a2.id).exists()       # intact
