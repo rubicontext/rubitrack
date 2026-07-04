@@ -9,10 +9,10 @@
         <td style="padding:2px 8px;"><a href="{% url 'history_editing_view' currentTransition.track_destination.id %}">{{ currentTransition.track_destination.title|slice:":20" }} - <span class="artist_green_flashy">{{ currentTransition.track_destination.artist.name|slice:":20" }}</span></a></td>
         <td style="padding:2px 8px;"><i class="fa fa-forward transition-after" style="color:#28a745 !important;"></i></td>
         <td style="padding:2px 8px;">
-            <input type="text" class="commentTransitionInput" size="60" value="{{ currentTransition.comment }}" transitionId="{{currentTransition.id}}" style="height:26px; font-size:13px; margin:0; width: calc(100% - 40px); display: inline-block;"/>
-            <a class="remove-btn btn-small" href="#" onclick="return false;" style="display: inline-block; margin-left: 5px;">
-                <button class="btn btn-primary btn-sm rounded-0 deleteTransition" type="button" title="Delete" transitionId="{{currentTransition.id}}" style="padding:6px 10px; background-color:#d9534f; color:white; border:none;"><i class="fa fa-trash"></i></button>
-            </a>
+            <div style="display:flex; align-items:center; gap:6px;">
+                <input type="text" class="commentTransitionInput" value="{{ currentTransition.comment }}" transitionId="{{currentTransition.id}}" style="flex:1 1 auto; min-width:0; height:28px; font-size:13px; margin:0;"/>
+                <button class="btn btn-sm deleteTransition" type="button" title="Supprimer la transition" transitionId="{{currentTransition.id}}" style="flex:0 0 auto; padding:5px 10px; background-color:#d9534f; color:white; border:none;"><i class="fa fa-trash"></i></button>
+            </div>
         </td>
     </tr>
     {% endfor %}
@@ -21,24 +21,29 @@
         <td style="padding:2px 8px;"><a href="{% url 'history_editing_view' currentTransition.track_source.id %}">{{ currentTransition.track_source.title }} - <span class="artist_green_flashy">{{ currentTransition.track_source.artist.name }}</span></a></td>
         <td style="padding:2px 8px;"><i class="fa fa-fast-backward transition-before" style="color:#dc3545 !important;"></i></td>
         <td style="padding:2px 8px;">
-            <input type="text" class="commentTransitionInput" size="60" value="{{ currentTransition.comment }}" transitionId="{{currentTransition.id}}" style="height:26px; font-size:13px; margin:0; width: calc(100% - 40px); display: inline-block;"/>
-            <a class="remove-btn btn-small" href="#" onclick="return false;" style="display: inline-block; margin-left: 5px;">
-                <button class="btn btn-primary btn-sm rounded-0 deleteTransition" type="button" title="Delete" transitionId="{{currentTransition.id}}" style="padding:6px 10px; background-color:#d9534f; color:white; border:none;"><i class="fa fa-trash"></i></button>
-            </a>
+            <div style="display:flex; align-items:center; gap:6px;">
+                <input type="text" class="commentTransitionInput" value="{{ currentTransition.comment }}" transitionId="{{currentTransition.id}}" style="flex:1 1 auto; min-width:0; height:28px; font-size:13px; margin:0;"/>
+                <button class="btn btn-sm deleteTransition" type="button" title="Supprimer la transition" transitionId="{{currentTransition.id}}" style="flex:0 0 auto; padding:5px 10px; background-color:#d9534f; color:white; border:none;"><i class="fa fa-trash"></i></button>
+            </div>
         </td>
     </tr>
     {% endfor %}
-    
+
     <!-- Bandeau des cue points de la track en cours (slots 1-8, lisibles en cabine) -->
     <tr>
         <td colspan="3" style="padding:6px 8px; border:none;">
             <span class="cue-strip-label" title="Cue points de la track en cours (slots 1 à 8)">CUES</span>
             {% for time in cue_points_times %}
-                <span class="cue-strip-slot" style="background:{% cycle '#e6fff5' '#c6f7e2' '#b3e5d6' '#a2d9ce' '#e6f0ff' '#c6dbff' '#b3cfff' '#a2bfff' %};"><span class="cue-strip-num">{{ forloop.counter }}</span>{{ time|default:"-" }}</span>
+                {% cycle '#c6f7e2' '#b3e5d6' '#a2d9ce' '#93cebf' '#c6dbff' '#b3cfff' '#a2bfff' '#93b0f0' as slotcolor silent %}
+                {% if time and time != '-' %}
+                    <span class="cue-strip-slot" style="background:{{ slotcolor }};"><span class="cue-strip-num">{{ forloop.counter }}</span>{{ time }}</span>
+                {% else %}
+                    <span class="cue-strip-slot cue-strip-empty"><span class="cue-strip-num">{{ forloop.counter }}</span>–</span>
+                {% endif %}
             {% endfor %}
         </td>
     </tr>
-    
+
     <!-- Ligne de la waveform juste après les cue points -->
     {% if waveform_url %}
     <tr>
