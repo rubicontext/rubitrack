@@ -38,7 +38,7 @@ def get_suggestions_for_track(track_id, bpm_range_percent=10, sort_by='playcount
 
     # Filtrer par clé musicale (distance Camelot)
     if track.musical_key and musical_key_distance < 12:
-        from rubitrack.track.musical_key.musical_key_utils import get_compatible_keys, normalize_musical_key_notation
+        from track.musical_key.musical_key_utils import get_compatible_keys, normalize_musical_key_notation
         compatible_keys = get_compatible_keys(track.musical_key, musical_key_distance)
         # Nettoyer les clés compatibles
         compatible_keys_clean = [normalize_musical_key_notation(k) for k in compatible_keys if k]
@@ -129,15 +129,6 @@ def ajax_suggestions(request):
                 'musical_key_distance': key_distance,
                 'musical_key_order': suggestion_key_obj.order if suggestion_key_obj else None,
             })
-        # DEBUG : log des clés compatibles et suggestions avant filtrage
-        if current_track and current_track.musical_key and musical_key_distance < 12:
-            from rubitrack.track.musical_key.musical_key_utils import get_compatible_keys
-            compatible_keys = get_compatible_keys(current_track.musical_key, musical_key_distance)
-            logger.info(f"Clés compatibles pour {current_track.musical_key} (distance {musical_key_distance}) : {compatible_keys}")
-            logger.info(f"Suggestions avant filtrage : {[t.musical_key for t in Track.objects.exclude(id=current_track.id)]}")
-        logger.info(f"AJAX params: track_id={track_id}, bpm_range={bpm_range}, ranking_min={ranking_min}, musical_key_distance={musical_key_distance}, genre_mode={genre_mode}")
-        logger.info(f"Suggestions trouvées: {len(suggestions)}")
-
         # Tri des suggestions par ordre Traktor (musical_key_order), puis limitation
         suggestions_data = sorted(suggestions_data, key=lambda x: x['musical_key_order'] if x['musical_key_order'] is not None else 999)
         suggestions_data = suggestions_data[:limit]
