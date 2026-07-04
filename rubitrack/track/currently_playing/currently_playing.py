@@ -361,32 +361,28 @@ def get_more_transition_block(request):
 
 
 def get_more_transition_block_history(request, current_track_id=None):
-    if request.method == 'GET' and (
-        'currentTrackId' in request.GET or 'trackSourceId' in request.GET or current_track_id is not None
-    ):
-        if 'currentTrackId' in request.GET:
-            current_track_form_id = request.GET['currentTrackId']
-        elif 'trackSourceId' in request.GET:
-            current_track_form_id = request.GET['trackSourceId']
-        else:
-            current_track_form_id = current_track_id
-
-        current_track_db = Track.objects.get(pk=current_track_form_id)
+    # id de la track courante: argument explicite, sinon POST, sinon GET
+    # (indépendant de la méthode HTTP: delete/add/update sont en POST)
+    if current_track_id is None:
+        current_track_id = (
+            request.POST.get('currentTrackId') or request.POST.get('trackSourceId')
+            or request.GET.get('currentTrackId') or request.GET.get('trackSourceId')
+        )
+    if current_track_id:
+        try:
+            current_track_db = Track.objects.get(pk=current_track_id)
+        except Track.DoesNotExist:
+            current_track_db = None
         if current_track_db is not None:
-            transitions_before = get_transitions_before(current_track_db)
-            transitions_after = get_transitions_after(current_track_db)
-            cue_points_times = get_cue_points_times_for_track_no_ms(current_track_db)
-            cue_points_slots = get_cue_points_slots_for_track(current_track_db)
-
             return render(
                 request,
                 'track/currently_playing/get_more_transition_block_history.html',
                 {
-                    'transitionsBefore': transitions_before,
-                    'transitionsAfter': transitions_after,
+                    'transitionsBefore': get_transitions_before(current_track_db),
+                    'transitionsAfter': get_transitions_after(current_track_db),
                     'currentTrack': current_track_db,
-                    'cue_points_times': cue_points_times,
-                    'cue_points_slots': cue_points_slots,
+                    'cue_points_times': get_cue_points_times_for_track_no_ms(current_track_db),
+                    'cue_points_slots': get_cue_points_slots_for_track(current_track_db),
                 },
             )
     logger.error('ERROR TRACK NOT FOUND')
