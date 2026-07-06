@@ -473,6 +473,60 @@
             font-size: 10px;
         }
     }
+
+    /* ===================================================================
+       VUE MOBILE "CABINE" — lecture au téléphone en conditions réelles.
+       Même charte (clair, bleu #283C4F, vert), desktop inchangé.
+       =================================================================== */
+    @media screen and (max-width: 768px) {
+        /* 1. Récupérer tout l'écran: masquer le chrome admin, contenu collé en haut */
+        #header, .breadcrumbs, #nav-sidebar, #toggle-nav-sidebar,
+        #footer, #user-tools, .messagelist { display: none !important; }
+        html, body { min-width: 0 !important; }
+        #container, #main, #content, .colM, .colMS, #content-main,
+        .dashboard #content, .main > .content {
+            width: 100% !important;
+            min-width: 0 !important;
+            margin: 0 !important;
+            padding: 8px !important;
+            float: none !important;
+            box-sizing: border-box;
+        }
+        * { max-width: 100%; }        /* tue le débordement horizontal (556px -> écran) */
+
+        /* 2. Track en cours: grande, centrée, tout en haut */
+        .now_playing_track { text-align: center; padding: 4px 0 8px; }
+        .on_air { display: inline-block; font-size: 15px !important; font-weight: 800;
+                  color: #e03131; letter-spacing: 1px; }
+        .track_medium_blue { display: block; font-size: 34px !important; line-height: 1.08;
+                             font-weight: 800; color: #283C4F; margin: 4px 0; word-break: break-word; }
+        .artist_green_flashy { display: block; font-size: 21px !important; color: #52a58a; }
+        .grey_subtitle_small { font-size: 13px !important; margin-top: 6px; }
+
+        /* 3. Cues: 4 pads/ligne, gros et lisibles */
+        .cue-strip-label { display: block; margin-bottom: 5px; font-size: 12px; }
+        .cue-strip-slot {
+            display: inline-block; min-width: 0 !important; width: calc(25% - 8px);
+            margin: 4px !important; padding: 10px 2px !important;
+            font-size: 17px !important; box-sizing: border-box;
+        }
+        .cue-strip-slot .cue-strip-num { display: block; font-size: 10px; }
+
+        /* 4. Titres de section compacts, critères sur leur ligne */
+        h2.section-title { font-size: 17px !important; margin: 16px 0 6px; }
+        h2.section-title .section-title-action,
+        h2.section-title .section-title-criteria {
+            display: block; margin-left: 0; margin-top: 2px; font-size: 12px;
+        }
+
+        /* 5. Tables larges: défilent DANS leur cadre au lieu d'élargir la page.
+              (la table des suggestions, nombreuses colonnes, forçait 615px) */
+        #transitionsAllTableDiv, #tablePlaylistHistory, #tableSuggestionAuto {
+            overflow-x: auto; -webkit-overflow-scrolling: touch; width: 100%;
+        }
+        /* marges négatives Bootstrap de .row -> débordement de 30px */
+        .now_playing_track .row { margin-left: 0 !important; margin-right: 0 !important; }
+    }
 </style>
 
 <script>

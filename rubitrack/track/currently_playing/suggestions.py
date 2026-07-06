@@ -9,16 +9,21 @@ def get_list_track_suggestions_auto(track):
         return None
 
     config = Config.get_config()
-    bpm_percent = config.currently_bpm_range_suggestions
+    # Valeurs de Config potentiellement non renseignées -> défauts sûrs
+    # (un None dans un filtre ORM lève "Cannot use None as a query value")
+    bpm_percent = config.currently_bpm_range_suggestions or 0
     key_distance_max = config.currently_musical_key_distance
-    min_ranking = config.currently_ranking_min
+    min_ranking = config.currently_ranking_min or 0
 
     base_qs = Track.objects.filter(
-        comment__icontains=track.genre,
         bpm__gte=track.bpm * (1 - bpm_percent / 100),
         bpm__lte=track.bpm * (1 + bpm_percent / 100),
         ranking__gte=min_ranking,
     ).exclude(id=track.id)
+    # Le genre (trigramme) est cherché dans le commentaire; une track sans genre
+    # ne doit pas faire planter la page principale -> on saute juste ce filtre.
+    if track.genre:
+        base_qs = base_qs.filter(comment__icontains=track.genre)
 
     if track.musical_key:
         try:
