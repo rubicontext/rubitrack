@@ -5,6 +5,16 @@
 
 {% block title %}On Air - Rubitrack{% endblock title %}
 
+{% block extrahead %}{{ block.super }}
+  <link rel="manifest" href="{% url 'pwa_manifest' %}">
+  <meta name="theme-color" content="#283C4F">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="RubiTrack">
+  <link rel="apple-touch-icon" href="{% static 'img/rubitrack-icon-192.png' %}">
+{% endblock %}
+
   {% block content %}
   {% csrf_token %}
 
@@ -537,12 +547,31 @@
 
   $(function () {
     $('[data-toggle="tooltip"]').tooltip();
-    
+
     // Initialiser les valeurs originales des champs de commentaire au chargement
     $('.commentTransitionInput').each(function() {
         $(this).attr('data-original-value', $(this).val());
     });
 });
+
+  // ===== PWA : installation + écran maintenu allumé en cabine =====
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('{% url "pwa_sw" %}').catch(function () {});
+  }
+  // Wake Lock : empêche le téléphone de se mettre en veille pendant le set
+  (function () {
+    var wakeLock = null;
+    function requestWakeLock() {
+      if ('wakeLock' in navigator) {
+        navigator.wakeLock.request('screen').then(function (wl) { wakeLock = wl; }).catch(function () {});
+      }
+    }
+    requestWakeLock();
+    // le verrou saute quand l'onglet passe en arrière-plan -> on le reprend au retour
+    document.addEventListener('visibilitychange', function () {
+      if (document.visibilityState === 'visible') { requestWakeLock(); }
+    });
+  })();
 
 </script>
 
