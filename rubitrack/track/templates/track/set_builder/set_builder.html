@@ -1,0 +1,209 @@
+{% extends 'admin/base_site.html' %}
+{% block title %}Set Builder - Rubitrack{% endblock title %}
+{% block content %}
+<style>
+  #sb-graph { width:100%; overflow:auto; border:1px solid #dde3ea; border-radius:6px; background:#fbfcfd; margin-top:14px; }
+  .sb-controls { display:flex; gap:16px; flex-wrap:wrap; align-items:flex-end; margin:10px 0; }
+  .sb-controls label { display:block; font-size:12px; color:#666; margin-bottom:3px; }
+  .sb-node rect { transition:stroke-width .1s; cursor:pointer; }
+  .sb-node:hover rect { stroke:#283C4F; stroke-width:2.5px; }
+  .sb-depthbtn { border:1px solid #ccc; background:#fff; padding:4px 10px; cursor:pointer; border-radius:4px; }
+  .sb-depthbtn.active { background:#283C4F; color:#fff; border-color:#283C4F; }
+  #sb-empty { color:#888; padding:30px; text-align:center; }
+</style>
+
+<h1>Set Builder <span style="font-size:14px; color:#888; font-weight:normal;">— exploration du graphe de transitions (lookahead +N)</span></h1>
+<p style="color:#666; max-width:820px;">
+  Choisis une track de départ : on déroule les transitions que tu as définies, en profondeur.
+  Le <b style="color:#e8590c;">chemin surligné</b> suit à chaque étape la transition la mieux notée (ta meilleure suite probable).
+  Clique un morceau pour re-centrer le graphe dessus.
+</p>
+
+<div class="sb-controls">
+  <div style="flex:1; min-width:280px;">
+    <label>Track de départ</label>
+    <input list="sb-tracklist" id="sb-start-input" placeholder="Titre ou artiste…" style="width:100%; padding:6px;" autocomplete="off">
+    <datalist id="sb-tracklist">
+      {% for t in tracks %}<option value="{{ t.title }} — {{ t.artist.name }} (#{{ t.id }})" data-id="{{ t.id }}"></option>{% endfor %}
+    </datalist>
+  </div>
+  <div>
+    <label>Profondeur</label>
+    <div id="sb-depth-buttons">
+      {% for d in "123456"|make_list %}
+        <button type="button" class="sb-depthbtn{% if d|add:0 == default_depth %} active{% endif %}" data-depth="{{ d }}">+{{ d }}</button>
+      {% endfor %}
+    </div>
+  </div>
+  <div>
+    <label>Options / track</label>
+    <select id="sb-branch" style="padding:6px;">
+      {% for b in "2345678"|make_list %}<option value="{{ b }}"{% if b|add:0 == default_branch %} selected{% endif %}>{{ b }} max</option>{% endfor %}
+    </select>
+  </div>
+</div>
+
+<div id="sb-info" style="font-size:12px; color:#888; min-height:16px;"></div>
+<div id="sb-graph"><div id="sb-empty">Sélectionne une track de départ pour construire le graphe.</div></div>
+
+<script>
+(function () {
+  const START_ID = {{ start_id|default:"null" }};
+  const GRAPH_BASE = "{% url 'set_builder' %}graph/";
+  const trackMap = {};
+  document.querySelectorAll('#sb-tracklist option').forEach(o => { trackMap[o.value] = o.dataset.id; });
+
+  let depth = {{ default_depth }};
+  let branch = {{ default_branch }};
+
+  const input = document.getElementById('sb-start-input');
+  const info = document.getElementById('sb-info');
+  const graph = document.getElementById('sb-graph');
+  const NS = 'http://www.w3.org/2000/svg';
+
+  function el(tag, attrs, text) {
+    const n = document.createElementNS(NS, tag);
+    for (const k in attrs) n.setAttribute(k, attrs[k]);
+    if (text != null) n.textContent = text;
+    return n;
+  }
+  function trunc(s, n) { return s && s.length > n ? s.slice(0, n - 1) + '…' : (s || ''); }
+
+  function greedyPath(data) {
+    // suit l'arête de meilleur ranking à chaque étape (nœuds non revisités)
+    const bySource = {};
+    data.edges.forEach(e => { (bySource[e.source] = bySource[e.source] || []).push(e); });
+    const pathEdges = new Set(), pathNodes = new Set([data.start_id]);
+    let cur = data.start_id;
+    while (bySource[cur]) {
+      const next = bySource[cur].filter(e => !pathNodes.has(e.target))
+        .sort((a, b) => b.ranking - a.ranking)[0];
+      if (!next) break;
+      pathEdges.add(next.source + '>' + next.target);
+      pathNodes.add(next.target);
+      cur = next.target;
+    }
+    return { pathEdges, pathNodes };
+  }
+
+  function render(data) {
+    graph.innerHTML = '';
+    if (!data.nodes.length || data.edges.length === 0) {
+      graph.innerHTML = '<div id="sb-empty">Cette track n\'a aucune transition sortante définie.</div>';
+      return;
+    }
+    const NW = 190, NH = 54, COLW = 250, VGAP = 18, PADX = 30, PADY = 30;
+    // regrouper par profondeur, trier par ranking décroissant dans la colonne
+    const cols = {};
+    data.nodes.forEach(n => { (cols[n.depth] = cols[n.depth] || []).push(n); });
+    const maxDepth = Math.max(...data.nodes.map(n => n.depth));
+    const pos = {};
+    let maxRows = 0;
+    for (let d = 0; d <= maxDepth; d++) {
+      const list = (cols[d] || []).sort((a, b) => b.ranking - a.ranking);
+      maxRows = Math.max(maxRows, list.length);
+      list.forEach((n, i) => {
+        pos[n.id] = { x: PADX + d * COLW, y: PADY + i * (NH + VGAP), depth: d, row: i };
+      });
+    }
+    // recentrer verticalement chaque colonne
+    const totalH = PADY * 2 + maxRows * (NH + VGAP);
+    for (let d = 0; d <= maxDepth; d++) {
+      const list = cols[d] || [];
+      const colH = list.length * (NH + VGAP);
+      const offset = (totalH - colH) / 2 - PADY;
+      list.forEach(n => { pos[n.id].y += offset; });
+    }
+    const width = PADX * 2 + maxDepth * COLW + NW;
+    const svg = el('svg', { width: width, height: totalH, viewBox: `0 0 ${width} ${totalH}` });
+
+    // flèche
+    const defs = el('defs');
+    [['sb-arrow', '#9aa7b4'], ['sb-arrow-hot', '#e8590c']].forEach(([id, col]) => {
+      const m = el('marker', { id, markerWidth: 8, markerHeight: 8, refX: 7, refY: 3, orient: 'auto', markerUnits: 'strokeWidth' });
+      m.appendChild(el('path', { d: 'M0,0 L7,3 L0,6 Z', fill: col }));
+      defs.appendChild(m);
+    });
+    svg.appendChild(defs);
+
+    const { pathEdges, pathNodes } = greedyPath(data);
+
+    // arêtes
+    data.edges.forEach(e => {
+      const s = pos[e.source], t = pos[e.target];
+      if (!s || !t) return;
+      const hot = pathEdges.has(e.source + '>' + e.target);
+      const x1 = s.x + NW, y1 = s.y + NH / 2, x2 = t.x, y2 = t.y + NH / 2;
+      const mx = (x1 + x2) / 2;
+      const path = el('path', {
+        d: `M${x1},${y1} C${mx},${y1} ${mx},${y2} ${x2},${y2}`,
+        fill: 'none',
+        stroke: hot ? '#e8590c' : '#9aa7b4',
+        'stroke-width': hot ? 3 : 1.3,
+        'marker-end': `url(#${hot ? 'sb-arrow-hot' : 'sb-arrow'})`,
+        opacity: hot ? 1 : 0.6,
+      });
+      const tip = (e.type ? e.type + ' · ' : '') + '★' + e.ranking + (e.comment ? ' · ' + e.comment : '');
+      path.appendChild(el('title', {}, tip));
+      svg.appendChild(path);
+    });
+
+    // nœuds
+    data.nodes.forEach(n => {
+      const p = pos[n.id];
+      const g = el('g', { class: 'sb-node' });
+      const onPath = pathNodes.has(n.id);
+      g.appendChild(el('rect', {
+        x: p.x, y: p.y, width: NW, height: NH, rx: 7,
+        fill: '#fff',
+        stroke: n.id === data.start_id ? '#283C4F' : (onPath ? '#e8590c' : '#c8d0d8'),
+        'stroke-width': n.id === data.start_id ? 3 : (onPath ? 2 : 1),
+      }));
+      // pastille couleur clé
+      g.appendChild(el('rect', { x: p.x, y: p.y, width: 6, height: NH, rx: 3, fill: n.color || '#ccc' }));
+      g.appendChild(el('text', { x: p.x + 14, y: p.y + 20, 'font-size': 12, 'font-weight': 'bold', fill: '#283C4F' }, trunc(n.title, 26)));
+      g.appendChild(el('text', { x: p.x + 14, y: p.y + 36, 'font-size': 11, fill: '#52a58a' }, trunc(n.artist, 28)));
+      const meta = [n.key, n.bpm ? n.bpm.toFixed(0) + ' bpm' : null, '▶' + n.ranking].filter(Boolean).join('  ·  ');
+      g.appendChild(el('text', { x: p.x + 14, y: p.y + 49, 'font-size': 10, fill: '#94a0ac' }, meta));
+      g.style.cursor = 'pointer';
+      g.addEventListener('click', () => { window.location.search = '?track_id=' + n.id; });
+      g.appendChild(el('title', {}, 'Re-centrer sur ' + n.title));
+      svg.appendChild(g);
+    });
+
+    graph.appendChild(svg);
+  }
+
+  function load(id) {
+    if (!id) return;
+    info.textContent = 'Chargement…';
+    fetch(`${GRAPH_BASE}${id}/?depth=${depth}&branch=${branch}`)
+      .then(r => r.json())
+      .then(data => {
+        if (data.error) { graph.innerHTML = '<div id="sb-empty">' + data.error + '</div>'; info.textContent = ''; return; }
+        info.textContent = `${data.nodes.length} morceaux · ${data.edges.length} transitions · profondeur +${data.depth}`
+          + (data.truncated ? ` · ${data.truncated} transition(s) masquée(s) (limite ${branch}/track)` : '');
+        render(data);
+      })
+      .catch(() => { info.textContent = 'Erreur de chargement.'; });
+  }
+
+  input.addEventListener('change', () => {
+    const id = trackMap[input.value];
+    if (id) window.location.search = '?track_id=' + id;
+  });
+  document.querySelectorAll('.sb-depthbtn').forEach(b => b.addEventListener('click', () => {
+    document.querySelectorAll('.sb-depthbtn').forEach(x => x.classList.remove('active'));
+    b.classList.add('active');
+    depth = parseInt(b.dataset.depth);
+    if (START_ID) load(START_ID);
+  }));
+  document.getElementById('sb-branch').addEventListener('change', function () {
+    branch = parseInt(this.value);
+    if (START_ID) load(START_ID);
+  });
+
+  if (START_ID) load(START_ID);
+})();
+</script>
+{% endblock content %}

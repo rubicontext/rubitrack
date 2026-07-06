@@ -46,6 +46,7 @@ from .config.tools_views import (
     tools_index,
 )
 from .currently_playing.set_history import display_sets
+from .set_builder.set_builder_view import set_builder_view, set_builder_graph_api
 from .musical_key.views_import_musical_keys import import_musical_keys_view
 from .collection.rekordbox.views import (
     rekordbox_sync_view,
@@ -146,6 +147,9 @@ urlpatterns = [
     path('tools/detect_transitions/', detect_transitions_view, name='detect_transitions'),
     # SETS (historique des sessions)
     path('sets/', display_sets, name='sets_view'),
+    # SET BUILDER (graphe de transitions / lookahead) — nouvelle page autonome
+    path('set_builder/', set_builder_view, name='set_builder'),
+    path('set_builder/graph/<int:track_id>/', set_builder_graph_api, name='set_builder_graph'),
     path('tools/cleanup_musical_keys/', cleanup_musical_keys, name='cleanup_musical_keys'),
     path('tools/cue_points/', cue_points_overview, name='cue_points_overview'),
     path('tools/delete_all_cue_points/', delete_all_cue_points, name='delete_all_cue_points'),
