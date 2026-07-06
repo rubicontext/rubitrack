@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>UI Lab — Now Playing</title>
+<style>
+  * { box-sizing: border-box; }
+  body { margin:0; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif; background:#eef1f5; color:#1e2a36; }
+  .lab-head { background:#283C4F; color:#fff; padding:18px 26px; }
+  .lab-head h1 { margin:0; font-size:22px; }
+  .lab-head p { margin:6px 0 0; opacity:.75; font-size:13px; }
+  .lab-tabs { display:flex; gap:8px; padding:14px 26px 0; background:#283C4F; }
+  .lab-tab { border:none; background:#3a5169; color:#cfe0ee; padding:10px 20px; border-radius:8px 8px 0 0; cursor:pointer; font-size:14px; font-weight:600; }
+  .lab-tab.active { background:#eef1f5; color:#283C4F; }
+  .lab-panel { display:none; padding:26px; }
+  .lab-panel.active { display:block; }
+  .lab-cap { font-size:13px; color:#667; margin:-8px 0 18px; }
+  .key-badge { display:inline-flex; align-items:center; justify-content:center; border-radius:8px; font-weight:800; color:#111; }
+  .compat-pill { display:inline-block; padding:2px 10px; border-radius:20px; color:#fff; font-size:12px; font-weight:700; }
+
+  /* ---------- A. DJ BOOTH (sombre, lisible de loin) ---------- */
+  #booth { background:#0f1620; color:#eaf2f8; border-radius:12px; padding:30px; }
+  #booth .onair { display:inline-block; background:#e03131; color:#fff; font-weight:800; letter-spacing:2px; padding:3px 12px; border-radius:5px; font-size:13px; animation:pulse 2s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1;} 50%{opacity:.55;} }
+  #booth .btitle { font-size:52px; font-weight:800; line-height:1.05; margin:14px 0 4px; }
+  #booth .bartist { font-size:26px; color:#52d3aa; margin-bottom:20px; }
+  #booth .bmeta { display:flex; gap:14px; align-items:center; flex-wrap:wrap; margin-bottom:26px; }
+  #booth .bbpm { font-size:40px; font-weight:800; }
+  #booth .bbpm small { font-size:15px; opacity:.6; font-weight:400; }
+  #booth .cues { display:grid; grid-template-columns:repeat(8,1fr); gap:8px; margin-bottom:28px; }
+  #booth .cue { border-radius:8px; padding:12px 6px; text-align:center; background:#1b2735; border:1px solid #24344a; }
+  #booth .cue.set { color:#0f1620; font-weight:800; }
+  #booth .cue .n { font-size:11px; opacity:.7; display:block; }
+  #booth .cue .t { font-size:16px; font-weight:800; }
+  #booth h3 { font-size:15px; letter-spacing:1px; color:#8fa3b6; text-transform:uppercase; margin:0 0 12px; }
+  #booth .nextrow { display:flex; gap:14px; overflow-x:auto; padding-bottom:6px; }
+  #booth .nextcard { flex:0 0 220px; background:#1b2735; border-radius:10px; padding:14px; border-left:5px solid; }
+  #booth .nextcard .nt { font-weight:700; font-size:16px; }
+  #booth .nextcard .na { color:#52d3aa; font-size:13px; margin-bottom:8px; }
+
+  /* ---------- B. QUEUE (clair, façon streaming) ---------- */
+  #queue .np { display:flex; align-items:center; gap:16px; background:#fff; border-radius:12px; padding:18px 20px; box-shadow:0 2px 10px rgba(0,0,0,.06); margin-bottom:20px; border-left:6px solid; }
+  #queue .np .npt { font-size:24px; font-weight:800; }
+  #queue .np .npa { color:#52a58a; font-size:16px; }
+  #queue .qlist { background:#fff; border-radius:12px; box-shadow:0 2px 10px rgba(0,0,0,.06); overflow:hidden; }
+  #queue .qrow { display:flex; align-items:center; gap:14px; padding:12px 18px; border-bottom:1px solid #eef1f4; }
+  #queue .qrow:hover { background:#f7fafc; }
+  #queue .qnum { color:#aab; font-weight:700; width:22px; text-align:center; }
+  #queue .qdot { width:12px; height:12px; border-radius:50%; flex:0 0 12px; }
+  #queue .qmain { flex:1; min-width:0; }
+  #queue .qtitle { font-weight:700; }
+  #queue .qartist { color:#8a99a8; font-size:13px; }
+  #queue .qbadges { display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
+  #queue .muted { color:#98a6b3; font-size:13px; }
+
+  /* ---------- C. MIXER (deux platines) ---------- */
+  #mixer .decks { display:flex; gap:18px; align-items:stretch; flex-wrap:wrap; }
+  #mixer .deck { flex:1; min-width:260px; background:#0f1620; color:#eaf2f8; border-radius:12px; padding:22px; }
+  #mixer .deck .lbl { font-size:12px; letter-spacing:2px; color:#8fa3b6; }
+  #mixer .deck .dt { font-size:26px; font-weight:800; margin:8px 0 2px; }
+  #mixer .deck .da { color:#52d3aa; margin-bottom:16px; }
+  #mixer .deck .drow { display:flex; gap:12px; align-items:center; }
+  #mixer .deck .dbpm { font-size:30px; font-weight:800; }
+  #mixer .center { flex:0 0 160px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:10px; }
+  #mixer .center .arrow { font-size:34px; color:#283C4F; }
+  #mixer .cuestrip { display:flex; gap:5px; margin-top:16px; }
+  #mixer .cuestrip .cd { width:22px; height:22px; border-radius:5px; background:#24344a; font-size:10px; text-align:center; line-height:22px; }
+  #mixer .chips { margin-top:22px; }
+  #mixer .chip { display:inline-flex; align-items:center; gap:8px; background:#fff; border:1px solid #d7dee6; border-radius:24px; padding:6px 14px; margin:4px; font-size:13px; }
+</style>
+</head>
+<body>
+
+<div class="lab-head">
+  <h1>UI Lab — concepts pour « Now Playing »</h1>
+  <p>Bac à sable : 3 directions d'interface, sur tes vraies données. Aucune page existante n'est modifiée. Choisis-en une et on la construit pour de vrai.</p>
+</div>
+<div class="lab-tabs">
+  <button class="lab-tab active" data-c="booth">🎧 Cabine (player)</button>
+  <button class="lab-tab" data-c="queue">📋 File d'attente</button>
+  <button class="lab-tab" data-c="mixer">🎚️ Mixeur 2 platines</button>
+</div>
+
+{% if no_data %}
+  <div class="lab-panel active"><p>Aucune track avec transitions en base pour alimenter les maquettes.</p></div>
+{% else %}
+
+<!-- ============ A. DJ BOOTH ============ -->
+<section class="lab-panel active" data-c="booth">
+  <div class="lab-cap">Pensé pour être lu <b>de loin, en cabine</b> : gros titre, pads de cues colorés, prochains morceaux en gros. Fond sombre anti-éblouissement.</div>
+  <div id="booth">
+    <span class="onair">● ON AIR</span>
+    <div class="btitle">{{ current.title }}</div>
+    <div class="bartist">{{ current.artist }}</div>
+    <div class="bmeta">
+      <span class="key-badge" style="background:{{ current.color }}; font-size:22px; padding:8px 14px;">{{ current.key }} · {{ current.camelot }}</span>
+      <span class="bbpm">{{ current.bpm|floatformat:0 }} <small>BPM</small></span>
+      {% if current.genre %}<span style="opacity:.6;">{{ current.genre }}</span>{% endif %}
+      {% if current.duration %}<span style="opacity:.6;">⏱ {{ current.duration }}</span>{% endif %}
+    </div>
+    <div class="cues">
+      {% for c in cue_slots %}
+        <div class="cue {% if c.exists %}set{% endif %}" style="{% if c.exists %}background:{{ current.color }};{% endif %}">
+          <span class="n">CUE {{ c.slot }}</span><span class="t">{{ c.time }}</span>
+        </div>
+      {% endfor %}
+    </div>
+    <h3>▸ Et après ?</h3>
+    <div class="nextrow">
+      {% for c in candidates|slice:":4" %}
+        <div class="nextcard" style="border-left-color:{{ c.color }};">
+          <div class="nt">{{ c.title|slice:":24" }}</div>
+          <div class="na">{{ c.artist|slice:":24" }}</div>
+          <div style="display:flex; gap:8px; align-items:center;">
+            <span class="key-badge" style="background:{{ c.color }}; padding:3px 8px; font-size:13px;">{{ c.key }}</span>
+            <span style="font-weight:700;">{{ c.bpm|floatformat:0 }}</span>
+            <span class="compat-pill" style="background:{{ c.compat.color }};">{{ c.compat.label }}</span>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+<!-- ============ B. QUEUE ============ -->
+<section class="lab-panel" data-c="queue">
+  <div class="lab-cap">Façon <b>file de lecture</b> (Spotify-like) : le set se construit en liste verticale. Idéal pour préparer/enchaîner, réordonnable.</div>
+  <div id="queue">
+    <div class="np" style="border-left-color:{{ current.color }};">
+      <span class="key-badge" style="background:{{ current.color }}; width:56px; height:56px; font-size:16px;">{{ current.key }}</span>
+      <div style="flex:1;">
+        <div class="npt">{{ current.title }}</div>
+        <div class="npa">{{ current.artist }}</div>
+      </div>
+      <div style="text-align:right;">
+        <div style="font-size:22px; font-weight:800;">{{ current.bpm|floatformat:0 }} <span style="font-size:12px; color:#99a;">BPM</span></div>
+        <div class="muted">{{ current.camelot }}{% if current.duration %} · {{ current.duration }}{% endif %}</div>
+      </div>
+    </div>
+    <div style="font-size:13px; color:#667; margin:0 0 8px; font-weight:700;">À SUIVRE ({{ candidates|length }})</div>
+    <div class="qlist">
+      {% for c in candidates %}
+      <div class="qrow">
+        <span class="qnum">{{ forloop.counter }}</span>
+        <span class="qdot" style="background:{{ c.color }};"></span>
+        <div class="qmain">
+          <div class="qtitle">{{ c.title }}</div>
+          <div class="qartist">{{ c.artist }}{% if c.comment %} — <span style="color:#b8860b;">{{ c.comment }}</span>{% endif %}</div>
+        </div>
+        <div class="qbadges">
+          <span class="key-badge" style="background:{{ c.color }}; padding:3px 9px; font-size:12px;">{{ c.key }}</span>
+          <span class="muted">{{ c.bpm|floatformat:0 }} BPM{% if c.bpm_delta != None %} <span style="color:{% if c.bpm_delta > 0 %}#e8590c{% else %}#1c7ed6{% endif %};">({% if c.bpm_delta > 0 %}+{% endif %}{{ c.bpm_delta }}%)</span>{% endif %}</span>
+          <span class="compat-pill" style="background:{{ c.compat.color }};">{{ c.compat.label }}</span>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    <div style="font-size:12px; color:#99a6b3; margin-top:10px;">↕ glisser pour réordonner · clic pour charger (maquette)</div>
+  </div>
+</section>
+
+<!-- ============ C. MIXER ============ -->
+<section class="lab-panel" data-c="mixer">
+  <div class="lab-cap">Vue <b>2 platines</b> : morceau en cours vs meilleur candidat, avec compatibilité de mixage (Δ BPM + relation harmonique Camelot). « Qu'est-ce qui mixe bien maintenant ? »</div>
+  <div id="mixer">
+    <div class="decks">
+      <div class="deck">
+        <div class="lbl">DECK A · EN COURS</div>
+        <div class="dt">{{ current.title|slice:":26" }}</div>
+        <div class="da">{{ current.artist }}</div>
+        <div class="drow">
+          <span class="key-badge" style="background:{{ current.color }}; padding:8px 12px; font-size:18px;">{{ current.key }} · {{ current.camelot }}</span>
+          <span class="dbpm">{{ current.bpm|floatformat:0 }}<span style="font-size:13px; opacity:.6;"> BPM</span></span>
+        </div>
+        <div class="cuestrip">{% for c in cue_slots %}<span class="cd" style="{% if c.exists %}background:{{ current.color }}; color:#0f1620; font-weight:700;{% endif %}">{{ c.slot }}</span>{% endfor %}</div>
+      </div>
+
+      <div class="center">
+        {% if deck_b %}
+        <span class="compat-pill" style="background:{{ deck_b.compat.color }}; font-size:15px; padding:6px 16px;">{{ deck_b.compat.label }}</span>
+        <span class="arrow">→</span>
+        <div style="text-align:center;">
+          <div style="font-weight:800; font-size:15px;">{% if deck_b.bpm_delta != None %}{% if deck_b.bpm_delta > 0 %}+{% endif %}{{ deck_b.bpm_delta }}%{% else %}—{% endif %}</div>
+          <div style="font-size:11px; color:#889;">Δ BPM</div>
+        </div>
+        {% else %}<span class="muted">Pas de candidat</span>{% endif %}
+      </div>
+
+      {% if deck_b %}
+      <div class="deck" style="background:#12202b;">
+        <div class="lbl" style="color:#e8a04a;">DECK B · SUGGÉRÉ</div>
+        <div class="dt">{{ deck_b.title|slice:":26" }}</div>
+        <div class="da">{{ deck_b.artist }}</div>
+        <div class="drow">
+          <span class="key-badge" style="background:{{ deck_b.color }}; padding:8px 12px; font-size:18px;">{{ deck_b.key }} · {{ deck_b.camelot }}</span>
+          <span class="dbpm">{{ deck_b.bpm|floatformat:0 }}<span style="font-size:13px; opacity:.6;"> BPM</span></span>
+        </div>
+      </div>
+      {% endif %}
+    </div>
+
+    <div class="chips">
+      <span style="font-size:13px; color:#667; margin-right:6px;">Charger sur Deck B :</span>
+      {% for c in candidates|slice:"1:6" %}
+        <span class="chip"><span class="qdot" style="width:10px;height:10px;background:{{ c.color }};"></span>{{ c.title|slice:":20" }} <b style="color:#889;">{{ c.bpm|floatformat:0 }}</b> <span class="compat-pill" style="background:{{ c.compat.color }}; font-size:11px; padding:1px 8px;">{{ c.compat.label }}</span></span>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+{% endif %}
+
+<script>
+  document.querySelectorAll('.lab-tab').forEach(function (tab) {
+    tab.addEventListener('click', function () {
+      var c = tab.dataset.c;
+      document.querySelectorAll('.lab-tab').forEach(t => t.classList.toggle('active', t === tab));
+      document.querySelectorAll('.lab-panel').forEach(p => p.classList.toggle('active', p.dataset.c === c));
+    });
+  });
+</script>
+</body>
+</html>
