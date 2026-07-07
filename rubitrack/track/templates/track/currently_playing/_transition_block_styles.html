@@ -1,0 +1,70 @@
+{# CSS PARTAGÉ du bloc de transitions + cues.
+   Inclus tel quel par currently_playing.html ET history_editing.html pour que
+   le bloc (même template get_more_transition_block_history.html) ait un rendu
+   STRICTEMENT identique sur les deux pages, desktop comme mobile. #}
+<style>
+    /* Bandeau des cue points */
+    .cue-strip-label {
+        color: #888; font-size: 11px; font-weight: bold;
+        margin-right: 6px; vertical-align: middle;
+    }
+    .cue-strip-slot {
+        display: inline-block; min-width: 52px; text-align: center;
+        padding: 3px 4px; margin-right: 2px; font-size: 13px; font-weight: bold;
+        border-radius: 3px; color: #283C4F;
+    }
+    .cue-strip-slot .cue-strip-num {
+        color: #7a8a99; font-weight: normal; font-size: 10px; margin-right: 2px;
+    }
+    /* Slot vide: neutre et discret — seuls les slots occupés sont colorés */
+    .cue-strip-slot.cue-strip-empty {
+        background: #f2f2f2; color: #b8b8b8; font-weight: normal;
+    }
+
+    #transitionsAllTable { font-size: 14px; }
+    .table-reduced-height tr { height: 28px; }
+    .table-reduced-height th, .table-reduced-height td {
+        padding: 2px 8px !important; vertical-align: middle;
+    }
+    .table-reduced-height input[type="text"] {
+        height: 26px; font-size: 13px; margin: 0; padding: 3px 6px;
+    }
+    .table-reduced-height .btn { padding: 2px 6px !important; font-size: 13px; }
+    /* Action destructive: cible cliquable confortable, couleur danger */
+    .table-reduced-height .btn.deleteTransition {
+        padding: 5px 10px !important; background-color: #d9534f !important;
+    }
+    .table-reduced-height ul.list-inline { margin-bottom: 0; }
+    .table-reduced-height .list-inline-item { margin-right: 2px; }
+
+    /* Couleurs des flèches de transition */
+    .fa-forward { color: #28a745 !important; }        /* vert: transitions après */
+    .fa-fast-backward { color: #dc3545 !important; }  /* rouge: transitions avant */
+
+    /* --- Mobile: bloc transitions lisible et sans débordement --- */
+    @media screen and (max-width: 768px) {
+        #transitionsAllTableDiv { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+        .table-reduced-height { font-size: 12px; min-width: 100%; table-layout: fixed; }
+        .table-reduced-height th, .table-reduced-height td { padding: 2px 4px !important; font-size: 12px; }
+        .table-reduced-height th:nth-child(1), .table-reduced-height td:nth-child(1) { width: 30% !important; max-width: 120px; }
+        .table-reduced-height th:nth-child(2), .table-reduced-height td:nth-child(2) { width: 5% !important; text-align: center; }
+        .table-reduced-height th:nth-child(3), .table-reduced-height td:nth-child(3) { width: 45% !important; }
+        .table-reduced-height th:nth-child(4), .table-reduced-height td:nth-child(4) { width: 20% !important; }
+        .table-reduced-height td:nth-child(1) a { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: block; }
+        .table-reduced-height input[type="text"] { width: 100%; max-width: none; height: 24px; font-size: 11px; padding: 2px 4px; box-sizing: border-box; }
+        .table-reduced-height .btn { padding: 1px 4px !important; font-size: 11px; }
+        /* Bandeau de cues: 4 pads/ligne, gros et lisibles (fait partie du bloc) */
+        .cue-strip-label { display: block; margin-bottom: 5px; font-size: 12px; }
+        .cue-strip-slot {
+            display: inline-block; min-width: 0 !important; width: calc(25% - 8px);
+            margin: 4px !important; padding: 10px 2px !important;
+            font-size: 17px !important; box-sizing: border-box;
+        }
+        .cue-strip-slot .cue-strip-num { display: block; font-size: 10px; }
+    }
+    @media screen and (max-width: 480px) {
+        .table-reduced-height th:nth-child(1), .table-reduced-height td:nth-child(1) { width: 25% !important; }
+        .table-reduced-height th:nth-child(3), .table-reduced-height td:nth-child(3) { width: 50% !important; }
+        .table-reduced-height th:nth-child(4), .table-reduced-height td:nth-child(4) { width: 20% !important; }
+    }
+</style>

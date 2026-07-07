@@ -2,13 +2,14 @@
 {% load admin_urls %}
 {% load musical_key_filters %}
 <!-- Removed static/select2 additions -->
-<link rel="stylesheet" href="http://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.min.css">
 <link rel="stylesheet" href="/static/css/rubitrack.css">
 
 {% block title %}{{ currentTrack.title }} - History Editing{% endblock title %}
   
   {% block content %}
   {% csrf_token %}
+  {# CSS partagé du bloc transitions: rendu identique à currently_playing #}
+  {% include 'track/currently_playing/_transition_block_styles.html' %}
   <div id="rubi-toast"></div>
   <style>
     #rubi-toast {

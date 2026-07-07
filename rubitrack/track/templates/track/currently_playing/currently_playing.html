@@ -257,6 +257,9 @@
 
 {% endif %}
 
+{# CSS partagé du bloc transitions: source unique, rendu identique à history_editing #}
+{% include 'track/currently_playing/_transition_block_styles.html' %}
+
 {# Styles et init communs (historiquement coincés dans le else: ils ne s'appliquaient que sans track en cours) #}
 <style>
     h2.section-title {
@@ -296,164 +299,6 @@
     }
     #rubi-toast.visible {
         opacity: 1;
-    }
-
-    /* Bandeau des cue points */
-    .cue-strip-label {
-        color: #888;
-        font-size: 11px;
-        font-weight: bold;
-        margin-right: 6px;
-        vertical-align: middle;
-    }
-    .cue-strip-slot {
-        display: inline-block;
-        min-width: 52px;
-        text-align: center;
-        padding: 3px 4px;
-        margin-right: 2px;
-        font-size: 13px;
-        font-weight: bold;
-        border-radius: 3px;
-        color: #283C4F;
-    }
-    .cue-strip-slot .cue-strip-num {
-        color: #7a8a99;
-        font-weight: normal;
-        font-size: 10px;
-        margin-right: 2px;
-    }
-    /* Slot vide: neutre et discret — seuls les slots occupés sont colorés */
-    .cue-strip-slot.cue-strip-empty {
-        background: #f2f2f2;
-        color: #b8b8b8;
-        font-weight: normal;
-    }
-
-    #transitionsAllTable {
-        font-size: 14px;
-    }
-    .table-reduced-height tr {
-        height: 28px;
-    }
-    .table-reduced-height th, .table-reduced-height td {
-        padding: 2px 8px !important;
-        vertical-align: middle;
-    }
-    .table-reduced-height input[type="text"] {
-        height: 26px;
-        font-size: 13px;
-        margin: 0;
-        padding: 3px 6px;
-    }
-    .table-reduced-height .btn {
-        padding: 2px 6px !important;
-        font-size: 13px;
-    }
-    /* Action destructive: cible cliquable confortable, couleur danger */
-    .table-reduced-height .btn.deleteTransition {
-        padding: 5px 10px !important;
-        background-color: #d9534f !important;
-    }
-    .table-reduced-height ul.list-inline {
-        margin-bottom: 0;
-    }
-    .table-reduced-height .list-inline-item {
-        margin-right: 2px;
-    }
-
-    /* Couleurs pour les flèches de transition */
-    .fa-forward {
-        color: #28a745 !important; /* Vert pour >> (transitions après) */
-    }
-    
-    .fa-fast-backward {
-        color: #dc3545 !important; /* Rouge pour << (transitions avant) */
-    }
-
-    /* Mobile responsive styles for transitions table */
-    @media screen and (max-width: 768px) {
-        #transitionsAllTableDiv {
-            overflow-x: auto;
-            -webkit-overflow-scrolling: touch;
-        }
-        
-        .table-reduced-height {
-            font-size: 12px;
-            min-width: 100%;
-            table-layout: fixed;
-        }
-        
-        .table-reduced-height th,
-        .table-reduced-height td {
-            padding: 2px 4px !important;
-            font-size: 12px;
-        }
-        
-        /* Adjust column widths for mobile */
-        .table-reduced-height th:nth-child(1), /* Track */
-        .table-reduced-height td:nth-child(1) {
-            width: 30% !important;
-            max-width: 120px;
-        }
-        
-        .table-reduced-height th:nth-child(2), /* > */
-        .table-reduced-height td:nth-child(2) {
-            width: 5% !important;
-            text-align: center;
-        }
-        
-        .table-reduced-height th:nth-child(3), /* Comment */
-        .table-reduced-height td:nth-child(3) {
-            width: 45% !important;
-        }
-        
-        .table-reduced-height th:nth-child(4), /* Actions */
-        .table-reduced-height td:nth-child(4) {
-            width: 20% !important;
-        }
-        
-        /* Truncate text that's too long */
-        .table-reduced-height td:nth-child(1) a {
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
-            display: block;
-        }
-        
-        /* Smaller input fields on mobile */
-        .table-reduced-height input[type="text"] {
-            width: 100%;
-            max-width: none;
-            height: 24px;
-            font-size: 11px;
-            padding: 2px 4px;
-            box-sizing: border-box;
-        }
-        
-        /* Smaller buttons on mobile */
-        .table-reduced-height .btn {
-            padding: 1px 4px !important;
-            font-size: 11px;
-        }
-    }
-
-    /* Very small screens */
-    @media screen and (max-width: 480px) {
-        .table-reduced-height th:nth-child(1), /* Track */
-        .table-reduced-height td:nth-child(1) {
-            width: 25% !important;
-        }
-        
-        .table-reduced-height th:nth-child(3), /* Comment takes more space */
-        .table-reduced-height td:nth-child(3) {
-            width: 50% !important;
-        }
-        
-        .table-reduced-height th:nth-child(4), /* Actions */
-        .table-reduced-height td:nth-child(4) {
-            width: 20% !important;
-        }
     }
 
     /* Styles pour les cue points */
@@ -513,14 +358,8 @@
         .artist_green_flashy { display: block; font-size: 21px !important; color: #52a58a; }
         .grey_subtitle_small { font-size: 13px !important; margin-top: 6px; }
 
-        /* 3. Cues: 4 pads/ligne, gros et lisibles */
-        .cue-strip-label { display: block; margin-bottom: 5px; font-size: 12px; }
-        .cue-strip-slot {
-            display: inline-block; min-width: 0 !important; width: calc(25% - 8px);
-            margin: 4px !important; padding: 10px 2px !important;
-            font-size: 17px !important; box-sizing: border-box;
-        }
-        .cue-strip-slot .cue-strip-num { display: block; font-size: 10px; }
+        /* (3. Bandeau de cues mobile: déplacé dans _transition_block_styles.html
+              pour un rendu identique sur currently_playing ET history_editing) */
 
         /* 4. Titres de section compacts, critères sur leur ligne */
         h2.section-title { font-size: 17px !important; margin: 16px 0 6px; }
