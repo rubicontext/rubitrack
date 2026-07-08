@@ -43,6 +43,19 @@
             <a href="{% url 'sets_view' %}" class="rt-btn rt-btn-outline"><i class="fas fa-history"></i> Voir mes sets</a>
         </div>
 
+        <!-- Set Builder: explorer les transitions sur plusieurs niveaux -->
+        <div class="rt-card">
+            <div class="rt-card-icon bg-indigo"><i class="fas fa-project-diagram"></i></div>
+            <h3 class="rt-card-title">Set Builder</h3>
+            <p class="rt-card-desc">Explore le graphe de tes transitions sur plusieurs niveaux (+1 à +6) depuis une track de départ. Bac à sable, ne crée rien.</p>
+            <ul class="rt-bullets">
+                <li>Enchaînements +1, +2, +3…</li>
+                <li>Meilleur chemin surligné</li>
+                <li>Clic sur un morceau = re-centrage</li>
+            </ul>
+            <a href="{% url 'set_builder' %}" class="rt-btn rt-btn-indigo"><i class="fas fa-project-diagram"></i> Ouvrir le Set Builder</a>
+        </div>
+
         <!-- Configuration (system) -->
         <div class="rt-card">
             <div class="rt-card-icon bg-cyan"><i class="fas fa-cog"></i></div>
