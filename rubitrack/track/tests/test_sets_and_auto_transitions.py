@@ -10,7 +10,10 @@ from django.contrib.auth.models import User
 from django.urls import reverse
 from django.utils import timezone
 
-from track.currently_playing.auto_transitions import find_transition_candidates_from_history
+from track.currently_playing.auto_transitions import (
+    find_transition_candidates_from_history,
+    recount_transition_play_counts,
+)
 from track.currently_playing.set_history import build_sets
 from track.models import Artist, Config, CurrentlyPlaying, Track, Transition, TransitionType
 
@@ -131,3 +134,27 @@ class TestTransitionCandidates:
         User.objects.create_superuser(username="admin", password="x", email="a@a.fr")
         client.login(username="admin", password="x")
         assert client.get(reverse("add_set_transition")).status_code == 405
+
+
+@pytest.mark.django_db
+class TestPlayCount:
+    def test_recount_sets_play_count_on_existing(self, history):
+        d = history
+        # A->B a été enchaîné 2 fois dans l'historique
+        transition = Transition.objects.create(track_source=d['a'], track_destination=d['b'], ranking=3)
+        other = Transition.objects.create(track_source=d['a'], track_destination=d['c'], ranking=3)
+        stats = recount_transition_play_counts()
+        transition.refresh_from_db(); other.refresh_from_db()
+        assert transition.play_count == 2      # réellement joué 2×
+        assert other.play_count == 0           # A->C jamais enchaîné
+        assert stats['played'] == 1
+        assert Transition.objects.count() == 2  # rien créé
+
+    def test_recount_view(self, history, client):
+        d = history
+        Transition.objects.create(track_source=d['a'], track_destination=d['b'], ranking=3)
+        User.objects.create_superuser(username="admin", password="x", email="a@a.fr")
+        client.login(username="admin", password="x")
+        resp = client.post(reverse("recount_play_counts"))
+        assert resp.status_code == 302
+        assert Transition.objects.get(track_source=d['a'], track_destination=d['b']).play_count == 2

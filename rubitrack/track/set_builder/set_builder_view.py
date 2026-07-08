@@ -81,7 +81,7 @@ def set_builder_graph_api(request, track_id):
                 Transition.objects.filter(track_source_id=source_id)
                 .exclude(track_destination_id=separator)
                 .select_related('track_destination__artist', 'transition_type')
-                .order_by('-ranking', 'position')
+                .order_by('-play_count', '-ranking', 'position')
             )
             total = qs.count()
             picked = list(qs[:branch])
@@ -93,6 +93,7 @@ def set_builder_graph_api(request, track_id):
                     'source': source_id,
                     'target': destination.id,
                     'ranking': transition.ranking,
+                    'play_count': transition.play_count,
                     'comment': transition.comment or '',
                     'type': transition.transition_type.name if transition.transition_type_id else '',
                 })

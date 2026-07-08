@@ -69,15 +69,22 @@
   }
   function trunc(s, n) { return s && s.length > n ? s.slice(0, n - 1) + '…' : (s || ''); }
 
+  // Priorité: enchaînement le plus JOUÉ en set (play_count), puis note manuelle
+  function edgeScore(e) { return [e.play_count || 0, e.ranking || 0]; }
+  function betterEdge(a, b) {
+    const sa = edgeScore(a), sb = edgeScore(b);
+    return (sb[0] - sa[0]) || (sb[1] - sa[1]);
+  }
+
   function greedyPath(data) {
-    // suit l'arête de meilleur ranking à chaque étape (nœuds non revisités)
+    // suit l'arête la plus jouée (puis mieux notée) à chaque étape
     const bySource = {};
     data.edges.forEach(e => { (bySource[e.source] = bySource[e.source] || []).push(e); });
     const pathEdges = new Set(), pathNodes = new Set([data.start_id]);
     let cur = data.start_id;
     while (bySource[cur]) {
       const next = bySource[cur].filter(e => !pathNodes.has(e.target))
-        .sort((a, b) => b.ranking - a.ranking)[0];
+        .sort(betterEdge)[0];
       if (!next) break;
       pathEdges.add(next.source + '>' + next.target);
       pathNodes.add(next.target);
@@ -143,7 +150,8 @@
         'marker-end': `url(#${hot ? 'sb-arrow-hot' : 'sb-arrow'})`,
         opacity: hot ? 1 : 0.6,
       });
-      const tip = (e.type ? e.type + ' · ' : '') + '★' + e.ranking + (e.comment ? ' · ' + e.comment : '');
+      const tip = '▶ joué ' + (e.play_count || 0) + '× · ★' + e.ranking
+        + (e.type ? ' · ' + e.type : '') + (e.comment ? ' · ' + e.comment : '');
       path.appendChild(el('title', {}, tip));
       svg.appendChild(path);
     });

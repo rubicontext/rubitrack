@@ -54,6 +54,10 @@
                 <li>Clic sur un morceau = re-centrage</li>
             </ul>
             <a href="{% url 'set_builder' %}" class="rt-btn rt-btn-indigo"><i class="fas fa-project-diagram"></i> Ouvrir le Set Builder</a>
+            <form method="post" action="{% url 'recount_play_counts' %}" style="display:inline;">
+                {% csrf_token %}
+                <button type="submit" class="rt-btn rt-btn-outline" title="Compte, depuis l'historique, combien de fois chaque transition a été enchaînée en set"><i class="fas fa-calculator"></i> Recalculer les enchaînements joués</button>
+            </form>
         </div>
 
         <!-- Configuration (system) -->

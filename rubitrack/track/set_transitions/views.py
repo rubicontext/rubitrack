@@ -14,7 +14,10 @@ from django.contrib.auth.decorators import login_required
 from django.shortcuts import redirect, render
 from django.views.decorators.http import require_POST
 
-from ..currently_playing.auto_transitions import find_transition_candidates_from_history
+from ..currently_playing.auto_transitions import (
+    find_transition_candidates_from_history,
+    recount_transition_play_counts,
+)
 from ..currently_playing.transition import create_transition
 from ..models import Track
 
@@ -65,3 +68,17 @@ def add_set_transition(request):
     else:
         messages.error(request, "Impossible de créer la transition.")
     return redirect('set_transitions')
+
+
+@login_required
+@require_POST
+def recount_play_counts(request):
+    """Recalcule play_count de chaque transition depuis l'historique des sets.
+    N'écrit que la statistique play_count; ne crée aucune transition."""
+    stats = recount_transition_play_counts()
+    messages.success(
+        request,
+        f"Enchaînements recalculés : {stats['played']}/{stats['transitions']} "
+        f"transitions déjà jouées en set ({stats['total_plays']} enchaînements analysés)."
+    )
+    return redirect('tools')

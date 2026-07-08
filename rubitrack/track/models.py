@@ -209,6 +209,9 @@ class Transition(models.Model):
     comment = models.TextField(max_length=200, blank=True, null=True)
     # used for sortable admin
     position = models.PositiveIntegerField(default=0, blank=False, null=False)
+    # nb de fois où cet enchaînement a réellement été joué en set (calculé
+    # depuis l'historique CurrentlyPlaying ; 0 tant que non analysé)
+    play_count = models.PositiveIntegerField(default=0, db_index=True)
 
     class Meta(object):
         ordering = ['position']
