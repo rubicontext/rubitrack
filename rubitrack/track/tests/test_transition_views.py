@@ -47,7 +47,7 @@ class TestTransitionViewsRequireePost:
         assert resp.status_code == 200
         html = resp.content.decode()
         assert "transitionsAllTable" in html          # bloc rendu (pas blank)
-        assert "CUES" in html
+        assert "cue-strip-slot" in html               # bandeau de cues présent
         # t1 supprimée, t2 (vers Third) toujours présente dans le bloc
         assert not Transition.objects.filter(id=d["t1"].id).exists()
         assert "Third" in html
