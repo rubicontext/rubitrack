@@ -34,6 +34,12 @@
     .fa-forward { color: #28a745 !important; }        /* vert: transitions après */
     .fa-fast-backward { color: #dc3545 !important; }  /* rouge: transitions avant */
 
+    /* Compteur d'enchaînements joués: discret, non intrusif */
+    .transition-playcount {
+        color: #c2c8ce; font-size: 10px; margin-left: 5px;
+        font-weight: normal; vertical-align: middle;
+    }
+
     /* --- Mobile: bloc transitions lisible et sans débordement --- */
     @media screen and (max-width: 768px) {
         #transitionsAllTableDiv { overflow-x: auto; -webkit-overflow-scrolling: touch; }

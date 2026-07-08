@@ -6,7 +6,7 @@
     </tr>
     {% for currentTransition in transitionsAfter %}
     <tr style="height:28px;">
-        <td style="padding:2px 8px;"><a href="{% url 'history_editing_view' currentTransition.track_destination.id %}">{{ currentTransition.track_destination.title|slice:":20" }} - <span class="artist_green_flashy">{{ currentTransition.track_destination.artist.name|slice:":20" }}</span></a></td>
+        <td style="padding:2px 8px;"><a href="{% url 'history_editing_view' currentTransition.track_destination.id %}">{{ currentTransition.track_destination.title|slice:":20" }} - <span class="artist_green_flashy">{{ currentTransition.track_destination.artist.name|slice:":20" }}</span></a>{% if currentTransition.play_count %}<span class="transition-playcount" title="Enchaînée {{ currentTransition.play_count }}× en set">&#9654;{{ currentTransition.play_count }}</span>{% endif %}</td>
         <td style="padding:2px 8px;"><i class="fa fa-forward transition-after" style="color:#28a745 !important;"></i></td>
         <td style="padding:2px 8px;">
             <div style="display:flex; align-items:center; gap:6px;">
@@ -18,7 +18,7 @@
     {% endfor %}
     {% for currentTransition in transitionsBefore %}
     <tr style="height:28px;">
-        <td style="padding:2px 8px;"><a href="{% url 'history_editing_view' currentTransition.track_source.id %}">{{ currentTransition.track_source.title }} - <span class="artist_green_flashy">{{ currentTransition.track_source.artist.name }}</span></a></td>
+        <td style="padding:2px 8px;"><a href="{% url 'history_editing_view' currentTransition.track_source.id %}">{{ currentTransition.track_source.title }} - <span class="artist_green_flashy">{{ currentTransition.track_source.artist.name }}</span></a>{% if currentTransition.play_count %}<span class="transition-playcount" title="Enchaînée {{ currentTransition.play_count }}× en set">&#9654;{{ currentTransition.play_count }}</span>{% endif %}</td>
         <td style="padding:2px 8px;"><i class="fa fa-fast-backward transition-before" style="color:#dc3545 !important;"></i></td>
         <td style="padding:2px 8px;">
             <div style="display:flex; align-items:center; gap:6px;">
