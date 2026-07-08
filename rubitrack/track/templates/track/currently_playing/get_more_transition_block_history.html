@@ -32,7 +32,6 @@
     <!-- Bandeau des cue points de la track en cours (slots 1-8, lisibles en cabine) -->
     <tr>
         <td colspan="3" style="padding:6px 8px; border:none;">
-            <span class="cue-strip-label" title="Cue points de la track en cours (slots 1 à 8)">CUES</span>
             {% for time in cue_points_times %}
                 {% cycle '#c6f7e2' '#b3e5d6' '#a2d9ce' '#93cebf' '#c6dbff' '#b3cfff' '#a2bfff' '#93b0f0' as slotcolor silent %}
                 {% if time and time != '-' %}
