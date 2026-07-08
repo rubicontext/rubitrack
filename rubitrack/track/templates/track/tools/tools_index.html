@@ -29,20 +29,17 @@
             <a href="{% url 'duplicates' %}" class="rt-btn rt-btn-warning"><i class="fas fa-copy"></i> Manage Duplicates</a>
         </div>
 
-        <!-- Transitions auto-détectées -->
+        <!-- Transitions des sets: propositions (jamais de création auto) -->
         <div class="rt-card">
             <div class="rt-card-icon bg-green"><i class="fas fa-random"></i></div>
             <h3 class="rt-card-title">Transitions des sets</h3>
-            <p class="rt-card-desc">Détecte les enchaînements récurrents dans l'historique de lecture et les enregistre comme transitions.</p>
+            <p class="rt-card-desc">Propose les enchaînements récurrents de tes sets. Rien n'est créé automatiquement : tu ajoutes au clic, après test en live.</p>
             <ul class="rt-bullets">
                 <li>Analyse de l'historique Icecast</li>
-                <li>Enchaînements joués ≥ 2 fois</li>
-                <li>Marquées "auto-détectées"</li>
+                <li>Enchaînements joués ≥ 2 fois, pas encore enregistrés</li>
+                <li>Bouton « Ajouter » par proposition</li>
             </ul>
-            <form method="post" action="{% url 'detect_transitions' %}" style="display:inline;">
-                {% csrf_token %}
-                <button type="submit" class="rt-btn rt-btn-green"><i class="fas fa-magic"></i> Détecter les transitions</button>
-            </form>
+            <a href="{% url 'set_transitions' %}" class="rt-btn rt-btn-green"><i class="fas fa-random"></i> Voir les propositions</a>
             <a href="{% url 'sets_view' %}" class="rt-btn rt-btn-outline"><i class="fas fa-history"></i> Voir mes sets</a>
         </div>
 

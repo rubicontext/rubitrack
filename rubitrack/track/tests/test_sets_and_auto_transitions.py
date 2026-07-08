@@ -1,6 +1,6 @@
 """
-Tests de la reconstruction des sets (historique de lecture) et de la
-détection automatique des transitions récurrentes.
+Tests de la reconstruction des sets (historique de lecture) et des
+transitions candidates (PROPOSITIONS, jamais de création auto).
 """
 
 from datetime import timedelta
@@ -10,9 +10,9 @@ from django.contrib.auth.models import User
 from django.urls import reverse
 from django.utils import timezone
 
-from track.currently_playing.auto_transitions import detect_transitions_from_history
+from track.currently_playing.auto_transitions import find_transition_candidates_from_history
 from track.currently_playing.set_history import build_sets
-from track.models import Artist, Config, CurrentlyPlaying, Track, Transition
+from track.models import Artist, Config, CurrentlyPlaying, Track, Transition, TransitionType
 
 
 @pytest.fixture
@@ -76,47 +76,58 @@ class TestBuildSets:
 
 
 @pytest.mark.django_db
-class TestAutoTransitions:
-    def test_recurring_pair_created_once(self, history):
+class TestTransitionCandidates:
+    """Propositions uniquement: le finder ne crée RIEN, la création est au clic."""
+
+    def test_recurring_pair_is_candidate_no_creation(self, history):
         d = history
-        stats = detect_transitions_from_history()
-        # A->B joué 2 fois -> créé ; B->C et A->B(set2)... B->C joué 1 fois -> non
-        assert stats['created'] == 1
-        transition = Transition.objects.get(track_source=d['a'], track_destination=d['b'])
-        assert "Auto-détectée" in transition.comment
-        assert "(x2)" in transition.comment
+        candidates = find_transition_candidates_from_history()
+        pairs = {(c['source_id'], c['destination_id']): c['occurrences'] for c in candidates}
+        assert pairs.get((d['a'].id, d['b'].id)) == 2      # A->B joué 2 fois -> candidat
+        assert Transition.objects.count() == 0             # RIEN créé automatiquement
 
-    def test_single_occurrence_not_created(self, history):
+    def test_single_occurrence_excluded(self, history):
         d = history
-        detect_transitions_from_history()
-        assert not Transition.objects.filter(
-            track_source=d['b'], track_destination=d['c']).exists()
+        pairs = {(c['source_id'], c['destination_id'])
+                 for c in find_transition_candidates_from_history()}
+        assert (d['b'].id, d['c'].id) not in pairs         # B->C joué 1 fois
 
-    def test_separator_pairs_ignored(self, history):
+    def test_separator_pairs_excluded(self, history):
         d = history
-        detect_transitions_from_history()
-        assert not Transition.objects.filter(track_source=d['sep']).exists()
-        assert not Transition.objects.filter(track_destination=d['sep']).exists()
+        candidates = find_transition_candidates_from_history()
+        ids = {c['source_id'] for c in candidates} | {c['destination_id'] for c in candidates}
+        assert d['sep'].id not in ids
 
-    def test_existing_transition_not_duplicated(self, history):
+    def test_existing_transition_not_proposed(self, history):
         d = history
-        Transition.objects.create(track_source=d['a'], track_destination=d['b'],
-                                  comment="ma transition manuelle", ranking=5)
-        stats = detect_transitions_from_history()
-        assert stats['created'] == 0
-        assert stats['already_known'] == 1
-        transition = Transition.objects.get(track_source=d['a'], track_destination=d['b'])
-        assert transition.comment == "ma transition manuelle"  # pas écrasée
+        Transition.objects.create(track_source=d['a'], track_destination=d['b'], ranking=5)
+        pairs = {(c['source_id'], c['destination_id'])
+                 for c in find_transition_candidates_from_history()}
+        assert (d['a'].id, d['b'].id) not in pairs
 
-    def test_idempotent(self, history):
-        detect_transitions_from_history()
-        stats = detect_transitions_from_history()
-        assert stats['created'] == 0
-        assert Transition.objects.count() == 1
-
-    def test_tools_view(self, history, client):
+    def test_page_lists_candidates(self, history, client):
         User.objects.create_superuser(username="admin", password="x", email="a@a.fr")
         client.login(username="admin", password="x")
-        response = client.post(reverse("detect_transitions"))
+        response = client.get(reverse("set_transitions"))
+        assert response.status_code == 200
+        assert "Alpha" in response.content.decode()
+
+    def test_creation_only_on_click(self, history, client):
+        d = history
+        TransitionType.objects.get_or_create(id=1, defaults={'name': 'Mix'})
+        User.objects.create_superuser(username="admin", password="x", email="a@a.fr")
+        client.login(username="admin", password="x")
+        # afficher la page ne crée rien
+        client.get(reverse("set_transitions"))
+        assert Transition.objects.count() == 0
+        # clic "Ajouter" (POST) -> crée exactement une transition
+        response = client.post(reverse("add_set_transition"),
+                               {"source_id": d['a'].id, "destination_id": d['b'].id})
         assert response.status_code == 302
-        assert Transition.objects.count() == 1
+        assert Transition.objects.filter(
+            track_source=d['a'], track_destination=d['b']).count() == 1
+
+    def test_add_get_rejected(self, history, client):
+        User.objects.create_superuser(username="admin", password="x", email="a@a.fr")
+        client.login(username="admin", password="x")
+        assert client.get(reverse("add_set_transition")).status_code == 405

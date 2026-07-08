@@ -42,9 +42,9 @@ from .config.tools_views import (
     cleanup_musical_keys,
     cue_points_overview,
     delete_all_cue_points,
-    detect_transitions_view,
     tools_index,
 )
+from .set_transitions.views import set_transitions_view, add_set_transition
 from .currently_playing.set_history import display_sets
 from .set_builder.set_builder_view import set_builder_view, set_builder_graph_api
 from .ui_lab.ui_lab_view import ui_lab_view
@@ -146,7 +146,9 @@ urlpatterns = [
     path('config/reset/', config_reset_view, name='config_reset'),
     # TOOLS
     path('tools/', tools_index, name='tools'),
-    path('tools/detect_transitions/', detect_transitions_view, name='detect_transitions'),
+    # Transitions de sets: PROPOSITIONS (jamais de création auto) + ajout au clic
+    path('set_transitions/', set_transitions_view, name='set_transitions'),
+    path('set_transitions/add/', add_set_transition, name='add_set_transition'),
     # SETS (historique des sessions)
     path('sets/', display_sets, name='sets_view'),
     # SET BUILDER (graphe de transitions / lookahead) — nouvelle page autonome
