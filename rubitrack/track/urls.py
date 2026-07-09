@@ -45,6 +45,7 @@ from .config.tools_views import (
     tools_index,
 )
 from .set_transitions.views import set_transitions_view, add_set_transition, recount_play_counts
+from .overlay.views import overlay_view
 from .currently_playing.set_history import display_sets
 from .set_builder.set_builder_view import set_builder_view, set_builder_graph_api
 from .ui_lab.ui_lab_view import ui_lab_view
@@ -150,6 +151,8 @@ urlpatterns = [
     path('set_transitions/', set_transitions_view, name='set_transitions'),
     path('set_transitions/add/', add_set_transition, name='add_set_transition'),
     path('set_transitions/recount/', recount_play_counts, name='recount_play_counts'),
+    # OVERLAY — mini-vue compacte à poser par-dessus Traktor (Always On Top)
+    path('overlay/', overlay_view, name='overlay'),
     # SETS (historique des sessions)
     path('sets/', display_sets, name='sets_view'),
     # SET BUILDER (graphe de transitions / lookahead) — nouvelle page autonome

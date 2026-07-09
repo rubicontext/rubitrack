@@ -1,0 +1,25 @@
+{# Contenu de l'overlay (rechargé par AJAX toutes les 10 s, sans flicker) #}
+{% if track %}
+<div class="ov-now">
+  <span class="ov-onair">ON AIR</span>
+  <span class="ov-key" style="background:{{ track.get_musical_key_color }};">{{ track.musical_key|default:"–" }}</span>
+  <span class="ov-bpm">{{ track.bpm|floatformat:0 }}</span>
+</div>
+<div class="ov-title">{{ track.title }}</div>
+<div class="ov-artist">{{ track.artist.name }}</div>
+{% if nexts %}
+<div class="ov-next-label">ET APRÈS</div>
+{% for n in nexts %}
+<div class="ov-next" title="{{ n.comment }}">
+  <span class="ov-key ov-key-sm" style="background:{{ n.color }};">{{ n.key|default:"–" }}</span>
+  <span class="ov-next-title">{{ n.title|slice:":28" }}</span>
+  <span class="ov-next-meta">{{ n.bpm|floatformat:0 }}{% if n.play_count %} · ▶{{ n.play_count }}{% endif %}</span>
+</div>
+{% endfor %}
+{% else %}
+<div class="ov-empty">Aucune transition définie pour cette track.</div>
+{% endif %}
+{% else %}
+<div class="ov-title">Pas de lecture en cours</div>
+<div class="ov-empty">Lance la diffusion Icecast (port 8059).</div>
+{% endif %}

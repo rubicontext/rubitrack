@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RubiTrack Overlay</title>
+<style>
+  * { box-sizing: border-box; margin: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: #ffffff; color: #283C4F; padding: 10px 12px;
+    overflow: hidden; user-select: none;
+  }
+  .ov-now { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
+  .ov-onair { color: #e03131; font-weight: 800; font-size: 11px; letter-spacing: 1px; }
+  .ov-key {
+    display: inline-block; min-width: 30px; text-align: center; border-radius: 4px;
+    padding: 1px 6px; font-weight: 800; font-size: 12px; color: #1e2a36;
+  }
+  .ov-key-sm { min-width: 26px; font-size: 11px; padding: 0 5px; }
+  .ov-bpm { font-weight: 800; font-size: 14px; color: #283C4F; }
+  .ov-bpm::after { content: " BPM"; font-size: 9px; color: #98a6b3; font-weight: normal; }
+  .ov-title {
+    font-size: 19px; font-weight: 800; line-height: 1.15; color: #283C4F;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .ov-artist { font-size: 13px; color: #52a58a; margin-bottom: 8px;
+               white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .ov-next-label { font-size: 9px; letter-spacing: 1.5px; color: #98a6b3;
+                   font-weight: 700; margin: 6px 0 3px; }
+  .ov-next { display: flex; align-items: center; gap: 6px; padding: 2px 0; font-size: 12px; }
+  .ov-next-title { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden;
+                   text-overflow: ellipsis; font-weight: 600; }
+  .ov-next-meta { color: #98a6b3; font-size: 11px; white-space: nowrap; }
+  .ov-empty { color: #98a6b3; font-size: 12px; margin-top: 4px; }
+</style>
+</head>
+<body>
+<div id="ov-content">
+  {% include 'track/overlay/_overlay_content.html' %}
+</div>
+<script>
+  // Rafraîchit le contenu sans flicker (remplace l'intérieur seulement)
+  setInterval(function () {
+    if (document.hidden) { return; }
+    fetch('?partial=1', {cache: 'no-store'})
+      .then(function (r) { return r.ok ? r.text() : null; })
+      .then(function (html) {
+        if (html) { document.getElementById('ov-content').innerHTML = html; }
+      })
+      .catch(function () {});  // réseau KO: on garde l'affichage courant
+  }, 10000);
+</script>
+</body>
+</html>
