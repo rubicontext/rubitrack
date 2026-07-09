@@ -60,3 +60,35 @@ class TestOverlay:
         resp = client.get(reverse("overlay"))
         assert resp.status_code == 200
         assert "Pas de lecture en cours" in resp.content.decode()
+
+
+@pytest.mark.django_db
+class TestOverlay2:
+    def test_sections_and_history(self, overlay_data):
+        from django.utils import timezone as tz
+        from datetime import timedelta
+        d = overlay_data
+        # historique: 2 tracks jouées avant la courante
+        CurrentlyPlaying.objects.create(track=d["d1"], date_played=tz.now() - timedelta(minutes=20))
+        CurrentlyPlaying.objects.create(track=d["d2"], date_played=tz.now() - timedelta(minutes=10))
+        resp = d["client"].get(reverse("overlay2"))
+        assert resp.status_code == 200
+        html = resp.content.decode()
+        assert 'data-sec="transitions"' in html      # section repliable transitions
+        assert 'data-sec="history"' in html          # section repliable historique
+        assert "DERNIÈRES JOUÉES" in html
+        assert "Next Two" in html                    # dans l'historique
+        assert "ov-content" in html                  # squelette avec JS
+
+    def test_partial_fragment(self, overlay_data):
+        resp = overlay_data["client"].get(reverse("overlay2") + "?partial=1")
+        html = resp.content.decode()
+        assert 'data-sec="transitions"' in html
+        assert "ov-content" not in html              # fragment sans squelette
+
+    def test_current_track_excluded_from_history(self, overlay_data):
+        d = overlay_data
+        html = d["client"].get(reverse("overlay2")).content.decode()
+        # la track en cours ne doit pas apparaître dans DERNIÈRES JOUÉES
+        history_part = html.split("DERNIÈRES JOUÉES")[1]
+        assert "Playing Now" not in history_part

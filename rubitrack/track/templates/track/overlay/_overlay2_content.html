@@ -1,0 +1,43 @@
+{# Contenu overlay2 (rechargé par AJAX toutes les 10 s). Les sections .ov-sec sont repliables ; l'état est réappliqué par le JS de la page après chaque refresh. #}
+{% if track %}
+<div class="ov-now">
+  <span class="ov-onair">ON AIR</span>
+  <span class="ov-key" style="background:{{ track.get_musical_key_color }};">{{ track.musical_key|default:"–" }}</span>
+  <span class="ov-bpm">{{ track.bpm|floatformat:0 }}</span>
+</div>
+<div class="ov-title">{{ track.title }}</div>
+<div class="ov-artist">{{ track.artist.name }}</div>
+
+<div class="ov-sec" data-sec="transitions">
+  <div class="ov-sec-head"><span class="ov-caret">▾</span> ET APRÈS {% if nexts %}({{ nexts|length }}){% endif %}</div>
+  <div class="ov-sec-body">
+    {% for n in nexts %}
+    <div class="ov-next" title="{{ n.comment }}">
+      <span class="ov-key ov-key-sm" style="background:{{ n.color }};">{{ n.key|default:"–" }}</span>
+      <span class="ov-next-title">{{ n.title|slice:":28" }}</span>
+      <span class="ov-next-meta">{{ n.bpm|floatformat:0 }}{% if n.play_count %} · ▶{{ n.play_count }}{% endif %}</span>
+    </div>
+    {% empty %}
+    <div class="ov-empty">Aucune transition définie.</div>
+    {% endfor %}
+  </div>
+</div>
+
+<div class="ov-sec" data-sec="history">
+  <div class="ov-sec-head"><span class="ov-caret">▾</span> DERNIÈRES JOUÉES</div>
+  <div class="ov-sec-body">
+    {% for p in last_played %}
+    <div class="ov-next">
+      <span class="ov-key ov-key-sm" style="background:{{ p.color }};">{{ p.key|default:"–" }}</span>
+      <span class="ov-next-title">{{ p.title|slice:":28" }}</span>
+      <span class="ov-next-meta">{{ p.time|date:"H:i" }}</span>
+    </div>
+    {% empty %}
+    <div class="ov-empty">Pas d'historique.</div>
+    {% endfor %}
+  </div>
+</div>
+{% else %}
+<div class="ov-title">Pas de lecture en cours</div>
+<div class="ov-empty">Lance la diffusion Icecast (port 8059).</div>
+{% endif %}
