@@ -38,7 +38,6 @@
     color: #b8c2cc; cursor: pointer; font-size: 10px;
   }
   .ov-dirbtn:hover { color: #52a58a; }
-  .ov-hint { letter-spacing: 0; font-weight: normal; color: #c2c8ce; }
   .ov-caret { display: inline-block; transition: transform .15s; font-size: 10px; }
   .ov-sec.collapsed .ov-caret { transform: rotate(-90deg); }
   .ov-sec.collapsed .ov-sec-body { display: none; }
@@ -57,6 +56,11 @@
   }
   .ov-addbtn:hover { background: #2fbf53; }
   .ov-added { color: #28a745; font-weight: 800; font-size: 13px; }
+  .ov-editbtn {
+    flex: 0 0 auto; border: none; background: none; color: #c2c8ce;
+    font-size: 12px; cursor: pointer; padding: 0 2px; line-height: 1;
+  }
+  .ov-editbtn:hover { color: #283C4F; }
   /* Mini-popup de saisie du commentaire */
   #ov-form {
     position: fixed; inset: 0; background: rgba(40,60,79,.45);
@@ -99,6 +103,7 @@
     <div class="lbl" id="ov-form-label"></div>
     <input type="text" id="ov-form-comment" placeholder="Commentaire (ex: 5:1 6Cut)" maxlength="200">
     <div class="row">
+      <button type="button" class="del" id="ov-form-delete" style="display:none; background:#d9534f; color:#fff; margin-right:auto;">Supprimer</button>
       <button type="button" class="cancel" id="ov-form-cancel">Annuler</button>
       <button type="button" class="ok" id="ov-form-ok">Ajouter</button>
     </div>
@@ -109,8 +114,9 @@
 <script>
   var CSRF = document.querySelector('[name=csrfmiddlewaretoken]').value;
   var ADD_URL = "{% url 'overlay_add_transition' %}";
+  var EDIT_URL = "{% url 'overlay_edit_transition' %}";
   var CURRENT_TRACK_ID = "{{ track.id|default:'' }}";
-  var formOpen = false, pendingSourceId = null;
+  var formOpen = false, pendingSourceId = null, pendingTransitionId = null;
 
   // --- Sections repliables (état en localStorage, comme la référence) ---
   var LS_KEY = 'rubitrack-overlay2-collapsed';
@@ -146,23 +152,37 @@
     refreshNow();
   });
 
-  // --- Bouton +: ouvre la mini-popup de commentaire ---
+  function openForm(label, comment, editMode) {
+    document.getElementById('ov-form-label').textContent = label;
+    document.getElementById('ov-form-comment').value = comment || '';
+    document.getElementById('ov-form-ok').textContent = editMode ? 'Enregistrer' : 'Ajouter';
+    document.getElementById('ov-form-delete').style.display = editMode ? '' : 'none';
+    document.getElementById('ov-form').classList.add('open');
+    formOpen = true;
+    setTimeout(function () { document.getElementById('ov-form-comment').focus(); }, 50);
+  }
+
+  // --- Bouton +: création (dernières jouées -> courante) ---
   document.addEventListener('click', function (event) {
     var btn = event.target.closest('.ov-addbtn');
     if (!btn) { return; }
     var row = btn.closest('.ov-next');
-    pendingSourceId = row.dataset.trackId;
-    document.getElementById('ov-form-label').textContent =
-      row.dataset.trackTitle + ' → track en cours';
-    document.getElementById('ov-form-comment').value = '';
-    document.getElementById('ov-form').classList.add('open');
-    formOpen = true;
-    setTimeout(function () { document.getElementById('ov-form-comment').focus(); }, 50);
+    pendingSourceId = row.dataset.trackId; pendingTransitionId = null;
+    openForm(row.dataset.trackTitle + ' → track en cours', '', false);
+  });
+
+  // --- Bouton ✎: édition/suppression d'une transition existante ---
+  document.addEventListener('click', function (event) {
+    var btn = event.target.closest('.ov-editbtn');
+    if (!btn) { return; }
+    var row = btn.closest('.ov-next');
+    pendingTransitionId = row.dataset.tid; pendingSourceId = null;
+    openForm('✎ ' + row.dataset.title, row.dataset.comment, true);
   });
 
   function closeForm() {
     document.getElementById('ov-form').classList.remove('open');
-    formOpen = false; pendingSourceId = null;
+    formOpen = false; pendingSourceId = null; pendingTransitionId = null;
   }
   function toast(msg, ok) {
     var t = document.getElementById('ov-toast');
@@ -185,23 +205,35 @@
     if (e.key === 'Enter') { document.getElementById('ov-form-ok').click(); }
     if (e.key === 'Escape') { closeForm(); }
   });
-  document.getElementById('ov-form-ok').addEventListener('click', function () {
-    if (!pendingSourceId || !CURRENT_TRACK_ID) { closeForm(); return; }
-    var body = new URLSearchParams({
-      source_id: pendingSourceId,
-      destination_id: CURRENT_TRACK_ID,
-      comment: document.getElementById('ov-form-comment').value
-    });
-    fetch(ADD_URL, {method: 'POST', body: body,
-                    headers: {'X-CSRFToken': CSRF,
-                              'Content-Type': 'application/x-www-form-urlencoded'}})
+  function postForm(url, params, okMessage) {
+    fetch(url, {method: 'POST', body: new URLSearchParams(params),
+                headers: {'X-CSRFToken': CSRF,
+                          'Content-Type': 'application/x-www-form-urlencoded'}})
       .then(function (r) { return r.json(); })
       .then(function (data) {
-        if (data.ok) { toast(data.created ? 'Transition ajoutée' : 'Commentaire mis à jour'); refreshNow(); }
+        if (data.ok) { toast(okMessage(data)); refreshNow(); }
         else { toast(data.error || 'Erreur', false); }
       })
       .catch(function () { toast('Réseau KO — réessayer', false); })
       .finally(closeForm);
+  }
+
+  document.getElementById('ov-form-ok').addEventListener('click', function () {
+    var comment = document.getElementById('ov-form-comment').value;
+    if (pendingTransitionId) {
+      postForm(EDIT_URL, {transition_id: pendingTransitionId, action: 'save', comment: comment},
+               function () { return 'Commentaire enregistré'; });
+    } else if (pendingSourceId && CURRENT_TRACK_ID) {
+      postForm(ADD_URL, {source_id: pendingSourceId, destination_id: CURRENT_TRACK_ID, comment: comment},
+               function (d) { return d.created ? 'Transition ajoutée' : 'Commentaire mis à jour'; });
+    } else { closeForm(); }
+  });
+
+  document.getElementById('ov-form-delete').addEventListener('click', function () {
+    if (!pendingTransitionId) { closeForm(); return; }
+    if (!confirm('Supprimer cette transition ?')) { return; }
+    postForm(EDIT_URL, {transition_id: pendingTransitionId, action: 'delete'},
+             function () { return 'Transition supprimée'; });
   });
 
   // --- Refresh 10 s (suspendu pendant la saisie) ---

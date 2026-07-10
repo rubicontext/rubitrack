@@ -45,7 +45,7 @@ from .config.tools_views import (
     tools_index,
 )
 from .set_transitions.views import set_transitions_view, add_set_transition, recount_play_counts
-from .overlay.views import overlay_view, overlay2_view, overlay_add_transition
+from .overlay.views import overlay_view, overlay2_view, overlay_add_transition, overlay_edit_transition
 from .currently_playing.set_history import display_sets
 from .set_builder.set_builder_view import set_builder_view, set_builder_graph_api
 from .ui_lab.ui_lab_view import ui_lab_view
@@ -155,6 +155,7 @@ urlpatterns = [
     path('overlay/', overlay_view, name='overlay'),
     path('overlay2/', overlay2_view, name='overlay2'),
     path('overlay/add_transition/', overlay_add_transition, name='overlay_add_transition'),
+    path('overlay/edit_transition/', overlay_edit_transition, name='overlay_edit_transition'),
     # SETS (historique des sessions)
     path('sets/', display_sets, name='sets_view'),
     # SET BUILDER (graphe de transitions / lookahead) — nouvelle page autonome

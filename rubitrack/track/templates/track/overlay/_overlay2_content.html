@@ -11,11 +11,12 @@
   <div class="ov-sec-head"><span class="ov-caret">▾</span> {% if direction == 'before' %}AVANT ÇA{% else %}ET APRÈS{% endif %} {% if nexts %}({{ nexts|length }}){% endif %}<span class="ov-dirbtn" title="Basculer le sens des transitions">⇄ {% if direction == 'before' %}voir après{% else %}voir avant{% endif %}</span></div>
   <div class="ov-sec-body">
     {% for n in nexts %}
-    <div class="ov-next">
+    <div class="ov-next" data-tid="{{ n.id }}" data-title="{{ n.title }}" data-comment="{{ n.comment }}">
       <span class="ov-key ov-key-sm" style="background:{{ n.color }};">{{ n.key|default:"–" }}</span>
       <span class="ov-next-title" title="{{ n.title }} — {{ n.artist }}">{{ n.title|slice:":24" }}</span>
       <span class="ov-next-comment" title="{{ n.comment }}">{{ n.comment }}</span>
       <span class="ov-next-meta">{{ n.bpm|floatformat:0 }}{% if n.play_count %} · ▶{{ n.play_count }}{% endif %}</span>
+      <button type="button" class="ov-editbtn" title="Éditer / supprimer la transition">✎</button>
     </div>
     {% empty %}
     <div class="ov-empty">Aucune transition définie.</div>
@@ -24,7 +25,7 @@
 </div>
 
 <div class="ov-sec" data-sec="history">
-  <div class="ov-sec-head"><span class="ov-caret">▾</span> DERNIÈRES JOUÉES <span class="ov-hint">(+ = transition vers la courante)</span></div>
+  <div class="ov-sec-head"><span class="ov-caret">▾</span> DERNIÈRES JOUÉES</div>
   <div class="ov-sec-body">
     {% for p in last_played %}
     <div class="ov-next" data-track-id="{{ p.id }}" data-track-title="{{ p.title }}">

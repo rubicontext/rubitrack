@@ -71,6 +71,7 @@ def _context(direction='after'):
         for transition in filter_transition_for_overlay(queryset):
             other = transition.track_source if direction == 'before' else transition.track_destination
             nexts.append({
+                'id': transition.id,
                 'title': other.title,
                 'artist': other.artist.name if other.artist_id else '',
                 'key': other.musical_key or '',
@@ -174,3 +175,27 @@ def overlay_add_transition(request):
     logger.info("Overlay: transition %s -> %s (%s)", source.title, destination.title,
                 'créée' if created else 'commentaire mis à jour')
     return JsonResponse({'ok': True, 'created': created})
+
+
+@login_required
+@require_POST
+def overlay_edit_transition(request):
+    """Édite le commentaire d'une transition existante, ou la supprime.
+    Action explicite depuis la popin de l'overlay (jamais automatique)."""
+    action = request.POST.get('action')
+    try:
+        transition = Transition.objects.get(id=request.POST.get('transition_id'))
+    except (Transition.DoesNotExist, ValueError, TypeError):
+        return JsonResponse({'ok': False, 'error': 'transition introuvable'}, status=404)
+
+    if action == 'delete':
+        logger.info("Overlay: transition supprimée %s -> %s",
+                    transition.track_source.title, transition.track_destination.title)
+        transition.delete()
+        return JsonResponse({'ok': True, 'action': 'deleted'})
+
+    transition.comment = (request.POST.get('comment') or '').strip()
+    transition.save(update_fields=['comment'])
+    logger.info("Overlay: commentaire édité %s -> %s",
+                transition.track_source.title, transition.track_destination.title)
+    return JsonResponse({'ok': True, 'action': 'saved'})

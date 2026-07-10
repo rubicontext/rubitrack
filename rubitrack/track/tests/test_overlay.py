@@ -213,3 +213,39 @@ class TestOverlayAddTransition:
             "source_id": 999999, "destination_id": d["cur"].id, "comment": "",
         })
         assert resp.status_code == 404
+
+
+@pytest.mark.django_db
+class TestOverlayEditTransition:
+    def test_save_comment(self, overlay_data):
+        d = overlay_data
+        transition = Transition.objects.get(track_source=d["cur"], track_destination=d["d1"])
+        resp = d["client"].post(reverse("overlay_edit_transition"), {
+            "transition_id": transition.id, "action": "save", "comment": "edit depuis overlay",
+        })
+        assert resp.json() == {"ok": True, "action": "saved"}
+        transition.refresh_from_db()
+        assert transition.comment == "edit depuis overlay"
+
+    def test_delete(self, overlay_data):
+        d = overlay_data
+        transition = Transition.objects.get(track_source=d["cur"], track_destination=d["d2"])
+        resp = d["client"].post(reverse("overlay_edit_transition"), {
+            "transition_id": transition.id, "action": "delete",
+        })
+        assert resp.json() == {"ok": True, "action": "deleted"}
+        assert not Transition.objects.filter(id=transition.id).exists()
+
+    def test_unknown_404_and_get_405(self, overlay_data):
+        d = overlay_data
+        assert d["client"].post(reverse("overlay_edit_transition"),
+                                {"transition_id": 999999, "action": "save"}).status_code == 404
+        assert d["client"].get(reverse("overlay_edit_transition")).status_code == 405
+
+    def test_edit_button_in_transitions_rows(self, overlay_data):
+        d = overlay_data
+        html = d["client"].get(reverse("overlay2")).content.decode()
+        part = html.split("DERNIÈRES JOUÉES")[0]
+        assert "ov-editbtn" in part                  # ✎ présent sur les transitions
+        assert "data-tid=" in part                   # id de transition exposé
+        assert "+ = transition" not in html          # hint retiré
