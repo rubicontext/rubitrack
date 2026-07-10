@@ -8,7 +8,7 @@
 </div>
 
 <div class="ov-sec" data-sec="transitions">
-  <div class="ov-sec-head"><span class="ov-caret">▾</span> ET APRÈS {% if nexts %}({{ nexts|length }}){% endif %}</div>
+  <div class="ov-sec-head"><span class="ov-caret">▾</span> {% if direction == 'before' %}AVANT ÇA{% else %}ET APRÈS{% endif %} {% if nexts %}({{ nexts|length }}){% endif %}<span class="ov-dirbtn" title="Basculer le sens des transitions">⇄ {% if direction == 'before' %}voir après{% else %}voir avant{% endif %}</span></div>
   <div class="ov-sec-body">
     {% for n in nexts %}
     <div class="ov-next">

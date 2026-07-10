@@ -28,10 +28,16 @@
   .ov-key-sm { min-width: 26px; font-size: 11px; padding: 0 5px; }
   .ov-sec { margin-top: 3px; }
   .ov-sec-head {
+    display: flex; align-items: center; gap: 4px;
     font-size: 9px; letter-spacing: 1.5px; color: #98a6b3; font-weight: 700;
     padding: 3px 0; cursor: pointer;
   }
   .ov-sec-head:hover { color: #52a58a; }
+  .ov-dirbtn {
+    margin-left: auto; letter-spacing: 0; font-weight: normal;
+    color: #b8c2cc; cursor: pointer; font-size: 10px;
+  }
+  .ov-dirbtn:hover { color: #52a58a; }
   .ov-hint { letter-spacing: 0; font-weight: normal; color: #c2c8ce; }
   .ov-caret { display: inline-block; transition: transform .15s; font-size: 10px; }
   .ov-sec.collapsed .ov-caret { transform: rotate(-90deg); }
@@ -119,6 +125,7 @@
     });
   }
   document.addEventListener('click', function (event) {
+    if (event.target.closest('.ov-dirbtn')) { return; }  // géré par le toggle
     var head = event.target.closest('.ov-sec-head');
     if (!head) { return; }
     var sec = head.parentElement;
@@ -129,6 +136,15 @@
     applyCollapsed();
   });
   applyCollapsed();
+
+  // Sens des transitions: après (défaut) / avant — mémorisé
+  var DIR_KEY = 'rubitrack-overlay-dir';
+  function getDir() { return localStorage.getItem(DIR_KEY) === 'before' ? 'before' : 'after'; }
+  document.addEventListener('click', function (event) {
+    if (!event.target.closest('.ov-dirbtn')) { return; }
+    localStorage.setItem(DIR_KEY, getDir() === 'before' ? 'after' : 'before');
+    refreshNow();
+  });
 
   // --- Bouton +: ouvre la mini-popup de commentaire ---
   document.addEventListener('click', function (event) {
@@ -156,12 +172,13 @@
     setTimeout(function () { t.classList.remove('show'); }, 2000);
   }
   function refreshNow() {
-    fetch('?partial=1', {cache: 'no-store'})
+    fetch('?partial=1&dir=' + getDir(), {cache: 'no-store'})
       .then(function (r) { return r.ok ? r.text() : null; })
       .then(function (html) {
         if (html) { document.getElementById('ov-content').innerHTML = html; applyCollapsed(); }
       }).catch(function () {});
   }
+  if (getDir() === 'before') { refreshNow(); }  // la page est rendue 'après' par défaut
 
   document.getElementById('ov-form-cancel').addEventListener('click', closeForm);
   document.getElementById('ov-form-comment').addEventListener('keydown', function (e) {

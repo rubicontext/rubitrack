@@ -21,37 +21,56 @@ from ..currently_playing.currently_playing import (
     get_currently_playing_track,
     get_transitions_after,
 )
+from ..playlist.playlist_transitions import PLAYLIST_TRANSITION_AUTO_GENERATED
 
 logger = logging.getLogger(__name__)
 
-MAX_NEXT = 4
+MAX_NEXT = 8
 LAST_PLAYED_COUNT = 3
 
 
-def _context():
+def filter_transition_for_overlay(queryset):
+    """Filtre/tri des transitions pour l'overlay:
+    - exclut les transitions générées depuis une playlist ('Generated from
+      Playlist : X'), du bruit en cabine;
+    - trie par nombre de fois réellement jouées en set (play_count), puis
+      note manuelle, puis position."""
+    return (
+        queryset.exclude(comment__istartswith=PLAYLIST_TRANSITION_AUTO_GENERATED)
+        .order_by('-play_count', '-ranking', 'position')
+    )
+
+
+def _context(direction='after'):
     track = get_currently_playing_track(with_refresh=True)
     nexts = []
     if track:
         separator = Config.get_config().separator_track_id
-        transitions = (
-            get_transitions_after(track)
-            .exclude(track_destination_id=separator)
-            .select_related('track_destination__artist')
-            .order_by('-play_count', '-ranking', 'position')[:MAX_NEXT]
-        )
-        for transition in transitions:
-            dest = transition.track_destination
+        if direction == 'before':
+            queryset = (
+                Transition.objects.filter(track_destination=track)
+                .exclude(track_source_id=separator)
+                .select_related('track_source__artist')
+            )
+        else:
+            queryset = (
+                get_transitions_after(track)
+                .exclude(track_destination_id=separator)
+                .select_related('track_destination__artist')
+            )
+        for transition in filter_transition_for_overlay(queryset)[:MAX_NEXT]:
+            other = transition.track_source if direction == 'before' else transition.track_destination
             nexts.append({
-                'title': dest.title,
-                'artist': dest.artist.name if dest.artist_id else '',
-                'key': dest.musical_key or '',
-                'color': dest.get_musical_key_color(),
-                'bpm': dest.bpm,
+                'title': other.title,
+                'artist': other.artist.name if other.artist_id else '',
+                'key': other.musical_key or '',
+                'color': other.get_musical_key_color(),
+                'bpm': other.bpm,
                 'play_count': transition.play_count,
                 'ranking': transition.ranking,
                 'comment': transition.comment or '',
             })
-    return {'track': track, 'nexts': nexts}
+    return {'track': track, 'nexts': nexts, 'direction': direction}
 
 
 def _last_played(current_track):
@@ -91,10 +110,14 @@ def _last_played(current_track):
     return plays
 
 
+def _direction(request):
+    return 'before' if request.GET.get('dir') == 'before' else 'after'
+
+
 @login_required
 def overlay_view(request):
     """Référence: 1 ligne courante + sections repliables."""
-    context = _context()
+    context = _context(direction=_direction(request))
     context['last_played'] = _last_played(context['track'])
     if request.GET.get('partial'):
         return render(request, 'track/overlay/_overlay_content.html', context)
@@ -104,7 +127,7 @@ def overlay_view(request):
 @login_required
 def overlay2_view(request):
     """Bac à sable: + ajout de transition (jouée -> courante) avec commentaire."""
-    context = _context()
+    context = _context(direction=_direction(request))
     context['last_played'] = _last_played(context['track'])
     if request.GET.get('partial'):
         return render(request, 'track/overlay/_overlay2_content.html', context)

@@ -109,6 +109,48 @@ class TestOverlay2:
 
 
 @pytest.mark.django_db
+class TestOverlayFilterAndDirection:
+    def test_generated_from_playlist_excluded(self, overlay_data):
+        d = overlay_data
+        gen = Track.objects.create(title="FromPlaylist", artist=d["artist"], bpm=128)
+        Transition.objects.create(track_source=d["cur"], track_destination=gen,
+                                  transition_type=d["mix"], ranking=5, play_count=99,
+                                  comment="Generated from Playlist : 2025_TEC_all_45stars")
+        html = d["client"].get(reverse("overlay")).content.decode()
+        assert "FromPlaylist" not in html          # exclue malgré son play_count
+
+    def test_filter_function_sorts_by_play_count(self, overlay_data):
+        from track.overlay.views import filter_transition_for_overlay
+        d = overlay_data
+        result = list(filter_transition_for_overlay(
+            Transition.objects.filter(track_source=d["cur"])))
+        assert result[0].play_count == 5           # d1 (jouée 5x) avant d2 (note 5)
+
+    def test_direction_before(self, overlay_data):
+        d = overlay_data
+        prev = Track.objects.create(title="CameBefore", artist=d["artist"], bpm=125)
+        Transition.objects.create(track_source=prev, track_destination=d["cur"],
+                                  transition_type=d["mix"], ranking=4)
+        html_after = d["client"].get(reverse("overlay")).content.decode()
+        html_before = d["client"].get(reverse("overlay") + "?partial=1&dir=before").content.decode()
+        assert "CameBefore" not in html_after.split("DERNIÈRES JOUÉES")[0]
+        assert "CameBefore" in html_before
+        assert "AVANT ÇA" in html_before
+        assert "ET APRÈS" in html_after            # défaut = après
+
+    def test_limit_eight(self, overlay_data):
+        d = overlay_data
+        for i in range(10):
+            t = Track.objects.create(title=f"Bulk{i}", artist=d["artist"], bpm=128)
+            Transition.objects.create(track_source=d["cur"], track_destination=t,
+                                      transition_type=d["mix"], ranking=3)
+        html = d["client"].get(reverse("overlay") + "?partial=1").content.decode()
+        # 8 max dans la section transitions
+        transitions_part = html.split("DERNIÈRES JOUÉES")[0]
+        assert transitions_part.count('class="ov-next"') == 8
+
+
+@pytest.mark.django_db
 class TestOverlayAddTransition:
     def test_creates_with_comment(self, overlay_data):
         d = overlay_data
