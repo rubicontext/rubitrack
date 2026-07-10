@@ -26,29 +26,47 @@ from ..playlist.playlist_transitions import PLAYLIST_TRANSITION_AUTO_GENERATED
 logger = logging.getLogger(__name__)
 
 LAST_PLAYED_COUNT = 3
-_SORT = ('-play_count', '-ranking', 'position')
 
 
-def filter_transition_for_overlay(queryset, limit=None):
+def _live_pair_counts(track):
+    """Compte EN DIRECT, depuis l'historique des sets, combien de fois chaque
+    autre track a été enchaînée juste après / juste avant `track`.
+    Returns: (after: {track_id: n}, before: {track_id: n})."""
+    from ..currently_playing.auto_transitions import _count_consecutive_pairs
+    after, before = {}, {}
+    for (source_id, destination_id), n in _count_consecutive_pairs().items():
+        if source_id == track.id:
+            after[destination_id] = n
+        if destination_id == track.id:
+            before[source_id] = n
+    return after, before
+
+
+def filter_transition_for_overlay(queryset, limit=None, count_of=None):
     """Transitions pour l'overlay, triées par nombre de fois réellement
-    jouées en set (play_count), puis note, puis position.
+    enchaînées en set (compteur live via count_of, sinon play_count stocké),
+    puis note, puis position.
 
     Les transitions 'Generated from Playlist : X' passent EN DERNIER: elles
     ne servent que de remplissage si les vraies transitions n'atteignent pas
     la limite (Config.overlay_max_transitions). Retourne une liste."""
     if limit is None:
         limit = Config.get_config().overlay_max_transitions
-    manual = list(
-        queryset.exclude(comment__istartswith=PLAYLIST_TRANSITION_AUTO_GENERATED)
-        .order_by(*_SORT)[:limit]
-    )
-    missing = limit - len(manual)
-    if missing > 0:
-        manual += list(
-            queryset.filter(comment__istartswith=PLAYLIST_TRANSITION_AUTO_GENERATED)
-            .order_by(*_SORT)[:missing]
-        )
-    return manual
+    if count_of is None:
+        def count_of(transition):
+            return transition.play_count
+
+    def sort_key(transition):
+        return (-count_of(transition), -(transition.ranking or 0), transition.position)
+
+    manual, generated = [], []
+    for transition in queryset:
+        is_generated = (transition.comment or '').lower().startswith(
+            PLAYLIST_TRANSITION_AUTO_GENERATED.lower())
+        (generated if is_generated else manual).append(transition)
+    manual.sort(key=sort_key)
+    generated.sort(key=sort_key)
+    return (manual + generated[:max(0, limit - len(manual))])[:limit]
 
 
 def _context(direction='after'):
@@ -68,8 +86,19 @@ def _context(direction='after'):
                 .exclude(track_destination_id=separator)
                 .select_related('track_destination__artist')
             )
-        for transition in filter_transition_for_overlay(queryset):
-            other = transition.track_source if direction == 'before' else transition.track_destination
+        # Compteurs LIVE depuis l'historique (pas le play_count stocké):
+        # nb de fois où l'autre track a été jouée juste après/avant la courante
+        after_counts, before_counts = _live_pair_counts(track)
+        counts = before_counts if direction == 'before' else after_counts
+
+        def other_of(transition):
+            return transition.track_source if direction == 'before' else transition.track_destination
+
+        def live_count(transition):
+            return counts.get(other_of(transition).id, 0)
+
+        for transition in filter_transition_for_overlay(queryset, count_of=live_count):
+            other = other_of(transition)
             nexts.append({
                 'id': transition.id,
                 'title': other.title,
@@ -77,7 +106,7 @@ def _context(direction='after'):
                 'key': other.musical_key or '',
                 'color': other.get_musical_key_color(),
                 'bpm': other.bpm,
-                'play_count': transition.play_count,
+                'play_count': live_count(transition),
                 'ranking': transition.ranking,
                 'comment': transition.comment or '',
             })

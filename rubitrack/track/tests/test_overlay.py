@@ -47,11 +47,24 @@ class TestOverlay:
         assert "Playing Now" in html
         assert "ov-content" not in html      # fragment seul, sans le squelette
 
-    def test_next_sorted_by_play_count(self, overlay_data):
-        html = overlay_data["client"].get(reverse("overlay")).content.decode()
-        # d1 (jouée 5x, note 3) doit apparaître avant d2 (jouée 0x, note 5)
+    def test_next_sorted_by_live_history_count(self, overlay_data):
+        """Le compteur des transitions est LIVE: nb de fois où la track a été
+        jouée juste après la courante dans l'historique (pas le champ stocké)."""
+        from datetime import timedelta
+        from django.utils import timezone as tz
+        d = overlay_data
+        # cur -> d1 enchaîné 2 fois dans l'historique (gaps courts, sets isolés)
+        base = tz.now() - timedelta(days=3)
+        for k in range(2):
+            start = base + timedelta(hours=2 * k)
+            CurrentlyPlaying.objects.create(track=d["cur"], date_played=start)
+            CurrentlyPlaying.objects.create(track=d["d1"], date_played=start + timedelta(minutes=4))
+        html = d["client"].get(reverse("overlay")).content.decode()
+        # d1 (enchaînée 2x en vrai, note 3) avant d2 (jamais enchaînée, note 5),
+        # même si le champ stocké de d1 vaut 5: le live (2) est affiché
         assert html.index("Next One") < html.index("Next Two")
-        assert "(5)" in html          # play_count affiché après le BPM: "129 (5)"
+        assert "(2)" in html          # compteur live après le BPM: "129 (2)"
+        assert "(5)" not in html.split("DERNIÈRES JOUÉES")[0]  # pas le stocké
 
     def test_no_current_track_graceful(self, db):
         User.objects.create_superuser("admin2", "a@a.fr", "x")
