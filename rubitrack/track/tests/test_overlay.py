@@ -61,6 +61,19 @@ class TestOverlay:
         assert resp.status_code == 200
         assert "Pas de lecture en cours" in resp.content.decode()
 
+    def test_reference_has_promoted_features(self, overlay_data):
+        """La référence embarque les fonctions validées du bac à sable:
+        ✎ édition sur les transitions, + sur les dernières jouées, popin."""
+        from datetime import timedelta
+        from django.utils import timezone as tz
+        d = overlay_data
+        CurrentlyPlaying.objects.create(track=d["d2"], date_played=tz.now() - timedelta(minutes=10))
+        html = d["client"].get(reverse("overlay")).content.decode()
+        assert "ov-editbtn" in html          # ✎ sur les transitions
+        assert "ov-addbtn" in html           # + sur les dernières jouées
+        assert "ov-form" in html             # popin de saisie
+        assert "overlay/add_transition" in html and "overlay/edit_transition" in html
+
 
 @pytest.mark.django_db
 class TestOverlay2:

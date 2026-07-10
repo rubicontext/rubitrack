@@ -11,7 +11,6 @@
     background: #ffffff; color: #283C4F; padding: 6px 10px;
     overflow: hidden; user-select: none;
   }
-  /* Track courante: UNE ligne discrète (déjà affichée dans Traktor) */
   .ov-nowline {
     display: flex; align-items: center; gap: 6px;
     padding-bottom: 4px; margin-bottom: 2px; border-bottom: 1px solid #eef1f4;
@@ -27,7 +26,6 @@
     font-weight: 800; color: #1e2a36;
   }
   .ov-key-sm { min-width: 26px; font-size: 11px; padding: 0 5px; }
-  /* Sections repliables */
   .ov-sec { margin-top: 3px; }
   .ov-sec-head {
     display: flex; align-items: center; gap: 4px;
@@ -43,7 +41,6 @@
   .ov-caret { display: inline-block; transition: transform .15s; font-size: 10px; }
   .ov-sec.collapsed .ov-caret { transform: rotate(-90deg); }
   .ov-sec.collapsed .ov-sec-body { display: none; }
-  /* Transitions avec commentaire visible */
   .ov-next { display: flex; align-items: center; gap: 6px; padding: 3px 0; font-size: 12px; }
   .ov-next-title { min-width: 0; max-width: 42%; white-space: nowrap; overflow: hidden;
                    text-overflow: ellipsis; font-weight: 600; }
@@ -51,14 +48,77 @@
                      text-overflow: ellipsis; color: #b8860b; font-size: 11px; }
   .ov-next-meta { color: #98a6b3; font-size: 11px; white-space: nowrap; }
   .ov-empty { color: #98a6b3; font-size: 12px; margin-top: 2px; }
+  /* Bouton + et coche */
+  .ov-addbtn {
+    flex: 0 0 auto; width: 20px; height: 20px; border-radius: 50%;
+    border: none; background: #28a745; color: #fff; font-weight: 800;
+    font-size: 13px; line-height: 1; cursor: pointer;
+  }
+  .ov-addbtn:hover { background: #2fbf53; }
+  .ov-added { color: #28a745; font-weight: 800; font-size: 13px; }
+  .ov-editbtn {
+    flex: 0 0 auto; border: none; background: none; color: #c2c8ce;
+    font-size: 12px; cursor: pointer; padding: 0 2px; line-height: 1;
+  }
+  .ov-editbtn:hover { color: #283C4F; }
+  /* Mini-popup de saisie du commentaire */
+  #ov-form {
+    position: fixed; inset: 0; background: rgba(40,60,79,.45);
+    display: none; align-items: center; justify-content: center; z-index: 50;
+  }
+  #ov-form.open { display: flex; }
+  #ov-form .box {
+    background: #fff; border-radius: 8px; padding: 12px; width: calc(100% - 30px);
+    box-shadow: 0 6px 24px rgba(0,0,0,.25);
+  }
+  #ov-form .lbl { font-size: 11px; color: #667; margin-bottom: 6px;
+                  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  #ov-form input {
+    width: 100%; padding: 6px 8px; font-size: 13px;
+    border: 1px solid #c8d0d8; border-radius: 5px; margin-bottom: 8px;
+  }
+  #ov-form .row { display: flex; gap: 8px; justify-content: flex-end; }
+  #ov-form button {
+    border: none; border-radius: 5px; padding: 6px 14px; font-size: 12px;
+    font-weight: 700; cursor: pointer;
+  }
+  #ov-form .ok { background: #28a745; color: #fff; }
+  #ov-form .cancel { background: #e9edf1; color: #556; }
+  #ov-toast {
+    position: fixed; bottom: 8px; left: 50%; transform: translateX(-50%);
+    background: #28a745; color: #fff; font-size: 11px; padding: 4px 12px;
+    border-radius: 12px; opacity: 0; transition: opacity .25s; pointer-events: none;
+  }
+  #ov-toast.show { opacity: 1; }
 </style>
 </head>
 <body>
+{% csrf_token %}
 <div id="ov-content">
   {% include 'track/overlay/_overlay_content.html' %}
 </div>
+
+<div id="ov-form">
+  <div class="box">
+    <div class="lbl" id="ov-form-label"></div>
+    <input type="text" id="ov-form-comment" placeholder="Commentaire (ex: 5:1 6Cut)" maxlength="200">
+    <div class="row">
+      <button type="button" class="del" id="ov-form-delete" style="display:none; background:#d9534f; color:#fff; margin-right:auto;">Supprimer</button>
+      <button type="button" class="cancel" id="ov-form-cancel">Annuler</button>
+      <button type="button" class="ok" id="ov-form-ok">Ajouter</button>
+    </div>
+  </div>
+</div>
+<div id="ov-toast"></div>
+
 <script>
-  // État plié/déplié mémorisé (localStorage), survit au refresh et au reboot
+  var CSRF = document.querySelector('[name=csrfmiddlewaretoken]').value;
+  var ADD_URL = "{% url 'overlay_add_transition' %}";
+  var EDIT_URL = "{% url 'overlay_edit_transition' %}";
+  var CURRENT_TRACK_ID = "{{ track.id|default:'' }}";
+  var formOpen = false, pendingSourceId = null, pendingTransitionId = null;
+
+  // --- Sections repliables (état en localStorage, comme la référence) ---
   var LS_KEY = 'rubitrack-overlay2-collapsed';
   function collapsedSet() {
     try { return new Set(JSON.parse(localStorage.getItem(LS_KEY) || '[]')); }
@@ -92,22 +152,93 @@
     refreshNow();
   });
 
+  function openForm(label, comment, editMode) {
+    document.getElementById('ov-form-label').textContent = label;
+    document.getElementById('ov-form-comment').value = comment || '';
+    document.getElementById('ov-form-ok').textContent = editMode ? 'Enregistrer' : 'Ajouter';
+    document.getElementById('ov-form-delete').style.display = editMode ? '' : 'none';
+    document.getElementById('ov-form').classList.add('open');
+    formOpen = true;
+    setTimeout(function () { document.getElementById('ov-form-comment').focus(); }, 50);
+  }
+
+  // --- Bouton +: création (dernières jouées -> courante) ---
+  document.addEventListener('click', function (event) {
+    var btn = event.target.closest('.ov-addbtn');
+    if (!btn) { return; }
+    var row = btn.closest('.ov-next');
+    pendingSourceId = row.dataset.trackId; pendingTransitionId = null;
+    openForm(row.dataset.trackTitle + ' → track en cours', '', false);
+  });
+
+  // --- Bouton ✎: édition/suppression d'une transition existante ---
+  document.addEventListener('click', function (event) {
+    var btn = event.target.closest('.ov-editbtn');
+    if (!btn) { return; }
+    var row = btn.closest('.ov-next');
+    pendingTransitionId = row.dataset.tid; pendingSourceId = null;
+    openForm('✎ ' + row.dataset.title, row.dataset.comment, true);
+  });
+
+  function closeForm() {
+    document.getElementById('ov-form').classList.remove('open');
+    formOpen = false; pendingSourceId = null; pendingTransitionId = null;
+  }
+  function toast(msg, ok) {
+    var t = document.getElementById('ov-toast');
+    t.textContent = msg;
+    t.style.background = ok === false ? '#d9534f' : '#28a745';
+    t.classList.add('show');
+    setTimeout(function () { t.classList.remove('show'); }, 2000);
+  }
   function refreshNow() {
     fetch('?partial=1&dir=' + getDir(), {cache: 'no-store'})
       .then(function (r) { return r.ok ? r.text() : null; })
       .then(function (html) {
-        if (html) {
-          document.getElementById('ov-content').innerHTML = html;
-          applyCollapsed();
-        }
-      })
-      .catch(function () {});
+        if (html) { document.getElementById('ov-content').innerHTML = html; applyCollapsed(); }
+      }).catch(function () {});
   }
   if (getDir() === 'before') { refreshNow(); }  // la page est rendue 'après' par défaut
 
-  // Refresh sans flicker; l'état plié est réappliqué après chaque swap
+  document.getElementById('ov-form-cancel').addEventListener('click', closeForm);
+  document.getElementById('ov-form-comment').addEventListener('keydown', function (e) {
+    if (e.key === 'Enter') { document.getElementById('ov-form-ok').click(); }
+    if (e.key === 'Escape') { closeForm(); }
+  });
+  function postForm(url, params, okMessage) {
+    fetch(url, {method: 'POST', body: new URLSearchParams(params),
+                headers: {'X-CSRFToken': CSRF,
+                          'Content-Type': 'application/x-www-form-urlencoded'}})
+      .then(function (r) { return r.json(); })
+      .then(function (data) {
+        if (data.ok) { toast(okMessage(data)); refreshNow(); }
+        else { toast(data.error || 'Erreur', false); }
+      })
+      .catch(function () { toast('Réseau KO — réessayer', false); })
+      .finally(closeForm);
+  }
+
+  document.getElementById('ov-form-ok').addEventListener('click', function () {
+    var comment = document.getElementById('ov-form-comment').value;
+    if (pendingTransitionId) {
+      postForm(EDIT_URL, {transition_id: pendingTransitionId, action: 'save', comment: comment},
+               function () { return 'Commentaire enregistré'; });
+    } else if (pendingSourceId && CURRENT_TRACK_ID) {
+      postForm(ADD_URL, {source_id: pendingSourceId, destination_id: CURRENT_TRACK_ID, comment: comment},
+               function (d) { return d.created ? 'Transition ajoutée' : 'Commentaire mis à jour'; });
+    } else { closeForm(); }
+  });
+
+  document.getElementById('ov-form-delete').addEventListener('click', function () {
+    if (!pendingTransitionId) { closeForm(); return; }
+    if (!confirm('Supprimer cette transition ?')) { return; }
+    postForm(EDIT_URL, {transition_id: pendingTransitionId, action: 'delete'},
+             function () { return 'Transition supprimée'; });
+  });
+
+  // --- Refresh 10 s (suspendu pendant la saisie) ---
   setInterval(function () {
-    if (document.hidden) { return; }
+    if (document.hidden || formOpen) { return; }
     refreshNow();
   }, 10000);
 </script>

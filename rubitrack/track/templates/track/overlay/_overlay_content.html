@@ -1,4 +1,4 @@
-{# Overlay RÉFÉRENCE (rechargé par AJAX toutes les 10 s). Sections .ov-sec repliables ; l'état est réappliqué par le JS de la page après chaque refresh. #}
+{# Overlay RÉFÉRENCE (rechargé par AJAX toutes les 10 s). Fonctions validées depuis le bac à sable: sections repliables, toggle avant/après, + sur les dernières jouées (création avec commentaire), ✎ édition/suppression. #}
 {% if track %}
 <div class="ov-nowline" title="{{ track.title }} — {{ track.artist.name }}">
   <span class="ov-dot">●</span>
@@ -11,11 +11,12 @@
   <div class="ov-sec-head"><span class="ov-caret">▾</span> {% if direction == 'before' %}AVANT ÇA{% else %}ET APRÈS{% endif %} {% if nexts %}({{ nexts|length }}){% endif %}<span class="ov-dirbtn" title="Basculer le sens des transitions">⇄ {% if direction == 'before' %}voir après{% else %}voir avant{% endif %}</span></div>
   <div class="ov-sec-body">
     {% for n in nexts %}
-    <div class="ov-next">
+    <div class="ov-next" data-tid="{{ n.id }}" data-title="{{ n.title }}" data-comment="{{ n.comment }}">
       <span class="ov-key ov-key-sm" style="background:{{ n.color }};">{{ n.key|default:"–" }}</span>
       <span class="ov-next-title" title="{{ n.title }} — {{ n.artist }}">{{ n.title|slice:":24" }}</span>
       <span class="ov-next-comment" title="{{ n.comment }}">{{ n.comment }}</span>
       <span class="ov-next-meta" title="BPM{% if n.play_count %} (joué {{ n.play_count }}× en set){% endif %}">{{ n.bpm|floatformat:0 }}{% if n.play_count %} ({{ n.play_count }}){% endif %}</span>
+      <button type="button" class="ov-editbtn" title="Éditer / supprimer la transition">✎</button>
     </div>
     {% empty %}
     <div class="ov-empty">Aucune transition définie.</div>
@@ -27,10 +28,15 @@
   <div class="ov-sec-head"><span class="ov-caret">▾</span> DERNIÈRES JOUÉES</div>
   <div class="ov-sec-body">
     {% for p in last_played %}
-    <div class="ov-next">
+    <div class="ov-next" data-track-id="{{ p.id }}" data-track-title="{{ p.title }}">
       <span class="ov-key ov-key-sm" style="background:{{ p.color }};">{{ p.key|default:"–" }}</span>
-      <span class="ov-next-title" title="{{ p.title }} — {{ p.artist }}">{{ p.title|slice:":28" }}</span>
+      <span class="ov-next-title" title="{{ p.title }} — {{ p.artist }}">{{ p.title|slice:":26" }}</span>
       <span class="ov-next-meta">{{ p.time|date:"H:i" }}</span>
+      {% if p.has_transition %}
+      <span class="ov-added" title="Transition déjà enregistrée vers la track en cours">✓</span>
+      {% else %}
+      <button type="button" class="ov-addbtn" title="Ajouter la transition {{ p.title }} → {{ track.title }}">+</button>
+      {% endif %}
     </div>
     {% empty %}
     <div class="ov-empty">Pas d'historique.</div>
