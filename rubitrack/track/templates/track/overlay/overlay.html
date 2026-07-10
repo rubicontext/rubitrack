@@ -4,6 +4,12 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>RubiTrack Overlay</title>
+<link rel="manifest" href="{% url 'overlay_manifest' %}">
+<meta name="theme-color" content="#283C4F">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Overlay">
+<link rel="apple-touch-icon" href="/static/img/rubitrack-icon-192.png">
 <style>
   * { box-sizing: border-box; margin: 0; }
   body {
@@ -241,6 +247,23 @@
     if (document.hidden || formOpen) { return; }
     refreshNow();
   }, 10000);
+
+  // --- PWA: installable sur l'écran d'accueil (manifest dédié) ---
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('{% url "pwa_sw" %}').catch(function () {});
+  }
+  // Wake Lock: l'écran du téléphone reste allumé pendant le set
+  (function () {
+    function requestWakeLock() {
+      if ('wakeLock' in navigator) {
+        navigator.wakeLock.request('screen').catch(function () {});
+      }
+    }
+    requestWakeLock();
+    document.addEventListener('visibilitychange', function () {
+      if (document.visibilityState === 'visible') { requestWakeLock(); }
+    });
+  })();
 </script>
 </body>
 </html>

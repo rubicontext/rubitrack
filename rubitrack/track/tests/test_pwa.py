@@ -19,6 +19,15 @@ class TestPwa:
         assert len(data["icons"]) >= 2
         assert any(i.get("purpose") == "maskable" for i in data["icons"])
 
+    def test_overlay_manifest(self):
+        resp = Client().get(reverse("overlay_manifest"))
+        assert resp.status_code == 200
+        data = json.loads(resp.content)
+        assert data["start_url"] == reverse("overlay")
+        assert data["scope"] == reverse("overlay")     # app distincte de la PWA
+        assert data["display"] == "standalone"
+        assert data["id"] != ""
+
     def test_service_worker(self):
         resp = Client().get(reverse("pwa_sw"))
         assert resp.status_code == 200

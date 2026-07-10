@@ -10,6 +10,31 @@ from django.templatetags.static import static
 from django.urls import reverse
 
 
+def overlay_manifest_view(request):
+    """Manifest dédié de l'overlay: app distincte (id/scope propres) pour
+    l'installer sur l'écran d'accueil avec sa propre icône, plein écran."""
+    overlay_url = reverse('overlay')
+    data = {
+        "id": overlay_url,
+        "name": "RubiTrack Overlay",
+        "short_name": "Overlay",
+        "description": "Mini-vue transitions par-dessus Traktor / en cabine.",
+        "start_url": overlay_url,
+        "scope": overlay_url,
+        "display": "standalone",
+        "orientation": "portrait",
+        "background_color": "#ffffff",
+        "theme_color": "#283C4F",
+        "icons": [
+            {"src": static("img/rubitrack-icon-192.png"), "sizes": "192x192", "type": "image/png"},
+            {"src": static("img/rubitrack-icon-512.png"), "sizes": "512x512", "type": "image/png"},
+            {"src": static("img/rubitrack-icon-maskable.png"), "sizes": "512x512",
+             "type": "image/png", "purpose": "maskable"},
+        ],
+    }
+    return JsonResponse(data, content_type="application/manifest+json")
+
+
 def manifest_view(request):
     """Manifest web app (fiche d'identité de la PWA)."""
     data = {

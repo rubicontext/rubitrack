@@ -49,7 +49,7 @@ from .overlay.views import overlay_view, overlay2_view, overlay_add_transition, 
 from .currently_playing.set_history import display_sets
 from .set_builder.set_builder_view import set_builder_view, set_builder_graph_api
 from .ui_lab.ui_lab_view import ui_lab_view
-from .pwa.views import manifest_view, service_worker_view
+from .pwa.views import manifest_view, overlay_manifest_view, service_worker_view
 from .musical_key.views_import_musical_keys import import_musical_keys_view
 from .collection.rekordbox.views import (
     rekordbox_sync_view,
@@ -165,6 +165,7 @@ urlpatterns = [
     path('ui_lab/', ui_lab_view, name='ui_lab'),
     # PWA — manifest + service worker (installer Now Playing sur le téléphone)
     path('manifest.webmanifest', manifest_view, name='pwa_manifest'),
+    path('overlay/manifest.webmanifest', overlay_manifest_view, name='overlay_manifest'),
     path('sw.js', service_worker_view, name='pwa_sw'),
     path('tools/cleanup_musical_keys/', cleanup_musical_keys, name='cleanup_musical_keys'),
     path('tools/cue_points/', cue_points_overview, name='cue_points_overview'),
