@@ -271,6 +271,11 @@ class Config(models.Model):
     max_upload_size_mb = models.IntegerField(default=10, help_text="Maximum file upload size in MB")
 
     # Transition settings
+    overlay_max_transitions = models.IntegerField(
+        default=8,
+        help_text="Nombre max de transitions affichées dans l'overlay "
+                  "(complétées par les 'Generated from Playlist' si moins)"
+    )
     default_comment_size = models.IntegerField(default=60, help_text="Default size for transition comments")
     transition_animation_duration_ms = models.IntegerField(
         default=300, help_text="Duration of transition animations (milliseconds)"

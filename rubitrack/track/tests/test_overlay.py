@@ -110,14 +110,35 @@ class TestOverlay2:
 
 @pytest.mark.django_db
 class TestOverlayFilterAndDirection:
-    def test_generated_from_playlist_excluded(self, overlay_data):
+    def test_generated_fill_last_when_under_limit(self, overlay_data):
         d = overlay_data
         gen = Track.objects.create(title="FromPlaylist", artist=d["artist"], bpm=128)
         Transition.objects.create(track_source=d["cur"], track_destination=gen,
                                   transition_type=d["mix"], ranking=5, play_count=99,
                                   comment="Generated from Playlist : 2025_TEC_all_45stars")
         html = d["client"].get(reverse("overlay")).content.decode()
-        assert "FromPlaylist" not in html          # exclue malgré son play_count
+        part = html.split("DERNIÈRES JOUÉES")[0]
+        # 2 vraies transitions < 8 -> la generated complète, mais EN DERNIER
+        # malgré son play_count 99
+        assert "FromPlaylist" in part
+        assert part.index("Next One") < part.index("FromPlaylist")
+        assert part.index("Next Two") < part.index("FromPlaylist")
+
+    def test_generated_not_shown_when_limit_reached(self, overlay_data):
+        from track.models import Config
+        d = overlay_data
+        Config._config_cache = None
+        cfg = Config.get_config()
+        cfg.overlay_max_transitions = 2            # limite = nb de vraies transitions
+        cfg.save()
+        gen = Track.objects.create(title="FromPlaylist", artist=d["artist"], bpm=128)
+        Transition.objects.create(track_source=d["cur"], track_destination=gen,
+                                  transition_type=d["mix"], ranking=5, play_count=99,
+                                  comment="Generated from Playlist : X")
+        html = d["client"].get(reverse("overlay")).content.decode()
+        part = html.split("DERNIÈRES JOUÉES")[0]
+        assert "FromPlaylist" not in part          # limite atteinte: pas de filler
+        assert part.count('class="ov-next"') == 2  # limite Config respectée
 
     def test_filter_function_sorts_by_play_count(self, overlay_data):
         from track.overlay.views import filter_transition_for_overlay

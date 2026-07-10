@@ -28,6 +28,7 @@ class ConfigForm(ModelForm):
             'max_suggestions',
             'max_playlist_history',
             'max_upload_size_mb',
+            'overlay_max_transitions',
             'default_comment_size',
             'transition_animation_duration_ms',
             'default_playlist_favourites',

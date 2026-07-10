@@ -25,20 +25,30 @@ from ..playlist.playlist_transitions import PLAYLIST_TRANSITION_AUTO_GENERATED
 
 logger = logging.getLogger(__name__)
 
-MAX_NEXT = 8
 LAST_PLAYED_COUNT = 3
+_SORT = ('-play_count', '-ranking', 'position')
 
 
-def filter_transition_for_overlay(queryset):
-    """Filtre/tri des transitions pour l'overlay:
-    - exclut les transitions générées depuis une playlist ('Generated from
-      Playlist : X'), du bruit en cabine;
-    - trie par nombre de fois réellement jouées en set (play_count), puis
-      note manuelle, puis position."""
-    return (
+def filter_transition_for_overlay(queryset, limit=None):
+    """Transitions pour l'overlay, triées par nombre de fois réellement
+    jouées en set (play_count), puis note, puis position.
+
+    Les transitions 'Generated from Playlist : X' passent EN DERNIER: elles
+    ne servent que de remplissage si les vraies transitions n'atteignent pas
+    la limite (Config.overlay_max_transitions). Retourne une liste."""
+    if limit is None:
+        limit = Config.get_config().overlay_max_transitions
+    manual = list(
         queryset.exclude(comment__istartswith=PLAYLIST_TRANSITION_AUTO_GENERATED)
-        .order_by('-play_count', '-ranking', 'position')
+        .order_by(*_SORT)[:limit]
     )
+    missing = limit - len(manual)
+    if missing > 0:
+        manual += list(
+            queryset.filter(comment__istartswith=PLAYLIST_TRANSITION_AUTO_GENERATED)
+            .order_by(*_SORT)[:missing]
+        )
+    return manual
 
 
 def _context(direction='after'):
@@ -58,7 +68,7 @@ def _context(direction='after'):
                 .exclude(track_destination_id=separator)
                 .select_related('track_destination__artist')
             )
-        for transition in filter_transition_for_overlay(queryset)[:MAX_NEXT]:
+        for transition in filter_transition_for_overlay(queryset):
             other = transition.track_source if direction == 'before' else transition.track_destination
             nexts.append({
                 'title': other.title,
