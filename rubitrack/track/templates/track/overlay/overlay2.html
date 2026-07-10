@@ -90,6 +90,29 @@
     border-radius: 12px; opacity: 0; transition: opacity .25s; pointer-events: none;
   }
   #ov-toast.show { opacity: 1; }
+
+  /* ===== Écran TACTILE (téléphone/tablette): tout plus gros, cibles au doigt.
+     pointer:coarse et non max-width: la fenêtre PC fait aussi ~340px. ===== */
+  @media (pointer: coarse) {
+    body { padding: 10px 12px; }
+    .ov-nowline { font-size: 16px; gap: 8px; padding-bottom: 8px; }
+    .ov-nowbpm { font-size: 14px; }
+    .ov-key-sm { min-width: 36px; font-size: 14px; padding: 2px 7px; }
+    .ov-sec-head { font-size: 12px; padding: 8px 0; }
+    .ov-dirbtn { font-size: 13px; }
+    .ov-caret { font-size: 13px; }
+    .ov-next { font-size: 16px; padding: 7px 0; gap: 8px; }
+    .ov-next-comment { font-size: 14px; }
+    .ov-next-meta { font-size: 14px; }
+    .ov-empty { font-size: 14px; }
+    .ov-addbtn { width: 32px; height: 32px; font-size: 18px; }
+    .ov-added { font-size: 18px; }
+    .ov-editbtn { font-size: 18px; padding: 4px 8px; }
+    #ov-form .lbl { font-size: 14px; }
+    #ov-form input { font-size: 16px; padding: 10px; }   /* >=16px: pas de zoom iOS */
+    #ov-form button { font-size: 15px; padding: 10px 18px; }
+    #ov-toast { font-size: 14px; padding: 8px 16px; }
+  }
 </style>
 </head>
 <body>
