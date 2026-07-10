@@ -15,7 +15,7 @@
       <span class="ov-key ov-key-sm" style="background:{{ n.color }};">{{ n.key|default:"–" }}</span>
       <span class="ov-next-title" title="{{ n.title }} — {{ n.artist }}">{{ n.title|slice:":24" }}</span>
       <span class="ov-next-comment" title="{{ n.comment }}">{{ n.comment }}</span>
-      <span class="ov-next-meta">{{ n.bpm|floatformat:0 }}{% if n.play_count %} · ▶{{ n.play_count }}{% endif %}</span>
+      <span class="ov-next-meta" title="BPM{% if n.play_count %} (joué {{ n.play_count }}× en set){% endif %}">{{ n.bpm|floatformat:0 }}{% if n.play_count %} ({{ n.play_count }}){% endif %}</span>
       <button type="button" class="ov-editbtn" title="Éditer / supprimer la transition">✎</button>
     </div>
     {% empty %}

@@ -51,7 +51,7 @@ class TestOverlay:
         html = overlay_data["client"].get(reverse("overlay")).content.decode()
         # d1 (jouée 5x, note 3) doit apparaître avant d2 (jouée 0x, note 5)
         assert html.index("Next One") < html.index("Next Two")
-        assert "▶5" in html
+        assert "(5)" in html          # play_count affiché après le BPM: "129 (5)"
 
     def test_no_current_track_graceful(self, db):
         User.objects.create_superuser("admin2", "a@a.fr", "x")
