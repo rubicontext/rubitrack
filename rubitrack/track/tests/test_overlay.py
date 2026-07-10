@@ -92,3 +92,61 @@ class TestOverlay2:
         # la track en cours ne doit pas apparaître dans DERNIÈRES JOUÉES
         history_part = html.split("DERNIÈRES JOUÉES")[1]
         assert "Playing Now" not in history_part
+
+    def test_add_button_or_check_on_history(self, overlay_data):
+        from datetime import timedelta
+        from django.utils import timezone as tz
+        d = overlay_data
+        # d1 a déjà une transition d1->cur ; d2 non
+        Transition.objects.create(track_source=d["d1"], track_destination=d["cur"],
+                                  transition_type=d["mix"], ranking=3)
+        CurrentlyPlaying.objects.create(track=d["d1"], date_played=tz.now() - timedelta(minutes=20))
+        CurrentlyPlaying.objects.create(track=d["d2"], date_played=tz.now() - timedelta(minutes=10))
+        html = d["client"].get(reverse("overlay2")).content.decode()
+        history_part = html.split("DERNIÈRES JOUÉES")[1]
+        assert "ov-addbtn" in history_part           # bouton + présent (d2)
+        assert "ov-added" in history_part            # coche ✓ présente (d1)
+
+
+@pytest.mark.django_db
+class TestOverlayAddTransition:
+    def test_creates_with_comment(self, overlay_data):
+        d = overlay_data
+        d3 = Track.objects.create(title="Fresh", artist=d["artist"], bpm=126)
+        resp = d["client"].post(reverse("overlay_add_transition"), {
+            "source_id": d3.id, "destination_id": d["cur"].id, "comment": "5:1 6Cut",
+        })
+        assert resp.status_code == 200
+        assert resp.json() == {"ok": True, "created": True}
+        transition = Transition.objects.get(track_source=d3, track_destination=d["cur"])
+        assert transition.comment == "5:1 6Cut"
+
+    def test_existing_updates_comment(self, overlay_data):
+        d = overlay_data
+        # d1->cur existe déjà (créée dans overlay_data avec play_count=5)
+        resp = d["client"].post(reverse("overlay_add_transition"), {
+            "source_id": d["cur"].id, "destination_id": d["d1"].id, "comment": "nouveau com",
+        })
+        assert resp.json()["created"] is False
+        t = Transition.objects.get(track_source=d["cur"], track_destination=d["d1"])
+        assert t.comment == "nouveau com"
+        # pas de doublon créé
+        assert Transition.objects.filter(track_source=d["cur"],
+                                         track_destination=d["d1"]).count() == 1
+
+    def test_same_track_rejected(self, overlay_data):
+        d = overlay_data
+        resp = d["client"].post(reverse("overlay_add_transition"), {
+            "source_id": d["cur"].id, "destination_id": d["cur"].id, "comment": "",
+        })
+        assert resp.status_code == 400
+
+    def test_get_rejected(self, overlay_data):
+        assert overlay_data["client"].get(reverse("overlay_add_transition")).status_code == 405
+
+    def test_unknown_track_404(self, overlay_data):
+        d = overlay_data
+        resp = d["client"].post(reverse("overlay_add_transition"), {
+            "source_id": 999999, "destination_id": d["cur"].id, "comment": "",
+        })
+        assert resp.status_code == 404

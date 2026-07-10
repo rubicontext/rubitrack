@@ -1,4 +1,4 @@
-{# Contenu de l'overlay (rechargé par AJAX toutes les 10 s, sans flicker) #}
+{# Overlay RÉFÉRENCE (rechargé par AJAX toutes les 10 s). Sections .ov-sec repliables ; l'état est réappliqué par le JS de la page après chaque refresh. #}
 {% if track %}
 <div class="ov-nowline" title="{{ track.title }} — {{ track.artist.name }}">
   <span class="ov-dot">●</span>
@@ -6,18 +6,37 @@
   <span class="ov-key ov-key-sm" style="background:{{ track.get_musical_key_color }};">{{ track.musical_key|default:"–" }}</span>
   <span class="ov-nowbpm">{{ track.bpm|floatformat:0 }}</span>
 </div>
-{% if nexts %}
-{% for n in nexts %}
-<div class="ov-next">
-  <span class="ov-key ov-key-sm" style="background:{{ n.color }};">{{ n.key|default:"–" }}</span>
-  <span class="ov-next-title" title="{{ n.title }} — {{ n.artist }}">{{ n.title|slice:":24" }}</span>
-  <span class="ov-next-comment" title="{{ n.comment }}">{{ n.comment }}</span>
-  <span class="ov-next-meta">{{ n.bpm|floatformat:0 }}{% if n.play_count %} · ▶{{ n.play_count }}{% endif %}</span>
+
+<div class="ov-sec" data-sec="transitions">
+  <div class="ov-sec-head"><span class="ov-caret">▾</span> ET APRÈS {% if nexts %}({{ nexts|length }}){% endif %}</div>
+  <div class="ov-sec-body">
+    {% for n in nexts %}
+    <div class="ov-next">
+      <span class="ov-key ov-key-sm" style="background:{{ n.color }};">{{ n.key|default:"–" }}</span>
+      <span class="ov-next-title" title="{{ n.title }} — {{ n.artist }}">{{ n.title|slice:":24" }}</span>
+      <span class="ov-next-comment" title="{{ n.comment }}">{{ n.comment }}</span>
+      <span class="ov-next-meta">{{ n.bpm|floatformat:0 }}{% if n.play_count %} · ▶{{ n.play_count }}{% endif %}</span>
+    </div>
+    {% empty %}
+    <div class="ov-empty">Aucune transition définie.</div>
+    {% endfor %}
+  </div>
 </div>
-{% endfor %}
-{% else %}
-<div class="ov-empty">Aucune transition définie pour cette track.</div>
-{% endif %}
+
+<div class="ov-sec" data-sec="history">
+  <div class="ov-sec-head"><span class="ov-caret">▾</span> DERNIÈRES JOUÉES</div>
+  <div class="ov-sec-body">
+    {% for p in last_played %}
+    <div class="ov-next">
+      <span class="ov-key ov-key-sm" style="background:{{ p.color }};">{{ p.key|default:"–" }}</span>
+      <span class="ov-next-title" title="{{ p.title }} — {{ p.artist }}">{{ p.title|slice:":28" }}</span>
+      <span class="ov-next-meta">{{ p.time|date:"H:i" }}</span>
+    </div>
+    {% empty %}
+    <div class="ov-empty">Pas d'historique.</div>
+    {% endfor %}
+  </div>
+</div>
 {% else %}
 <div class="ov-nowline"><span class="ov-nowtext">Pas de lecture en cours</span></div>
 <div class="ov-empty">Lance la diffusion Icecast (port 8059).</div>

@@ -1,4 +1,4 @@
-{# Contenu overlay2 (rechargé par AJAX toutes les 10 s). Les sections .ov-sec sont repliables ; l'état est réappliqué par le JS de la page après chaque refresh. #}
+{# Overlay BAC À SABLE (rechargé par AJAX toutes les 10 s). Comme la référence + bouton « + » sur les dernières jouées: crée la transition (jouée -> courante) avec saisie du commentaire. #}
 {% if track %}
 <div class="ov-nowline" title="{{ track.title }} — {{ track.artist.name }}">
   <span class="ov-dot">●</span>
@@ -24,13 +24,18 @@
 </div>
 
 <div class="ov-sec" data-sec="history">
-  <div class="ov-sec-head"><span class="ov-caret">▾</span> DERNIÈRES JOUÉES</div>
+  <div class="ov-sec-head"><span class="ov-caret">▾</span> DERNIÈRES JOUÉES <span class="ov-hint">(+ = transition vers la courante)</span></div>
   <div class="ov-sec-body">
     {% for p in last_played %}
-    <div class="ov-next">
+    <div class="ov-next" data-track-id="{{ p.id }}" data-track-title="{{ p.title }}">
       <span class="ov-key ov-key-sm" style="background:{{ p.color }};">{{ p.key|default:"–" }}</span>
-      <span class="ov-next-title" title="{{ p.title }} — {{ p.artist }}">{{ p.title|slice:":28" }}</span>
+      <span class="ov-next-title" title="{{ p.title }} — {{ p.artist }}">{{ p.title|slice:":26" }}</span>
       <span class="ov-next-meta">{{ p.time|date:"H:i" }}</span>
+      {% if p.has_transition %}
+      <span class="ov-added" title="Transition déjà enregistrée vers la track en cours">✓</span>
+      {% else %}
+      <button type="button" class="ov-addbtn" title="Ajouter la transition {{ p.title }} → {{ track.title }}">+</button>
+      {% endif %}
     </div>
     {% empty %}
     <div class="ov-empty">Pas d'historique.</div>
